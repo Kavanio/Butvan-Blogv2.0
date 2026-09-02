@@ -2,17 +2,13 @@ package com.butvan.blog.service.controller;
 
 import com.butvan.blog.common.result.PageResult;
 import com.butvan.blog.common.result.Result;
-import com.butvan.blog.common.utils.IpUtils;
-import com.butvan.blog.pojo.dto.quote.QuoteCreateDTO;
 import com.butvan.blog.pojo.dto.quote.QuoteQueryDTO;
 import com.butvan.blog.pojo.dto.quote.QuoteSaveDTO;
 import com.butvan.blog.pojo.vo.quote.AdminQuoteVO;
 import com.butvan.blog.service.annotation.TrackApi;
 import com.butvan.blog.service.service.QuoteService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,7 +28,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-@Slf4j
 public class QuoteController {
 
     private final QuoteService quoteService;
@@ -46,21 +41,6 @@ public class QuoteController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "12") Integer size) {
         return Result.success(quoteService.pagePublicQuotes(page, size));
-    }
-
-    /**
-     * 已登录用户提交一条待审核留言。
-     */
-    @TrackApi("【前台】登录用户提交金句留言")
-    @PostMapping("/quotes")
-    public Result<AdminQuoteVO> createUserQuote(
-            @Valid @RequestBody QuoteCreateDTO dto,
-            Principal principal,
-            HttpServletRequest request) {
-        String ipAddress = IpUtils.getClientIp(request);
-        String userAgent = request.getHeader("User-Agent");
-        log.info("登录用户提交金句，operator={}", principal.getName());
-        return Result.success(quoteService.createUserQuote(dto, principal.getName(), ipAddress, userAgent));
     }
 
     /**

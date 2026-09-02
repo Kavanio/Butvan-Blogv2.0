@@ -16,10 +16,3 @@ export interface QuotePageResult {
   size: number
   records: QuoteItem[]
 }
-
-/** 登录用户投递金句的请求体。 */
-export interface QuoteCreatePayload {
-  content: string
-  authorName?: string
-  source?: string
-}

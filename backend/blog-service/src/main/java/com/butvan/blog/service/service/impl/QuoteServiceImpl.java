@@ -2,7 +2,6 @@ package com.butvan.blog.service.service.impl;
 
 import com.butvan.blog.common.exception.BusinessException;
 import com.butvan.blog.common.result.PageResult;
-import com.butvan.blog.pojo.dto.quote.QuoteCreateDTO;
 import com.butvan.blog.pojo.dto.quote.QuoteQueryDTO;
 import com.butvan.blog.pojo.dto.quote.QuoteSaveDTO;
 import com.butvan.blog.pojo.entity.Quote;
@@ -14,7 +13,6 @@ import com.butvan.blog.service.repository.UserRepository;
 import com.butvan.blog.service.service.QuoteService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,13 +31,10 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class QuoteServiceImpl implements QuoteService {
 
     private static final int DEFAULT_PAGE_SIZE = 12;
     private static final int MAX_PAGE_SIZE = 48;
-    private static final int MAX_SUBMISSIONS_PER_TEN_MINUTES = 3;
-
     private final QuoteRepository quoteRepository;
     private final UserRepository userRepository;
 
@@ -56,33 +51,6 @@ public class QuoteServiceImpl implements QuoteService {
                 .size(pageable.getPageSize())
                 .records(quotePage.getContent().stream().map(this::toQuoteVO).toList())
                 .build();
-    }
-
-    @Override
-    @Transactional
-    public AdminQuoteVO createUserQuote(QuoteCreateDTO dto, String username, String ipAddress, String userAgent) {
-        User user = findActiveUser(username);
-        long recentCount = quoteRepository.countByUserIdAndCreatedAtAfter(user.getId(), LocalDateTime.now().minusMinutes(10));
-        if (recentCount >= MAX_SUBMISSIONS_PER_TEN_MINUTES) {
-            throw new BusinessException("提交过于频繁，请十分钟后再试");
-        }
-
-        Quote quote = Quote.builder()
-                .user(user)
-                .content(normalizeRequired(dto.getContent(), "请写下一句想留下的话"))
-                .authorName(resolveAuthorName(dto.getAuthorName(), user.getNickname(), user.getEmail()))
-                .source(normalizeOptional(dto.getSource()))
-                .displaySize("MEDIUM")
-                .status("PENDING")
-                .isPinned(false)
-                .sortOrder(0)
-                .ipAddress(normalizeOptional(ipAddress))
-                .userAgent(truncateUserAgent(userAgent))
-                .build();
-
-        Quote savedQuote = quoteRepository.save(quote);
-        log.info("登录用户投稿金句成功，quoteId={}, userId={}", savedQuote.getId(), user.getId());
-        return toAdminQuoteVO(savedQuote);
     }
 
     @Override
@@ -226,20 +194,6 @@ public class QuoteServiceImpl implements QuoteService {
     }
 
     /**
-     * 选择投稿展示署名，优先使用填写值，再回退用户昵称或邮箱。
-     */
-    private String resolveAuthorName(String inputName, String nickname, String email) {
-        String authorName = normalizeOptional(inputName);
-        if (StringUtils.hasText(authorName)) {
-            return authorName;
-        }
-        if (StringUtils.hasText(nickname)) {
-            return nickname.trim();
-        }
-        return email;
-    }
-
-    /**
      * 校验并标准化审核状态。
      */
     private String normalizeStatus(String status) {
@@ -263,17 +217,6 @@ public class QuoteServiceImpl implements QuoteService {
             throw new BusinessException("展示字号无效");
         }
         return normalized;
-    }
-
-    /**
-     * 将 User-Agent 截断到数据库允许的最大长度。
-     */
-    private String truncateUserAgent(String userAgent) {
-        String normalized = normalizeOptional(userAgent);
-        if (normalized == null) {
-            return null;
-        }
-        return normalized.length() > 500 ? normalized.substring(0, 500) : normalized;
     }
 
     /**

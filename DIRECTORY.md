@@ -133,7 +133,6 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   │   │   │   │   └── AlbumSkeleton.tsx          #         骨架屏（列表+详情加载态占位）
 │   │   │   │   ├── quote/                         #       金句墙组件
 │   │   │   │   │   ├── QuoteWall.tsx              #         稳定 ID 驱动的错位文字流渲染器
-│   │   │   │   │   ├── QuoteComposer.tsx          #         登录用户投稿与审核提示弹层
 │   │   │   │   │   └── QuoteSkeleton.tsx          #         无卡片文字骨架屏
 │   │   │   │   └── series/                        #       系列组件
 │   │   │   │       └── SeriesNavigation.tsx       #         系列目录导航（上一篇/下一篇）
@@ -147,7 +146,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   │   │   │   ├── profile.ts                     #       用户资料 API（公开资料、导航菜单）
 │   │   │   │   ├── friend-api.ts                  #       友链 API（列表查询、申请、图片上传、网站元数据抓取）
 │   │   │   │   ├── album-api.ts                   #       相册 API（公开列表查询、slug 相册详情）
-│   │   │   │   ├── quote-api.ts                   #       金句墙公开查询与登录投稿 API
+│   │   │   │   ├── quote-api.ts                   #       金句墙已发布内容的公开查询 API
 │   │   │   │   ├── api.ts                         #       Axios/fetch 封装（baseURL、拦截器、错误处理）
 │   │   │   │   ├── constants.ts                   #       前端常量（站点名、分页大小等）
 │   │   │   │   └── image-url.ts                   #       图片 URL 解析工具函数（支持相对路径与绝对路径）
@@ -155,7 +154,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   │   │   │   ├── scene.ts                       #       场景/热区类型
 │   │   │   │   ├── article.ts                     #       文章/分类/标签类型
 │   │   │   │   ├── album.ts                       #       相册类型（AlbumItem/AlbumPhoto/AlbumDetail）
-│   │   │   │   ├── quote.ts                       #       金句墙分页记录与投稿请求类型
+│   │   │   │   ├── quote.ts                       #       金句墙公开分页记录类型
 │   │   │   │   └── common.ts                      #       通用类型（分页、API 响应等）
 │   │   │   └── styles/                            #     🎨 额外样式（Tailwind 无法覆盖的复杂样式）
 │   │   ├── next.config.ts                         #     Next.js 配置（图片域名、重定向等）
@@ -334,7 +333,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
     │       │   ├── admin/                          #         后台管理相关：AdminCreateUserDTO, AdminUpdateUserDTO, AdminResetPasswordDTO
     │       │   ├── article/                        #         文章相关：ArticleCreateDTO, ArticleUpdateDTO, ArticleQueryDTO
     │       │   ├── comment/                        #         评论相关：CommentCreateDTO, CommentAuditDTO
-    │       │   ├── quote/                          #         金句相关：QuoteCreateDTO, QuoteSaveDTO, QuoteQueryDTO
+    │       │   ├── quote/                          #         金句相关：QuoteSaveDTO, QuoteQueryDTO
     │       │   ├── auth/                           #         认证相关：LoginDTO, RegisterDTO, CurrentUserUpdateDTO, PasswordChangeDTO
     │       │   ├── scene/                          #         场景相关：SceneSaveDTO, HotspotSaveDTO
     │       │   ├── page/                           #         独立页相关：PageSaveDTO

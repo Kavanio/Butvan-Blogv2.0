@@ -1,7 +1,6 @@
 package com.butvan.blog.service.service;
 
 import com.butvan.blog.common.result.PageResult;
-import com.butvan.blog.pojo.dto.quote.QuoteCreateDTO;
 import com.butvan.blog.pojo.dto.quote.QuoteQueryDTO;
 import com.butvan.blog.pojo.dto.quote.QuoteSaveDTO;
 import com.butvan.blog.pojo.vo.quote.AdminQuoteVO;
@@ -20,17 +19,6 @@ public interface QuoteService {
      * @return 前台展示分页数据
      */
     PageResult pagePublicQuotes(Integer page, Integer size);
-
-    /**
-     * 提交一条需要审核的登录用户留言。
-     *
-     * @param dto 投稿内容
-     * @param username 当前登录用户名或邮箱
-     * @param ipAddress 客户端 IP
-     * @param userAgent 客户端 User-Agent
-     * @return 新建后的后台管理视图对象
-     */
-    AdminQuoteVO createUserQuote(QuoteCreateDTO dto, String username, String ipAddress, String userAgent);
 
     /**
      * 后台条件分页查询金句。
