@@ -93,6 +93,8 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   │   │   │   │   ├── page.tsx                   #         「暗夜画廊」相册列表页（非对称编辑式网格+IntersectionObserver入场+金色光晕交互）
 │   │   │   │   │   └── [slug]/                    #         相册详情页
 │   │   │   │   │   │   └── page.tsx               #           「光影长廊」视差横幅+瀑布流照片墙+弹性灯箱
+│   │   │   │   ├── quotes/                        #       ✒️ 金句留言墙前台路由
+│   │   │   │   │   └── page.tsx                   #         错位文字展墙、分页加载与登录投稿入口
 │   │   │   │   ├── layout.tsx                     #         根布局：字体加载、全局 Metadata
 │   │   │   │   ├── globals.css                    #         全局样式：静谧深海色彩变量、发光阴影
 │   │   │   │   ├── providers.tsx                  #         HeroUI v3 无 Provider 兼容包装器
@@ -129,6 +131,9 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   │   │   │   │   ├── AlbumHero.tsx              #         详情页视差横幅（毛玻璃标题叠层+滚动视差）
 │   │   │   │   │   ├── PhotoLightbox.tsx          #         弹性灯箱（弹簧缩放动画+键盘导航+页码指示器）
 │   │   │   │   │   └── AlbumSkeleton.tsx          #         骨架屏（列表+详情加载态占位）
+│   │   │   │   ├── quote/                         #       金句墙组件
+│   │   │   │   │   ├── QuoteWall.tsx              #         稳定 ID 驱动的错位文字流渲染器
+│   │   │   │   │   └── QuoteSkeleton.tsx          #         无卡片文字骨架屏
 │   │   │   │   └── series/                        #       系列组件
 │   │   │   │       └── SeriesNavigation.tsx       #         系列目录导航（上一篇/下一篇）
 │   │   │   ├── hooks/                             #     🪝 自定义 Hooks
@@ -141,6 +146,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   │   │   │   ├── profile.ts                     #       用户资料 API（公开资料、导航菜单）
 │   │   │   │   ├── friend-api.ts                  #       友链 API（列表查询、申请、图片上传、网站元数据抓取）
 │   │   │   │   ├── album-api.ts                   #       相册 API（公开列表查询、slug 相册详情）
+│   │   │   │   ├── quote-api.ts                   #       金句墙已发布内容的公开查询 API
 │   │   │   │   ├── api.ts                         #       Axios/fetch 封装（baseURL、拦截器、错误处理）
 │   │   │   │   ├── constants.ts                   #       前端常量（站点名、分页大小等）
 │   │   │   │   └── image-url.ts                   #       图片 URL 解析工具函数（支持相对路径与绝对路径）
@@ -148,6 +154,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   │   │   │   ├── scene.ts                       #       场景/热区类型
 │   │   │   │   ├── article.ts                     #       文章/分类/标签类型
 │   │   │   │   ├── album.ts                       #       相册类型（AlbumItem/AlbumPhoto/AlbumDetail）
+│   │   │   │   ├── quote.ts                       #       金句墙公开分页记录类型
 │   │   │   │   └── common.ts                      #       通用类型（分页、API 响应等）
 │   │   │   └── styles/                            #     🎨 额外样式（Tailwind 无法覆盖的复杂样式）
 │   │   ├── next.config.ts                         #     Next.js 配置（图片域名、重定向等）
@@ -187,6 +194,8 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │       │   │   │   │   └── page.tsx               #           标签CRUD
 │       │   │   │   ├── comments/                  #         评论管理
 │       │   │   │   │   └── page.tsx               #           评论审核（通过/垃圾/删除）
+│       │   │   │   ├── quotes/                    #         金句墙管理
+│       │   │   │   │   └── page.tsx               #           金句创建、审核、置顶、编辑和软删除
 │       │   │   │   ├── media/                     #         媒体库
 │       │   │   │   │   └── page.tsx               #           文件上传/预览/删除（支持图片裁剪）
 │       │   │   │   ├── pages/                     #         独立页面管理
@@ -242,11 +251,13 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │       │   │   ├── account-api.ts                 #       当前登录账号资料、改密、个人中心相关 API 封装
 │       │   │   ├── article-api.ts                 #       文章、分类、标签相关的 API 请求统一封装
 │       │   │   ├── comments-api.ts                #       评论、审核、快捷回复相关的 API 请求统一封装
+│       │   │   ├── quote-api.ts                   #       金句墙后台管理 API 请求封装
 │       │   │   ├── album-api.ts                   #       相册管理 API（CRUD、照片添加/移除/排序）
 │       │   │   ├── user-api.ts                    #       用户管理 API（CRUD、启禁用、重置密码、批量操作）
 │       │   │   ├── notification-api.ts            #       系统消息通知管理 API (新增)
 │       │   │   └── websocket-url.ts               #       WebSocket URL 智能解析与构建工具库 (新增)
 │       │   └── types/                             #     📐 TypeScript 类型定义（与 blog-client 共享，新增 notification.ts）
+│       │       └── quote.ts                        #       金句管理类型与请求结构
 │       ├── next.config.ts
 │       ├── postcss.config.mjs
 │       ├── tsconfig.json
@@ -307,6 +318,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
     │       │   ├── ArticleVersion.java             #         blog_article_version — 文章版本历史
     │       │   ├── Series.java                     #         blog_series — 文章系列/专题
     │       │   ├── Comment.java                    #         blog_comment — 评论
+    │       │   ├── Quote.java                      #         blog_quote — 金句留言墙内容与审核记录
     │       │   ├── Media.java                      #         blog_media — 媒体资源
 │       │   ├── Album.java                      #         blog_album — 相册
 │       │   ├── AlbumPhoto.java                 #         blog_album_photo — 相册照片关联
@@ -321,6 +333,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
     │       │   ├── admin/                          #         后台管理相关：AdminCreateUserDTO, AdminUpdateUserDTO, AdminResetPasswordDTO
     │       │   ├── article/                        #         文章相关：ArticleCreateDTO, ArticleUpdateDTO, ArticleQueryDTO
     │       │   ├── comment/                        #         评论相关：CommentCreateDTO, CommentAuditDTO
+    │       │   ├── quote/                          #         金句相关：QuoteSaveDTO, QuoteQueryDTO
     │       │   ├── auth/                           #         认证相关：LoginDTO, RegisterDTO, CurrentUserUpdateDTO, PasswordChangeDTO
     │       │   ├── scene/                          #         场景相关：SceneSaveDTO, HotspotSaveDTO
     │       │   ├── page/                           #         独立页相关：PageSaveDTO
@@ -333,6 +346,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
     │           ├── article/                        #         文章相关：ArticleDetailVO, ArticleListVO
     │           ├── home/                           #         首页相关：HomeSceneVO, HotspotVO
     │           ├── comment/                        #         评论相关：CommentVO
+    │           ├── quote/                          #         金句相关：QuoteVO, AdminQuoteVO
     │           ├── auth/                           #         认证相关：LoginVO, CurrentUserVO
     │           ├── site/                           #         站点配置相关：SiteConfigVO
     │           ├── profile/                        #         个人资料相关：ProfileVO
@@ -358,6 +372,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
             │   │   │   ├── CategoryController.java #         分类管理接口
             │   │   │   ├── TagController.java      #         标签管理接口
             │   │   │   ├── CommentController.java  #         评论提交/审核/删除接口
+            │   │   │   ├── QuoteController.java    #         金句公开查询、登录投稿与后台审核接口
             │   │   │   ├── MediaController.java    #         文件上传/删除接口
             │   │   │   ├── PageController.java     #         独立页面管理接口
             │   │   │   ├── NavigationController.java #       导航菜单管理接口
@@ -378,6 +393,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
             │   │   │   ├── TagRepository.java      #         标签 Repository
             │   │   │   ├── SeriesRepository.java   #         系列 Repository
             │   │   │   ├── CommentRepository.java  #         评论 Repository（按文章+状态查询）
+            │   │   │   ├── QuoteRepository.java    #         金句 Repository（分页筛选与投稿频控统计）
             │   │   │   ├── MediaRepository.java    #         媒体 Repository
             │   │   │   ├── PageRepository.java     #         独立页 Repository（按 slug 查询）
             │   │   │   ├── NavigationRepository.java #       导航 Repository（按位置查询树形菜单）
@@ -394,6 +410,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
             │   │   │   ├── CategoryService.java    #         分类业务接口
             │   │   │   ├── TagService.java         #         标签业务接口
             │   │   │   ├── CommentService.java     #         评论业务接口
+            │   │   │   ├── QuoteService.java       #         金句投稿、审核、置顶与软删除业务接口
             │   │   │   ├── MediaService.java       #         媒体业务接口
             │   │   │   ├── PageService.java        #         独立页业务接口
             │   │   │   ├── NavigationService.java  #         导航业务接口
@@ -411,6 +428,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
             │   │   │       ├── CategoryServiceImpl.java
             │   │   │       ├── TagServiceImpl.java
             │   │   │       ├── CommentServiceImpl.java
+            │   │   │       ├── QuoteServiceImpl.java #       金句业务实现（审核、频控、分页与 VO 转换）
             │   │   │       ├── MediaServiceImpl.java
             │   │   │       ├── PageServiceImpl.java
             │   │   │       ├── NavigationServiceImpl.java
@@ -441,6 +459,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
             │   └── resources/                      #       配置文件与 Flyway 数据库迁移
             │       ├── db/migration/               #         Flyway 数据库同步更新源
             │       │   └── V202607291900__add_article_related_ids.sql # 文章关联推荐 ID 列表字段扩展迁移 SQL
+            │       │   └── V202609021100__create_quote_wall.sql # 金句墙表、索引和动态导航注册
             │   │   ├── log/                        #       📝 日志模块
             │   │   │   └── WebConsoleAppender.java  #         自定义 Logback 系统日志 WebSocket 拦截 Appender
             │   │   └── security/                   #       🔒 安全模块

@@ -139,6 +139,68 @@ h1, h2, h3, h4, h5, h6 {
   animation: arrowPush 1.2s ease-in-out infinite;
 }
 
+/* ===== 金句墙：非规则文字流 ===== */
+@keyframes quoteWallEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.quote-wall-entry {
+  animation: quoteWallEnter 0.55s cubic-bezier(0.22, 0.8, 0.25, 1) both;
+}
+
+.quote-wall-text,
+.quote-wall-meta {
+  transition: transform 220ms ease, color 220ms ease, letter-spacing 220ms ease;
+}
+
+.quote-wall-mark {
+  position: absolute;
+  top: -0.05em;
+  left: -0.55em;
+  color: #727BBA;
+  font-family: Georgia, serif;
+  font-size: 2rem;
+  line-height: 1;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 220ms ease, transform 220ms ease;
+  pointer-events: none;
+}
+
+.quote-wall-entry:hover .quote-wall-text {
+  transform: translateX(5px);
+  letter-spacing: 0;
+}
+
+.quote-wall-entry:hover .quote-wall-meta {
+  transform: translateX(8px);
+  color: #52525b;
+}
+
+.quote-wall-entry:hover .quote-wall-mark {
+  opacity: 0.72;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quote-wall-entry {
+    animation: none;
+  }
+
+  .quote-wall-text,
+  .quote-wall-meta,
+  .quote-wall-mark {
+    transition: none;
+  }
+}
+
 /* ===== 文章列表逐项入场动画 ===== */
 @keyframes articleFadeIn {
   from {
@@ -605,7 +667,6 @@ body {
 .dark [class*="dark:text-zinc-400"] {
   color: #52525b !important;
 }
-
 
 
 
