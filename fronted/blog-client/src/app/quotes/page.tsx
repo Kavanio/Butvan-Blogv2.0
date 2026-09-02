@@ -63,7 +63,7 @@ export default function QuotesPage() {
       <Navbar profile={profile} />
       <SidebarWidget />
 
-      <div className="mx-auto w-full max-w-[1380px] flex-1 px-4 pb-12 pt-7 sm:px-6 md:pt-9 lg:px-8">
+      <div className="mx-auto min-h-[100svh] w-full max-w-[1380px] flex-1 px-4 pb-12 pt-7 sm:px-6 md:pt-9 lg:px-8">
         <section aria-label="金句墙内容">
           {loading ? (
             <QuoteSkeleton />
