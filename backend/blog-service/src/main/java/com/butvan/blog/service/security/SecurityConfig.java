@@ -111,6 +111,8 @@ public class SecurityConfig {
                     auth
                         // 后台用户管理接口仅限 ADMIN 角色访问
                         .requestMatchers("/api/admin/users/**").hasRole("ADMIN")
+                        // 金句墙后台审核接口仅限 ADMIN 角色访问
+                        .requestMatchers("/api/admin/quotes/**").hasRole("ADMIN")
                         // 其它任何后台 API 均需校验 Bearer Token 权限身份
                         .anyRequest().authenticated();
                 }

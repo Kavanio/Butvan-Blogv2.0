@@ -30,6 +30,10 @@ blog:
         label: "项目展示"
         category: "页面"
         dynamic: false
+      - path: "/quotes"
+        label: "金句墙"
+        category: "页面"
+        dynamic: false
       # ---------- 动态路由模式 ----------
       - path: "/article/:slug"
         label: "文章详情"
@@ -58,4 +62,3 @@ blog:
     owner: 18755120710
     repo: Butvan-Blogv2.0
     token: ${GITHUB_TOKEN:}
-
