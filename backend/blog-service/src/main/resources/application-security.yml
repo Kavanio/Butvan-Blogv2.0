@@ -45,6 +45,9 @@ security:
     - "GET /api/notes/**"
     - "POST /api/notes/*/like"
 
+    # ---- 金句留言墙模块 ----
+    - "GET /api/quotes"
+
     # ---- 照片墙模块 ----
     - "GET /api/public/photos/**"
 

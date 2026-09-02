@@ -24,6 +24,7 @@ const STATIC_CLIENT_ROUTES: ClientRoute[] = [
   { path: '/categories', label: '分类列表', category: '页面', dynamic: false },
   { path: '/notes', label: '手记列表', category: '页面', dynamic: false },
   { path: '/projects', label: '项目展示', category: '页面', dynamic: false },
+  { path: '/quotes', label: '金句墙', category: '页面', dynamic: false },
   { path: '/article/[slug]', label: '文章详情', category: '动态路由', dynamic: true },
   { path: '/categories/[slug]', label: '分类文章', category: '动态路由', dynamic: true },
   { path: '/tags/[slug]', label: '标签文章', category: '动态路由', dynamic: true },
