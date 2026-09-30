@@ -14,7 +14,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 ├── CHANGELOG.md                                   # 📝 全项目发版历史与变更日志（对标 GitHub Release）
 ├── version.json                                   # 📌 全项目单一事实源版本号定义
 ├── fWdgJuAOF.jpeg                                 # 默认「Cozy Room」场景高清背景图
-├── docker-compose.yml                             # 🐳 Docker Compose 容器编排配置文件
+├── docker-compose.yml                             # 🐳 应用及 Redis 编排，连接服务器独立维护的 PostgreSQL
 ├── .github/                                       # ⚙️ GitHub 自动化配置目录
 │   └── workflows/
 │       ├── deploy.yml                             #   GitHub Actions 自动化部署流水线

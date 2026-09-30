@@ -1,24 +1,7 @@
 version: '3.8'
 
 services:
-  # 1. 数据库 PostgreSQL
-  postgres:
-    image: postgres:16-alpine
-    container_name: blog-postgres
-    restart: always
-    mem_limit: 256m
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-butvan_blog}
-      POSTGRES_USER: ${POSTGRES_USER:-butvan}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      # 将容器内的数据库数据挂载到宿主机当前目录下的 data/postgres 目录，保证数据持久化
-      - ./data/postgres:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    networks:
-      - blog-network
-
+  # PostgreSQL 由服务器独立维护，本编排仅连接已有数据库。
   # 2. 缓存 Redis
   redis:
     image: redis:7-alpine
@@ -40,11 +23,13 @@ services:
     container_name: blog-service
     restart: always
     mem_limit: 512m
+    # Linux 容器通过宿主机网关访问服务器已有的 PostgreSQL。
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
-      - postgres
       - redis
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-butvan_blog}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST:-host.docker.internal}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-butvan_blog}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-butvan}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_DATA_REDIS_HOST: redis

@@ -133,16 +133,32 @@ pnpm dev
 
 ## 🐳 线上容器化部署
 
-系统使用 Docker Compose 进行全栈一键拉起部署。
+系统使用 Docker Compose 部署后端、前台、后台及 Redis，PostgreSQL 由服务器独立维护。
 
-1.  **打包项目**：
-    ```bash
-    mvn clean package -DskipTests
-    ```
-2.  **配置环境**：
-    在根目录的 `docker-compose.yml` 中调整对应的 Redis 密码、PostgreSQL 连接参数。
-3.  **构建并拉起容器**：
-    ```bash
-    docker-compose up -d --build
-    ```
-    容器编排中已配置好数据库、缓存、前端双端代理，服务将以生产级状态后台健康运行。
+1. 准备已有 PostgreSQL 数据库、业务账号和数据，确保数据库允许 Docker 网段访问。
+2. 将 `docker-compose.yml` 同步到 `/opt/blog`，复制 `.env.example` 为 `.env` 并填入真实配置。数据库配置使用 `POSTGRES_HOST`、`POSTGRES_PORT`、`POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`。默认通过 `host.docker.internal` 访问宿主机 5432 端口，容器内的 `localhost` 指向容器自身。
+3. 在服务器登录阿里云镜像仓库后运行：
+
+   ```bash
+   cd /opt/blog
+   docker compose config --quiet
+   docker compose pull
+   docker compose up -d
+   docker compose ps
+   ```
+
+流水线不会自动创建或迁移 PostgreSQL。`/opt/blog` 没有 `.git` 时，也不会自动同步 Compose 文件，需先手动更新。移除数据库服务后，不要使用 `--remove-orphans` 清理可能仍承载数据的旧数据库容器。
+
+### 自动部署 SSH 密钥
+
+在本地终端生成专用密钥（若文件已存在，请换一个文件名，不要覆盖）：
+
+```bash
+ssh-keygen -t ed25519 -C "butvan-blog-actions" -f ~/.ssh/butvan_blog_actions -N ""
+cat ~/.ssh/butvan_blog_actions.pub | ssh root@101.133.239.11 'umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys'
+ssh -o IdentitiesOnly=yes -o PasswordAuthentication=no -i ~/.ssh/butvan_blog_actions root@101.133.239.11 'whoami'
+```
+
+公钥 `.pub` 安装到服务器；私钥文件 `~/.ssh/butvan_blog_actions` 的完整内容填入仓库 Settings → Secrets and variables → Actions 的 `SERVER_SSH_KEY`。私钥不要提交到仓库或发送到聊天中。
+
+新服务器对应 `SERVER_HOST=101.133.239.11`、`SERVER_USER=root`、`SERVER_PORT=22`。此专用密钥使用空口令，匹配当前流水线未配置 passphrase 的方式。

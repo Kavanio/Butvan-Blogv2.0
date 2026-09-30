@@ -2,6 +2,33 @@
 
 本文档记录 **Butvan Blog 2.0** 的全部版本更新明细与发版履历，遵循 [Semantic Versioning 2.0.0](https://semver.org/lang/zh-CN/) 版本规范。
 
+## v2.1.4
+
+- **发布日期（Asia/Shanghai）**：2026-09-30
+- **对比基线**：v2.1.3...v2.1.4
+- **发布通道**：Stable
+
+调整服务器迁移后的部署配置，复用服务器已有 PostgreSQL。
+
+### 部署修复
+
+- 移除博客 Compose 中的 PostgreSQL 服务和数据库启动依赖，支持配置数据库主机、端口。
+- 为后端配置 Linux 宿主机网关映射；部署失败时立即退出，并保留独立管理的数据库容器。
+- 补充服务器数据库接入和部署 SSH 密钥说明。
+
+### 升级说明
+
+- 部署前备份数据库；此配置不会迁移或创建数据库。
+- 将新版 Compose 同步至 `/opt/blog`，在 `.env` 配置现有数据库账号及 `POSTGRES_HOST`、`POSTGRES_PORT`。
+- 数据库必须允许容器网段访问。旧 Compose 数据库容器不会自动删除，需由运维确认后处理。
+- 无新增 Flyway 迁移。新服务器的 PostgreSQL 18 应用兼容性尚待实际启动验证。
+
+### Commits
+
+- fix(deploy): 复用服务器已有 PostgreSQL
+
+---
+
 ## v2.1.3
 
 - **发布日期 (UTC)**：2026-09-02
