@@ -63,7 +63,81 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │       ├── migration-v1.5-user-management.sql     #   数据库迁移脚本 (v1.5 版本，后台侧边栏用户管理菜单)
 │       └── migration-v1.6-role-author-to-user.sql #   数据库迁移脚本 (v1.6 版本，角色 AUTHOR→USER 统一迁移)
 │
-├── fronted/                                       # 🖥️【前端】Next.js 16 + TypeScript + HeroUI v3 + Tailwind v4
+├── frontend-next/                             # 🎨 ✨【新一代极客博客前台】Next.js 15 + React 19 + Tailwind + Framer Motion
+│   ├── package.json                           #     前端工程依赖管理（锁定 pnpm）
+│   ├── next.config.mjs                        #     Next.js 配置（BFF 反向代理 /api/* 与 /uploads/*）
+│   ├── tailwind.config.ts                     #     Tailwind CSS 3.4 样式与微噪点扩展配置
+│   ├── tsconfig.json                          #     TypeScript 编译配置与路径别名映射 (@/*)
+│   ├── docs/                                  #     📚 工程文档
+│   │   ├── ARCHITECTURE.md                    #       大厂前端四层架构与容灾降级规范
+│   │   └── COMPONENTS.md                      #       核心组件维护手册（Props 接口、交互 Token 与视觉分层）
+│   ├── public/                                #     静态资产（高保真素材、拍立得照片、矢量邮票、贴纸）
+│   └── src/
+│       ├── app/                               #     Next.js App Router 路由层
+│       │   ├── page.tsx                       #       🏠 博客首页（Header/Note/Article/Photo/Friend 五大流动板块）
+│       │   ├── layout.tsx                     #       全局根布局（字体加载、触觉音效驱动与胶片微噪点图层）
+│       │   ├── globals.css                    #       全局样式定义（静谧冷调/暗色主题变量、滚动条与排版）
+│       │   ├── article/                       #       📝 深度长文路由
+│       │   │   ├── page.tsx                   #         长文归档页（即时关键字搜索 + 分类标签筛选）
+│       │   │   └── [slug]/                    #         文章详情阅读器
+│       │   │       ├── page.tsx               #           服务端元数据与骨架分发
+│       │   │       └── ArticleDetailClient.tsx#           文章正文客户端阅读器（Markdown 渲染、点赞、树状嵌套评论）
+│       │   ├── notes/                         #       💡 碎片随笔手记路由
+│       │   │   └── [slug]/                    #         手记详情
+│       │   │       ├── page.tsx               #           服务端元数据
+│       │   │       └── NoteDetailClient.tsx   #           轻量手记阅读器（心情/天气徽章、时间戳与点赞互动）
+│       │   ├── friends/                       #       🤝 邻居友链路由
+│       │   │   └── page.tsx                   #         独立全网友链天地（一键复制本站信息、在线交换申请弹窗）
+│       │   └── components/photo-card/         #       🧪 组件实验室
+│       │       └── page.tsx                   #         拍立得与邮票交互式相册独立效果展示页
+│       ├── components/                        #     🧩 组件层
+│       │   ├── ui/                            #       纯原子 UI 原语（无业务依赖）
+│       │   │   ├── Badge.tsx                  #         微状态/分类彩色徽章
+│       │   │   ├── NoiseOverlay.tsx           #         胶片微噪点图层
+│       │   │   ├── SpringModal.tsx            #         物理阻尼弹簧模态框
+│       │   │   └── TextLink.tsx               #         下划线交互文字链
+│       │   ├── core/                          #       跨板块核心统一组件（统一交互语言）
+│       │   │   ├── ContentRow.tsx             #         ★ 核心统一行（手记/文章通用，带哈希确定性倾角与音效）
+│       │   │   ├── HaloFrame.tsx              #         ★ 双层渐变柔光相框
+│       │   │   ├── PageThumb.tsx              #         悬浮微缩纸质卡片
+│       │   │   ├── Stamp.tsx                  #         法式打孔齿孔邮票组件
+│       │   │   └── SectionHeader.tsx          #         统一样式板块章节标题
+│       │   └── modules/                       #       页面级业务板块组合
+│       │       ├── HeaderSection.tsx          #         极简名片、北京时钟与扑克牌芯片组扇形回正动效
+│       │       ├── NoteSection.tsx            #         碎片随笔手记列表板块
+│       │       ├── ArticleSection.tsx         #         深度架构长文列表板块
+│       │       ├── PhotoSection.tsx           #         1040px 突破全宽交互式拍立得拼贴画板
+│       │       ├── FriendSection.tsx          #         底部邻居友链展示与申请板块
+│       │       └── CommentSection.tsx         #         树状嵌套高可靠评论系统（乐观更新）
+│       ├── services/                          #     🌐 统一数据服务防腐层
+│       │   ├── client.ts                      #       HttpClient 封装（超时重试、真实 IP 透传、熔断捕获）
+│       │   └── index.ts                       #       领域 Service（profile, note, article, friend, photo, comment）
+│       ├── constants/                         #     📦 静态常量与兜底容灾
+│       │   ├── fallbacks.ts                   #       全量离线兜底数据字典（后端断开时秒级降级不崩溃）
+│       │   └── site.ts                        #       站点全局元数据配置
+│       ├── hooks/                             #     🪝 自定义 Hooks
+│       │   ├── useClock.ts                    #       北京时间/巴黎时间高精度时钟 Hook
+│       │   ├── useSound.ts                    #       触觉音效集成 Hook
+│       │   └── useTheme.ts                    #       亮色/暗色主题无缝切换 Hook
+│       ├── lib/                               #     🔧 核心库与多媒体驱动
+│       │   ├── sound.ts                       #       基于 Web Audio API 的程序化触觉音效合成器（tick, droplet, sparkle等）
+│       │   ├── i18n.tsx                       #       轻量多语言上下文
+│       │   ├── utils.ts                       #       Tailwind 类名合并与通用工具
+│       │   └── data.ts                        #       本地数据辅助工具
+│       ├── types/                             #     📐 TypeScript 严格数据类型映射
+│       │   ├── article.ts                     #       文章与标签模型
+│       │   ├── note.ts                        #       随笔手记模型
+│       │   ├── album.ts                       #       相册与拍立得照片模型
+│       │   ├── friend.ts                      #       友链模型
+│       │   ├── comment.ts                     #       树状评论模型
+│       │   ├── profile.ts                     #       博主名片模型
+│       │   └── api.ts                         #       统一 API 响应契约
+│       └── utils/                             #     🧮 纯算法工具
+│           ├── hash.ts                        #       确定性字符串哈希算法（用于生成稳定倾角）
+│           ├── math.ts                        #       几何与阻尼插值数学工具
+│           └── date.ts                        #       日期标准化解析工具
+│
+├── fronted/                                       # 🖥️【原双端前端】Next.js 16 + TypeScript + HeroUI v3 + Tailwind v4
 │   │
 │   ├── blog-client/                               #   用户展示端（前台博客）
 │   │   ├── public/                                #     静态资源
@@ -534,6 +608,12 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 | `docx/database/migration-v0.7.sql` | 数据库 | PostgreSQL v0.7 迁移脚本（安全插入后台“资源管理 -> 媒体内容管理”菜单） |
 | `docx/database/migration-v0.9.sql` | 数据库 | PostgreSQL v0.9 迁移脚本（实现 GitHub 和 2FA 安全绑定与双重认证） |
 | `docx/wechat_login_sealed_record_refactor.md` | 项目文档 | 微信扫码登录 Java 17/21 sealed + record 架构重构详细指南 |
+| `frontend-next/src/app/page.tsx` | 新前台-首页 | 五大流动板块首页（Header、Note、Article、Photo、Friend） |
+| `frontend-next/src/components/core/ContentRow.tsx` | 新前台-组件 | 核心统一行组件（哈希确定性倾角微缩图 + 弹簧阻尼 + 音效） |
+| `frontend-next/src/components/modules/PhotoSection.tsx` | 新前台-组件 | 1040px 突破全宽交互式拍立得拼贴画板与打孔邮票集 |
+| `frontend-next/src/services/client.ts` | 新前台-网络 | HttpClient 网络层（超时控制、IP 透传、离线优雅熔断兜底） |
+| `frontend-next/src/constants/fallbacks.ts` | 新前台-容灾 | 全量离线兜底数据仓库（后端离线保障前台秒级降级不白屏） |
+| `frontend-next/src/lib/sound.ts` | 新前台-音频 | 基于 Web Audio API 的程序化触觉反馈音效合成引擎 |
 | `fronted/blog-admin/src/lib/article-api.ts` | 后台-工具 | 统一封装文章、分类、标签相关 API 请求方法 |
 | `fronted/blog-client/src/app/page.tsx` | 前台-首页 | 房间场景：从 API 获取激活场景，PNG 图层叠层绝对百分比渲染、hover 物理悬空、发光避光阴影及缩放过渡 |
 | `fronted/blog-client/src/components/home/RoomScene.tsx` | 前台-组件 | 多图层渲染容器，背景图+PNG物品百分比定位叠加 |
@@ -564,4 +644,4 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 
 ---
 
-*最后更新：2026-07-17*
+*最后更新：2026-10-01*
