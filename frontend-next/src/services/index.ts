@@ -125,6 +125,7 @@ export const albumService = {
           caption: item.caption || item.albumTitle || "",
           albumTitle: item.albumTitle,
           albumSlug: item.albumSlug,
+          createdAt: item.createdAt,
           width: item.width,
           height: item.height,
         }));

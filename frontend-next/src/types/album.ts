@@ -14,6 +14,8 @@ export interface PhotoVO {
   height?: number;
   albumId?: number;
   albumTitle?: string;
+  albumSlug?: string;
+  createdAt?: string;
 }
 
 export interface AlbumVO {

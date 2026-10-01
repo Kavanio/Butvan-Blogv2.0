@@ -84,52 +84,12 @@ export const FALLBACK_ARTICLES: ArticleItemVO[] = [
 
 export const FALLBACK_PHOTOS: PhotoVO[] = [
   {
-    id: 1,
-    url: "/images/craft/greenhouse.jpg?v=2",
-    caption: "Greenhouse in Morning",
-    location: "Botanical Garden",
-  },
-  {
-    id: 2,
-    url: "/images/stamps/paris-eiffel.jpg?v=5",
-    caption: "Timbre Paris, Tour Eiffel",
-    location: "Paris, France",
-  },
-  {
-    id: 3,
-    url: "/images/craft/run-leaves.jpg",
-    caption: "Autumn Path Leaves",
-    location: "Forest Trail",
-  },
-  {
-    id: 4,
-    url: "/images/stamps/nancy-stanislas.jpg?v=5",
-    caption: "Timbre Nancy, Stanislas",
-    location: "Nancy, France",
-  },
-  {
-    id: 5,
-    url: "/images/craft/road-cat.jpg?v=3",
-    caption: "Wandering Road Cat",
-    location: "Suburban Street",
-  },
-  {
-    id: 6,
-    url: "/images/craft/matcha.jpg",
-    caption: "Handmade Ceramic Matcha",
-    location: "Studio",
-  },
-  {
-    id: 7,
-    url: "/images/craft/crochet-hung.jpg",
-    caption: "Handmade Crochet",
-    location: "Home Workroom",
-  },
-  {
-    id: 8,
-    url: "/images/craft/pool.jpg",
-    caption: "Summer Quiet Pool",
-    location: "Country Resort",
+    id: 10,
+    url: "https://minio.server.butvan.top/blog2/ALBUM/20260725/390577e7-51b0-4c84-a13a-736100489eac.png",
+    caption: "生活随拍",
+    albumTitle: "随拍",
+    albumSlug: "随拍",
+    createdAt: "2026-07-25T15:23:38.968714",
   },
 ];
 
