@@ -114,10 +114,22 @@ export const articleService = {
 export const albumService = {
   async getPublicPhotos(page = 1, size = 12): Promise<PhotoVO[]> {
     try {
-      const res = await http.get<PageResult<PhotoVO>>(
+      const res = await http.get<PageResult<any>>(
         `/public/photos?page=${page}&size=${size}`
       );
-      return res?.records?.length ? res.records : FALLBACK_PHOTOS;
+      if (res?.records && res.records.length > 0) {
+        return res.records.map((item: any) => ({
+          id: item.id,
+          url: item.fileUrl || item.url || "",
+          thumbnailUrl: item.fileUrl || item.thumbnailUrl || item.url || "",
+          caption: item.caption || item.albumTitle || "",
+          albumTitle: item.albumTitle,
+          albumSlug: item.albumSlug,
+          width: item.width,
+          height: item.height,
+        }));
+      }
+      return FALLBACK_PHOTOS;
     } catch {
       return FALLBACK_PHOTOS;
     }

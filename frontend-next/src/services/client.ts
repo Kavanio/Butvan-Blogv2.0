@@ -4,14 +4,35 @@
 
 import { Result } from "@/types/api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
+function getApiBase(): string {
+  // 1. 服务端 Node.js (SSR / ISR / Server Components) 环境
+  if (typeof window === "undefined") {
+    if (process.env.INTERNAL_BACKEND_URL) {
+      return process.env.INTERNAL_BACKEND_URL.replace(/\/$/, "");
+    }
+    if (process.env.BACKEND_API_URL) {
+      return process.env.BACKEND_API_URL.replace(/\/$/, "");
+    }
+    // 默认直连本地 Spring Boot 8080 API
+    return "http://127.0.0.1:8080/api";
+  }
+
+  // 2. 浏览器客户端环境：优先读取环境变量，默认走 Next.js rewrites 反向代理
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, "");
+  }
+  return "/api";
+}
+
 const TIMEOUT_MS = 8000;
 
 export async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_BASE}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  const base = getApiBase();
+  const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const url = `${base}${path}`;
 
   const headers: Record<string, string> = {
     Accept: "application/json",

@@ -23,13 +23,17 @@ export interface ArticleItemVO {
   categoryId?: number;
   categoryName?: string;
   tags?: TagItem[];
+  tagNames?: string[];
   wordCount?: number;
   readTime?: number;
+  readingTime?: number;
 }
 
 export interface ArticleDetailVO extends ArticleItemVO {
   content: string;
+  contentHtml?: string;
   isAllowComment?: boolean;
+  tagNames?: string[];
 }
 
 export interface ArticleQueryDTO {

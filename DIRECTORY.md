@@ -83,6 +83,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │       │   │       ├── page.tsx               #           服务端元数据与骨架分发
 │       │   │       └── ArticleDetailClient.tsx#           文章正文客户端阅读器（Markdown 渲染、点赞、树状嵌套评论）
 │       │   ├── notes/                         #       💡 碎片随笔手记路由
+│       │   │   ├── page.tsx                   #         手记归档页（即时搜索 + 心情标签筛选）
 │       │   │   └── [slug]/                    #         手记详情
 │       │   │       ├── page.tsx               #           服务端元数据
 │       │   │       └── NoteDetailClient.tsx   #           轻量手记阅读器（心情/天气徽章、时间戳与点赞互动）

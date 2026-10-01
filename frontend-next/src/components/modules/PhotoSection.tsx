@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSound } from "@/hooks/useSound";
 import { SpringModal } from "@/components/ui/SpringModal";
@@ -85,6 +85,23 @@ export function PhotoSection({ photos }: PhotoSectionProps) {
     setZOrder((prev) => ({ ...prev, [id]: zCounter.current }));
   };
 
+  const items = useMemo(() => {
+    if (!photos || photos.length === 0) return CRAFT_ITEMS;
+    let photoIdx = 0;
+    return CRAFT_ITEMS.map((item) => {
+      if (item.kind === "photo" && photoIdx < photos.length) {
+        const real = photos[photoIdx++];
+        return {
+          ...item,
+          id: `real-photo-${real.id}`,
+          label: real.caption || real.albumTitle || item.label,
+          src: real.url || item.src,
+        };
+      }
+      return item;
+    });
+  }, [photos]);
+
   return (
     <section className="relative left-1/2 right-1/2 -mx-[50vw] my-16 w-screen overflow-hidden px-4 sm:px-6">
       {/* 1040px 交互式照片拼贴画板 (Photo Scrapbook Board) */}
@@ -106,8 +123,8 @@ export function PhotoSection({ photos }: PhotoSectionProps) {
             aria-hidden="true"
           />
 
-          {/* 渲染 18 个绝对定位卡片 */}
-          {CRAFT_ITEMS.map((item, index) => {
+          {/* 渲染 18 个绝对定位卡片 (动态注入真实相册照片) */}
+          {items.map((item, index) => {
             const isHovered = hoveredId === item.id;
             const hasHover = hoveredId !== null;
             const currentZ = zOrder[item.id] ?? (10 + index);

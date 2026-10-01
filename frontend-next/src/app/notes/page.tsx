@@ -2,26 +2,26 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Search } from "lucide-react";
-import { articleService } from "@/services";
-import { ArticleItemVO } from "@/types/article";
+import { ArrowLeft, Sparkles, Search } from "lucide-react";
+import { noteService } from "@/services";
+import { NoteItemVO } from "@/types/note";
 import { ContentRow } from "@/components/core/ContentRow";
 import { useSound } from "@/hooks/useSound";
 import { formatDate } from "@/utils/date";
 
-export default function ArticleArchivePage() {
-  const [articles, setArticles] = useState<ArticleItemVO[]>([]);
+export default function NoteArchivePage() {
+  const [notes, setNotes] = useState<NoteItemVO[]>([]);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const { playTick } = useSound();
 
   useEffect(() => {
     async function load() {
       try {
         setLoading(true);
-        const data = await articleService.getPublicArticles({ page: 1, size: 50 });
-        setArticles(data);
+        const data = await noteService.getPublicNotes({ page: 1, size: 50 });
+        setNotes(data);
       } finally {
         setLoading(false);
       }
@@ -29,33 +29,21 @@ export default function ArticleArchivePage() {
     load();
   }, []);
 
-  // 提取所有分类与标签名
-  const allTags = Array.from(
-    new Set([
-      ...articles.map((a) => a.categoryName).filter(Boolean),
-      ...articles.flatMap((a) => (a.tagNames || []).filter(Boolean)),
-      ...articles.flatMap((a) =>
-        (a.tags || []).map((t) => (typeof t === "string" ? t : t.name)).filter(Boolean)
-      ),
-    ])
+  // 提取所有心情与状态标签
+  const allMoods = Array.from(
+    new Set(notes.map((n) => n.mood).filter(Boolean))
   ) as string[];
 
-  // 过滤后的文章列表
-  const filtered = articles.filter((a) => {
+  // 过滤后的手记列表
+  const filtered = notes.filter((n) => {
     const matchesKeyword =
       !keyword ||
-      a.title.toLowerCase().includes(keyword.toLowerCase()) ||
-      (a.summary && a.summary.toLowerCase().includes(keyword.toLowerCase())) ||
-      (a.categoryName && a.categoryName.toLowerCase().includes(keyword.toLowerCase()));
-    
-    const itemTags = [
-      a.categoryName,
-      ...(a.tagNames || []),
-      ...(a.tags || []).map((t) => (typeof t === "string" ? t : t.name)),
-    ].filter(Boolean) as string[];
+      n.title.toLowerCase().includes(keyword.toLowerCase()) ||
+      (n.summary && n.summary.toLowerCase().includes(keyword.toLowerCase())) ||
+      (n.location && n.location.toLowerCase().includes(keyword.toLowerCase()));
 
-    const matchesTag = !selectedTag || itemTags.includes(selectedTag);
-    return matchesKeyword && matchesTag;
+    const matchesMood = !selectedMood || n.mood === selectedMood;
+    return matchesKeyword && matchesMood;
   });
 
   return (
@@ -72,8 +60,8 @@ export default function ArticleArchivePage() {
             <span>cd .. / 返回首页</span>
           </Link>
           <div className="flex items-center gap-1.5 text-xs text-gray-600 font-mono">
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Archive ({articles.length})</span>
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Notes ({notes.length})</span>
           </div>
         </div>
       </header>
@@ -82,76 +70,77 @@ export default function ArticleArchivePage() {
       <main className="max-w-[40.5rem] mx-auto px-6 pt-10 pb-20">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            全部文章 / Articles
+            全部手记 / Notes
           </h1>
           <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-            设计工程、前端架构、动效美学与产品构建的全量归档与反思。
+            即兴灵感、代码顿悟、生活碎片与技术折腾的轻量微记录。
           </p>
         </div>
 
-        {/* 搜索与标签栏 */}
-        <div className="flex flex-col gap-3 mb-6">
+        {/* 搜索与过滤工具栏 */}
+        <div className="mb-6 space-y-3">
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input
               type="text"
-              placeholder="搜索文章标题或摘要..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              className="w-full text-xs pl-8 pr-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-gray-400 dark:focus:border-gray-600 transition-colors"
+              placeholder="搜索手记标题、摘要或地点..."
+              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-pink-500 text-gray-1200 placeholder:text-gray-500 transition-colors"
             />
           </div>
 
-          {allTags.length > 0 && (
+          {allMoods.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-micro text-gray-500 font-mono mr-1">心情:</span>
               <button
                 onClick={() => {
                   playTick();
-                  setSelectedTag(null);
+                  setSelectedMood(null);
                 }}
                 className={`text-micro px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
-                  selectedTag === null
-                    ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900 border-transparent font-medium"
-                    : "border-gray-200 dark:border-gray-800 text-gray-600 hover:text-gray-900"
+                  selectedMood === null
+                    ? "bg-pink-500 text-white border-pink-500 font-medium"
+                    : "border-gray-200 dark:border-gray-800 text-gray-600 hover:text-gray-900 dark:hover:text-gray-200"
                 }`}
               >
                 全部
               </button>
-              {allTags.map((tag) => (
+              {allMoods.map((mood) => (
                 <button
-                  key={tag}
+                  key={mood}
                   onClick={() => {
                     playTick();
-                    setSelectedTag(tag === selectedTag ? null : tag);
+                    setSelectedMood(mood === selectedMood ? null : mood);
                   }}
                   className={`text-micro px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
-                    selectedTag === tag
+                    selectedMood === mood
                       ? "bg-pink-500 text-white border-pink-500 font-medium"
-                      : "border-gray-200 dark:border-gray-800 text-gray-600 hover:text-gray-900"
+                      : "border-gray-200 dark:border-gray-800 text-gray-600 hover:text-gray-900 dark:hover:text-gray-200"
                   }`}
                 >
-                  #{tag}
+                  {mood}
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* 文章列表 */}
+        {/* 手记列表 */}
         <div className="flex flex-col">
           {loading ? (
-            <div className="py-12 text-center text-xs text-gray-500 font-mono">加载全量文章归档中...</div>
+            <div className="py-12 text-center text-xs text-gray-500 font-mono">加载手记归档中...</div>
           ) : filtered.length === 0 ? (
-            <div className="py-12 text-center text-xs text-gray-500 font-mono">未搜索到相关文章</div>
+            <div className="py-12 text-center text-xs text-gray-500 font-mono">未搜索到相关手记</div>
           ) : (
             filtered.map((item) => (
               <ContentRow
                 key={item.id}
                 title={item.title}
                 date={formatDate(item.publishedAt)}
-                badge={item.categoryName}
+                badge={item.mood}
                 badgeTone="pink"
-                href={`/article/${item.slug || item.id}`}
+                href={`/notes/${item.slug || item.id}`}
                 thumb={item.coverImageUrl}
               />
             ))

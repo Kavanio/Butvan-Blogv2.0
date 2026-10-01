@@ -22,14 +22,17 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
   const [copied, setCopied] = useState(false);
   const { playSparkle, playDroplet, playTick } = useSound();
 
-  // 解析 Markdown
+  // 解析 Markdown（优先使用后端预渲染的 contentHtml，大幅提升首屏加载性能）
   const htmlContent = useMemo(() => {
+    if (article.contentHtml) {
+      return article.contentHtml;
+    }
     try {
       return marked.parse(article.content || "", { async: false }) as string;
     } catch {
       return article.content || "";
     }
-  }, [article.content]);
+  }, [article.content, article.contentHtml]);
 
   // 点赞处理
   const handleLike = async () => {
@@ -87,9 +90,9 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
             {article.categoryName && (
               <Badge tone="pink">{article.categoryName}</Badge>
             )}
-            {article.tags?.map((tag) => {
+            {(article.tags || article.tagNames)?.map((tag, idx) => {
               const tagName = typeof tag === "string" ? tag : tag.name;
-              const tagKey = typeof tag === "string" ? tag : String(tag.id);
+              const tagKey = typeof tag === "string" ? `${tag}-${idx}` : String(tag.id);
               return (
                 <Badge key={tagKey} tone="gray">
                   #{tagName}
@@ -107,7 +110,7 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
             <span>•</span>
             <span className="inline-flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              {article.readTime || 5} min read
+              {article.readingTime || article.readTime || 5} min read
             </span>
             <span>•</span>
             <span className="inline-flex items-center gap-1">
