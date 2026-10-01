@@ -14,11 +14,11 @@ interface HeaderSectionProps {
 }
 
 const TECH_STACK_LOGOS = [
-  { src: "/images/logos/sephora.png", title: "React & Next.js", rotate: -6 },
-  { src: "/images/logos/renault.png?v=2", title: "TypeScript & Node", rotate: -4 },
-  { src: "/images/logos/mad.png", title: "Spring Boot & Java", rotate: 6 },
-  { src: "/images/logos/canalplus.png?v=2", title: "Tailwind & Motion", rotate: -5 },
-  { src: "/images/logos/astrazeneca.png?v=4", title: "Web Audio & Craft", rotate: -6 },
+  { src: "/images/tech/spring.svg", title: "Java & Spring Boot 3", rotate: -6 },
+  { src: "/images/tech/postgres.svg", title: "PostgreSQL & JPA", rotate: -4 },
+  { src: "/images/tech/nextjs.svg", title: "Next.js & React 19", rotate: 6 },
+  { src: "/images/tech/docker.svg", title: "Docker & Linux", rotate: -5 },
+  { src: "/images/tech/agent.svg", title: "AI Agent & LLM", rotate: -6 },
 ];
 
 export function HeaderSection({ profile }: HeaderSectionProps) {
@@ -27,10 +27,16 @@ export function HeaderSection({ profile }: HeaderSectionProps) {
   const { playSparkle } = useSound();
 
   const name = profile?.nickname || SITE_CONFIG.name;
-  const bio = profile?.bio || SITE_CONFIG.description;
-  const github = (profile?.socialLinks?.github as string) || SITE_CONFIG.socialLinks.github;
-  const x = (profile?.socialLinks?.x as string) || SITE_CONFIG.socialLinks.x;
-  const email = (profile?.socialLinks?.email as string) || SITE_CONFIG.socialLinks.email;
+  const bio = profile?.bio || "JAVA / Agent / VibeCoding 开发者";
+  const socialLinks = profile?.socialLinks || {};
+  const introLine1 =
+    (socialLinks.introLine1 as string) || "大三后端开发｜敲代码｜热爱生活";
+  const introLine2 =
+    (socialLinks.introLine2 as string) ||
+    "欢迎来到我的 Blog 交流学习，分享技术文章也分享生活帖子";
+  const github = (socialLinks.github as string) || SITE_CONFIG.socialLinks.github;
+  const email = (socialLinks.email as string) || SITE_CONFIG.socialLinks.email;
+  const x = (socialLinks.x as string) || (socialLinks.twitter as string) || "";
 
   return (
     <header className="relative z-30">
@@ -41,7 +47,7 @@ export function HeaderSection({ profile }: HeaderSectionProps) {
             {name}
           </h1>
           <span className="text-lede font-medium leading-snug text-gray-1100">
-            Design Engineer & Full-Stack Developer
+            {bio}
           </span>
         </div>
 
@@ -67,37 +73,37 @@ export function HeaderSection({ profile }: HeaderSectionProps) {
       </div>
 
       {/* 个人介绍段落（包含扑克牌展开式技术栈徽标） */}
-      <div className="space-y-4 text-base text-gray-1100 leading-relaxed">
+      <div className="space-y-3 text-base text-gray-1100 leading-relaxed">
         <p>
-          I'm a design engineer who ships what he designs
-          {/* 扑克牌式层叠与扇形展开卡片 (100% 对齐原版交互) */}
+          {introLine1}
+          {/* 扑克牌式层叠与扇形展开技术栈徽标 */}
           <span
             aria-hidden="true"
             className="group/stack relative z-40 ml-1.5 mr-0.5 inline-flex translate-y-[5px] items-center"
           >
             {TECH_STACK_LOGOS.map((logo, index) => (
               <span
-                key={logo.src}
+                key={logo.title}
                 style={{ "--spread": `${(index - 1) * 7}px` } as React.CSSProperties}
                 className="group/chip chip-item relative -ml-2.5 inline-block shrink-0 first:ml-0 hover:z-30 cursor-pointer"
                 onMouseEnter={playSparkle}
               >
-                {/* 悬停品牌提示气泡 */}
+                {/* 悬停技术栈提示气泡 */}
                 <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-1200 px-1.5 py-0.5 text-[11px] font-medium leading-4 text-[var(--color-gray-bg)] opacity-0 shadow-md transition-opacity duration-200 group-hover/chip:opacity-100 z-40">
                   {logo.title}
                 </span>
-                {/* 芯片外框与旋转悬浮放大 1.55 倍 */}
+                {/* 芯片外框与旋转悬浮放大 */}
                 <span
                   style={{ "--rot": `${logo.rotate}deg` } as React.CSSProperties}
                   className="chip-card block rounded-[7px] border border-gray-400 bg-white dark:bg-[#1c1c1c] p-[2px] shadow-sm"
                 >
-                  <span className="block size-[22px] overflow-hidden rounded-[4px] bg-gray-200 dark:bg-gray-800">
+                  <span className="flex size-[22px] items-center justify-center overflow-hidden rounded-[4px] bg-gray-100 dark:bg-gray-800 p-0.5">
                     <img
                       src={logo.src}
-                      alt=""
-                      width={22}
-                      height={22}
-                      className="h-full w-full object-cover"
+                      alt={logo.title}
+                      width={18}
+                      height={18}
+                      className="h-full w-full object-contain"
                       draggable={false}
                     />
                   </span>
@@ -106,26 +112,37 @@ export function HeaderSection({ profile }: HeaderSectionProps) {
             ))}
           </span>
           <br />
-          {bio}
-          <br />
-          I write about this way of working, and I build tools to make it real.
+          {introLine2}
         </p>
 
-        {/* 社交链接 */}
-        <p>
-          Find me on{" "}
-          <TextLink href={github} external>
-            GitHub
-          </TextLink>{" "}
-          and{" "}
-          <TextLink href={x} external>
-            X
+        {/* 社交与联系链接（动态过滤非空项，杜绝死链接） */}
+        <p className="flex flex-wrap items-center gap-x-1.5 text-sm text-gray-1000">
+          <span>Find me on</span>
+          {github && (
+            <TextLink href={github} external>
+              GitHub
+            </TextLink>
+          )}
+          {x && (
+            <>
+              <span>and</span>
+              <TextLink href={x} external>
+                X
+              </TextLink>
+            </>
+          )}
+          {email && (
+            <>
+              <span>, or write to me at</span>
+              <TextLink href={email.startsWith("mailto:") ? email : `mailto:${email}`} external>
+                {email.replace(/^mailto:/, "")}
+              </TextLink>
+            </>
+          )}
+          <span className="text-gray-500">·</span>
+          <TextLink href="/feed.xml" external>
+            RSS
           </TextLink>
-          , or write to me at{" "}
-          <TextLink href={email.startsWith("mailto:") ? email : `mailto:${email}`} external>
-            {email.replace(/^mailto:/, "")}
-          </TextLink>
-          .
         </p>
       </div>
     </header>
