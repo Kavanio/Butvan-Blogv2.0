@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useSound } from "@/hooks/useSound";
 import { SpringModal } from "@/components/ui/SpringModal";
 import { PhotoVO } from "@/types/album";
+import { albumService } from "@/services";
 
 interface CraftItem {
   id: string;
@@ -22,29 +23,29 @@ interface CraftItem {
 }
 
 /**
- * 原网站高保真照片剪贴画板经典条目 (Photo Scrapbook Board)
- * 15 张摄影切片与 3 联经典齿孔艺术邮票，100% 精确还原设计稿
+ * 原版高保真 1040px 交互式照片剪贴画板槽位与经典条目
+ * 包含 15 个拍立得摄影槽位（含 1 个圆形裁切）与 3 枚打孔艺术邮票
  */
-const CRAFT_ITEMS: CraftItem[] = [
-  { id: "cat-table", kind: "photo", label: "Le chat sur la table", src: "/images/craft/cat-table.jpg", w: 140, aspect: "3/4", left: 33, top: 41, rotate: -5 },
-  { id: "lobby", kind: "photo", label: "Le lobby", src: "/images/craft/lobby.jpg", w: 140, aspect: "3/4", left: 146, top: 13, rotate: 4 },
-  { id: "run-leaves", kind: "photo", label: "Courir sous les feuilles", src: "/images/craft/run-leaves.jpg", w: 140, aspect: "3/4", left: 349, top: 19, rotate: -3 },
-  { id: "setup", kind: "photo", label: "Mon setup", src: "/media/setup-poster.jpg", w: 148, aspect: "4/5", left: 455, top: 50, rotate: 2 },
-  { id: "p3", kind: "photo", label: "Fleurs & cookies", src: "/images/craft/flowers.jpg", w: 140, aspect: "3/4", left: 630, top: 37, rotate: -2 },
-  { id: "cafe", kind: "photo", label: "Pause café", src: "/images/craft/cafe.jpg", w: 140, aspect: "3/4", left: 754, top: 93, rotate: 6 },
-  { id: "pool", kind: "photo", label: "La piscine", src: "/images/craft/pool.jpg", w: 140, aspect: "3/4", left: 858, top: 22, rotate: 4 },
-  { id: "beach", kind: "photo", label: "Plage au coucher de soleil", src: "/media/beach-poster.jpg", round: true, w: 150, aspect: "1/1", left: 862, top: 147, rotate: -2 },
-  { id: "crochet-hung", kind: "photo", label: "Sacs au crochet, suspendus", src: "/images/craft/crochet-hung.jpg", w: 140, aspect: "3/4", left: 172, top: 187, rotate: 5 },
-  { id: "road-cat", kind: "photo", label: "Sur la route, avec le chat", src: "/images/craft/road-cat.jpg", w: 140, aspect: "3/4", left: 19, top: 278, rotate: -4 },
-  { id: "car-watercolor", kind: "photo", label: "Aquarelle en voiture", src: "/images/craft/car-watercolor.jpg", w: 140, aspect: "3/4", left: 126, top: 306, rotate: 3 },
-  { id: "train-sketch", kind: "photo", label: "Croquis dans le train", src: "/images/craft/train-sketch.jpg", w: 140, aspect: "3/4", left: 349, top: 311, rotate: -2 },
-  { id: "matcha", kind: "photo", label: "Matcha à la rose", src: "/images/craft/matcha.jpg", w: 140, aspect: "3/4", left: 448, top: 278, rotate: 3 },
-  { id: "p1", kind: "photo", label: "Sous serre", src: "/images/craft/greenhouse.jpg", w: 140, aspect: "3/4", left: 567, top: 286, rotate: -3 },
-  { id: "cellar", kind: "photo", label: "La cave", src: "/images/craft/cellar.jpg", w: 140, aspect: "3/4", left: 629, top: 306, rotate: 4 },
+const DEFAULT_CRAFT_ITEMS: CraftItem[] = [
+  { id: "cat-table", kind: "photo", label: "木桌小憩", src: "/images/craft/cat-table.jpg", w: 140, aspect: "3/4", left: 33, top: 41, rotate: -5 },
+  { id: "lobby", kind: "photo", label: "走廊漫步", src: "/images/craft/lobby.jpg", w: 140, aspect: "3/4", left: 146, top: 13, rotate: 4 },
+  { id: "run-leaves", kind: "photo", label: "落叶小径", src: "/images/craft/run-leaves.jpg", w: 140, aspect: "3/4", left: 349, top: 19, rotate: -3 },
+  { id: "setup", kind: "photo", label: "工作台一隅", src: "/media/setup-poster.jpg", w: 148, aspect: "4/5", left: 455, top: 50, rotate: 2 },
+  { id: "p3", kind: "photo", label: "花与曲奇", src: "/images/craft/flowers.jpg", w: 140, aspect: "3/4", left: 630, top: 37, rotate: -2 },
+  { id: "cafe", kind: "photo", label: "午后咖啡", src: "/images/craft/cafe.jpg", w: 140, aspect: "3/4", left: 754, top: 93, rotate: 6 },
+  { id: "pool", kind: "photo", label: "静谧泳池", src: "/images/craft/pool.jpg", w: 140, aspect: "3/4", left: 858, top: 22, rotate: 4 },
+  { id: "beach", kind: "photo", label: "夕阳日落剪影", src: "/media/beach-poster.jpg", round: true, w: 150, aspect: "1/1", left: 862, top: 147, rotate: -2 },
+  { id: "crochet-hung", kind: "photo", label: "手作针织", src: "/images/craft/crochet-hung.jpg", w: 140, aspect: "3/4", left: 172, top: 187, rotate: 5 },
+  { id: "road-cat", kind: "photo", label: "副驾旅途", src: "/images/craft/road-cat.jpg", w: 140, aspect: "3/4", left: 19, top: 278, rotate: -4 },
+  { id: "car-watercolor", kind: "photo", label: "车内水彩", src: "/images/craft/car-watercolor.jpg", w: 140, aspect: "3/4", left: 126, top: 306, rotate: 3 },
+  { id: "train-sketch", kind: "photo", label: "高铁速写", src: "/images/craft/train-sketch.jpg", w: 140, aspect: "3/4", left: 349, top: 311, rotate: -2 },
+  { id: "matcha", kind: "photo", label: "清爽抹茶", src: "/images/craft/matcha.jpg", w: 140, aspect: "3/4", left: 448, top: 278, rotate: 3 },
+  { id: "p1", kind: "photo", label: "绿植温室", src: "/images/craft/greenhouse.jpg", w: 140, aspect: "3/4", left: 567, top: 286, rotate: -3 },
+  { id: "cellar", kind: "photo", label: "红酒藏窖", src: "/images/craft/cellar.jpg", w: 140, aspect: "3/4", left: 629, top: 306, rotate: 4 },
   // 右下角三联经典打孔艺术邮票
-  { id: "stamp-lille", kind: "stamp", label: "Timbre Lille, le beffroi", src: "/images/stamps/lille-beffroi.jpg", city: "LILLE", numeral: "I", w: 92, aspect: "2/3", left: 812, top: 352, rotate: -9 },
-  { id: "stamp-paris", kind: "stamp", label: "Timbre Paris, la tour Eiffel", src: "/images/stamps/paris-eiffel.jpg", city: "PARIS", numeral: "II", w: 92, aspect: "2/3", left: 872, top: 338, rotate: -2 },
-  { id: "stamp-nancy", kind: "stamp", label: "Timbre Nancy, la place Stanislas", src: "/images/stamps/nancy-stanislas.jpg", city: "NANCY", numeral: "III", w: 92, aspect: "2/3", left: 930, top: 346, rotate: 4 },
+  { id: "stamp-lille", kind: "stamp", label: "Lille 城市邮票", src: "/images/stamps/lille-beffroi.jpg", city: "LILLE", numeral: "I", w: 92, aspect: "2/3", left: 812, top: 352, rotate: -9 },
+  { id: "stamp-paris", kind: "stamp", label: "Paris 铁塔邮票", src: "/images/stamps/paris-eiffel.jpg", city: "PARIS", numeral: "II", w: 92, aspect: "2/3", left: 872, top: 338, rotate: -2 },
+  { id: "stamp-nancy", kind: "stamp", label: "Nancy 广场邮票", src: "/images/stamps/nancy-stanislas.jpg", city: "NANCY", numeral: "III", w: 92, aspect: "2/3", left: 930, top: 346, rotate: 4 },
 ];
 
 /**
@@ -77,24 +78,63 @@ interface PhotoSectionProps {
 
 /**
  * 1040px 突破全宽交互式照片拼贴画板 (Photo Scrapbook Board)
- * 100% 原版还原：拍立得照片散落、去色去模糊聚焦、物理阻尼拖拽与点击灯箱预览
+ * 完美契合原版画板交互：真实获取后端相册照片并动态注入槽位，兼具高质感排布与动态数据能力
  */
-export function PhotoSection({ photos }: PhotoSectionProps) {
+export function PhotoSection({ photos: initialPhotos }: PhotoSectionProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [activeItem, setActiveItem] = useState<CraftItem | null>(null);
   const [zOrder, setZOrder] = useState<Record<string, number>>({});
   const zCounter = useRef(100);
 
+  // 客户端维护真实后端相册照片状态
+  const [photoList, setPhotoList] = useState<PhotoVO[]>(initialPhotos || []);
+
   const { playTick, playDroplet } = useSound();
+
+  // 客户端挂载后，主动拉取一次最新相册照片数据，确保照片数据实时动态
+  useEffect(() => {
+    albumService
+      .getPublicPhotos(1, 20)
+      .then((data) => {
+        if (data && data.length > 0) {
+          setPhotoList(data);
+        }
+      })
+      .catch((err) => {
+        console.warn("客户端动态同步相册照片失败:", err);
+      });
+  }, []);
 
   const bringToFront = (id: string) => {
     zCounter.current += 1;
     setZOrder((prev) => ({ ...prev, [id]: zCounter.current }));
   };
 
-  // 默认直接展示原网站高保真经典照片画板
-  const items = useMemo(() => CRAFT_ITEMS, []);
+  /**
+   * 将真实获取的相册照片真实注入到原版 1040px 画板槽位中
+   * 优先展示博主真实拍摄的照片，剩余槽位保留高保真经典素材衬底
+   */
+  const items = useMemo(() => {
+    if (!photoList || photoList.length === 0) {
+      return DEFAULT_CRAFT_ITEMS;
+    }
+
+    let photoIdx = 0;
+    return DEFAULT_CRAFT_ITEMS.map((item) => {
+      // 仅替换 photo 类型的槽位，保留右下角经典打孔艺术邮票
+      if (item.kind === "photo" && photoIdx < photoList.length) {
+        const real = photoList[photoIdx++];
+        return {
+          ...item,
+          id: `real-photo-${real.id}`,
+          label: real.caption || real.albumTitle || item.label,
+          src: real.url || item.src,
+        };
+      }
+      return item;
+    });
+  }, [photoList]);
 
   return (
     <section className="relative left-1/2 right-1/2 -mx-[50vw] my-16 w-screen overflow-hidden px-4 sm:px-6">
@@ -117,7 +157,7 @@ export function PhotoSection({ photos }: PhotoSectionProps) {
             aria-hidden="true"
           />
 
-          {/* 渲染 18 个绝对定位卡片 (100% 对齐原版拼贴画板) */}
+          {/* 渲染 18 个绝对定位卡片 (动态注入博主真实相册照片) */}
           {items.map((item, index) => {
             const isHovered = hoveredId === item.id;
             const hasHover = hoveredId !== null;
