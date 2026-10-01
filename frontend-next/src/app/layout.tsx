@@ -6,24 +6,30 @@ import "./globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
   weight: "400",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Chloé Maillot · Design Engineer",
-  description: "Product thinking, design engineering, and creativity. Portfolio of Chloé Maillot.",
+  title: "Butvan · Design Engineer & Full-Stack Developer",
+  description: "Personal blog and digital garden of Butvan. Product thinking, design engineering, and creativity.",
   icons: {
     icon: "/icon.svg",
+  },
+  other: {
+    google: "notranslate",
   },
 };
 
@@ -34,11 +40,13 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="zh-CN"
+      translate="no"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} font-sans`}
+      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} font-sans notranslate`}
     >
       <head>
+        <meta name="google" content="notranslate" />
         <script
           dangerouslySetInnerHTML={{
             __html: `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`,
