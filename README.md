@@ -30,11 +30,15 @@
 
 ## 🛠️ 技术选型清单
 
-### 🖥️ 前端展示端 & 管理后台 (`fronted/`)
-*   **核心框架**：Next.js 16 (App Router) + TypeScript
-*   **UI 组件库**：HeroUI v3 (原 NextUI 升级版)
-*   **样式引擎**：Tailwind CSS v4 (基于原生级高性能架构)
-*   **核心机制**：IntersectionObserver 入场动效、毛玻璃视差横幅、弹性物理灯箱。
+### 🖥️ 前端展示端 & 管理后台
+*   **新一代设计工程师博客前台 (`frontend-next/`)**：
+    *   **核心框架**：Next.js 15 (App Router) + React 19 + TypeScript
+    *   **动效与音效**：Framer Motion + Web Audio API 程序化物理音效合成
+    *   **设计美学**：1:1 复刻法国高级设计工程师 Chloé Maillot 极客美学，1040px 交互式照片拼贴画板、确定性哈希倾角、微胶片噪点与打孔邮票。
+    *   **架构体系**：互联网大厂分层规范设计，全接口无侵入对接 `backend` 8080 服务并集成离线熔断兜底。
+*   **原双端工程 (`fronted/`)**：
+    *   `blog-client`：基于房间拟真切片场景的用户前台
+    *   `blog-admin`：基于 HeroUI v3 + Tailwind CSS 的后台内容管控中心
 
 ### ⚙️ 后端服务 (`backend/`)
 *   **核心框架**：Spring Boot 3.2.5
@@ -63,8 +67,13 @@ Butvan Blog2.0/
 │   ├── blog-pojo/                             #   数据模型层 (Entity/DTO/VO 定义)
 │   └── blog-service/                          #   业务服务层 (Controller/Service/Repository, 程序入口)
 │
-├── fronted/                                   # 🖥️ 前端 Next.js 双端项目
-│   ├── blog-client/                           #   用户展示端 (前台)
+├── frontend-next/                             # 🎨 ✨ 新一代极客博客前台 (Design Engineer 美学，Next.js 15 + React 19)
+│   ├── src/                                   #   业务源码 (核心统一组件、五大板块、详情路由)
+│   ├── docs/                                  #   组件维护手册 (COMPONENTS.md) 与架构文档
+│   └── public/                                #   高保真静态资产、邮票、微视频与程序化音频
+│
+├── fronted/                                   # 🖥️ 原前端 Next.js 双端项目
+│   ├── blog-client/                           #   原用户展示端 (房间拟真场景)
 │   └── blog-admin/                            #   管理后台 (可视化编辑器、内容管控)
 │
 ├── docx/                                      # 📝 归档文档与初始数据库设计
@@ -113,7 +122,15 @@ Butvan Blog2.0/
 2. 在数据库中手动创建初始库 `butvan_blog`。
 3. 运行 `BlogServiceApplication.java` 启动类，Flyway 会自动检测已有表或自动执行 [V1.0__init_schema.sql](backend/blog-service/src/main/resources/db/migration/V1.0__init_schema.sql) 初始化表结构。
 
-### 3. 前台用户端启动
+### 3. 新一代设计工程师博客前台启动 (推荐 ✨)
+```bash
+cd frontend-next
+pnpm install
+pnpm dev
+```
+打开浏览器访问 [http://localhost:3000](http://localhost:3000)。
+
+### 4. 原前台用户端启动
 ```bash
 cd fronted/blog-client
 pnpm install
@@ -121,7 +138,7 @@ pnpm dev
 ```
 打开浏览器访问 [http://localhost:3000](http://localhost:3000)。
 
-### 4. 后台管理端启动
+### 5. 后台管理端启动
 ```bash
 cd fronted/blog-admin
 pnpm install

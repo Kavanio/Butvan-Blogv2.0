@@ -1,0 +1,16 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="8" width="48" height="48" rx="12" fill="#f0f0f0"/>
+
+  <!-- Left: vague spec, one short line -->
+  <rect x="16" y="30" width="10" height="3" rx="1.5" fill="#bbbbbb"/>
+
+  <!-- Center dashed divider -->
+  <line x1="32" y1="20" x2="32" y2="44" stroke="#cccccc" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <!-- Right: precise spec, structured lines with indent -->
+  <rect x="38" y="22" width="6" height="2" rx="1" fill="#202020"/>
+  <rect x="40" y="26" width="10" height="2" rx="1" fill="#202020" opacity="0.75"/>
+  <rect x="40" y="30" width="8" height="2" rx="1" fill="#202020" opacity="0.75"/>
+  <rect x="40" y="34" width="10" height="2" rx="1" fill="#202020" opacity="0.75"/>
+  <rect x="40" y="38" width="9" height="2" rx="1" fill="#202020" opacity="0.75"/>
+</svg>

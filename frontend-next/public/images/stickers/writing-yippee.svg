@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="8" width="48" height="48" rx="12" fill="#f0f0f0"/>
+
+  <!-- The yippee: one dark check, and the confetti of the moment it lands -->
+  <path d="M24 33 L30 39 L41 27" stroke="#202020" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- The burst, thrown up and outward, greys like the rest of the family -->
+  <rect x="18" y="19" width="4" height="2.4" rx="1" fill="#bbbbbb" transform="rotate(-24 20 20.2)"/>
+  <rect x="30" y="15" width="4" height="2.4" rx="1" fill="#999999" transform="rotate(14 32 16.2)"/>
+  <rect x="42" y="18" width="4" height="2.4" rx="1" fill="#bbbbbb" transform="rotate(38 44 19.2)"/>
+  <rect x="46" y="30" width="4" height="2.4" rx="1" fill="#cccccc" transform="rotate(-52 48 31.2)"/>
+  <rect x="14" y="30" width="4" height="2.4" rx="1" fill="#cccccc" transform="rotate(60 16 31.2)"/>
+  <rect x="24" y="46" width="4" height="2.4" rx="1" fill="#cccccc" transform="rotate(-30 26 47.2)"/>
+  <rect x="38" y="44" width="4" height="2.4" rx="1" fill="#bbbbbb" transform="rotate(22 40 45.2)"/>
+</svg>

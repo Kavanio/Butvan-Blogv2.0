@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-gray-bg: #ffffff;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #fcfcfc;
+  --color-gray-200: #f6f6f6;
+  --color-gray-300: #f0f0f0;
+  --color-gray-400: #e8e8e8;
+  --color-gray-500: #e0e0e0;
+  --color-gray-600: #d9d9d9;
+  --color-gray-700: #cecece;
+  --color-gray-800: #8d8d8d;
+  --color-gray-900: #8a8a8a;
+  --color-gray-1000: #6d6d6d;
+  --color-gray-1100: #545454;
+  --color-gray-1200: #202020;
+}
+
+.dark {
+  --color-gray-bg: #0d0d0d;
+  --color-gray-50: #121212;
+  --color-gray-100: #161616;
+  --color-gray-200: #1c1c1c;
+  --color-gray-300: #262626;
+  --color-gray-400: #313131;
+  --color-gray-500: #3b3b3b;
+  --color-gray-600: #474747;
+  --color-gray-700: #565656;
+  --color-gray-800: #bbbbbb;
+  --color-gray-900: #8a8a8a;
+  --color-gray-1000: #a2a2a2;
+  --color-gray-1100: #c6c6c6;
+  --color-gray-1200: #f3f3f3;
+}
+
+body {
+  background-color: var(--color-gray-bg);
+  color: var(--color-gray-1200);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: #fde3ef;
+  color: #9b3860;
+}
+
+.dark ::selection {
+  background-color: #462134;
+  color: #f2aed0;
+}
+
+/* Editorial Markdown Typography */
+.prose-editorial {
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: var(--color-gray-1200);
+}
+
+.prose-editorial h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.prose-editorial h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px dashed var(--color-gray-400);
+}
+
+.prose-editorial h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-editorial p {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  color: var(--color-gray-1100);
+}
+
+.prose-editorial a {
+  color: #d946ef;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: opacity 0.2s;
+}
+
+.prose-editorial a:hover {
+  opacity: 0.8;
+}
+
+.prose-editorial blockquote {
+  margin: 1.25rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 3px solid #ec4899;
+  background: var(--color-gray-100);
+  border-radius: 0 0.5rem 0.5rem 0;
+  font-style: italic;
+  color: var(--color-gray-1000);
+}
+
+.prose-editorial code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.825em;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.3rem;
+  background: var(--color-gray-200);
+  border: 1px solid var(--color-gray-300);
+}
+
+.prose-editorial pre {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #18181b;
+  color: #f4f4f5;
+  overflow-x: auto;
+  font-size: 0.825rem;
+  line-height: 1.6;
+}
+
+.prose-editorial pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+}
+
+.prose-editorial ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin: 0.75rem 0;
+}
+
+.prose-editorial ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+  margin: 0.75rem 0;
+}
+
+.prose-editorial li {
+  margin: 0.35rem 0;
+}
+
+.prose-editorial img {
+  border-radius: 0.75rem;
+  margin: 1.5rem auto;
+  max-width: 100%;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Logo Chips Stack Fan-out & Hover Zoom Animations (100% 对齐原版) */
+.chip-item {
+  transform: translateX(0);
+  transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.group\/stack:hover .chip-item {
+  transform: translateX(var(--spread));
+}
+
+.chip-card {
+  transform: rotate(var(--rot));
+  transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 380ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms ease;
+  will-change: transform;
+}
+
+.chip-item:hover .chip-card {
+  transform: rotate(0deg) scale(1.55) !important;
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.22), 0 4px 10px -2px rgba(0, 0, 0, 0.12);
+  border-color: var(--color-gray-600);
+}
