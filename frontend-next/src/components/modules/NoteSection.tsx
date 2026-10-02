@@ -14,10 +14,15 @@ export function NoteSection({ notes }: NoteSectionProps) {
   if (!notes || notes.length === 0) return null;
 
   return (
-    <section id="notes" className="mt-16 sm:mt-28">
-      <SectionHeader title="Notes" moreHref="/notes" moreLabel="View all notes" />
+    <section id="notes" className="mt-16 sm:mt-32">
+      <SectionHeader
+        title="Notes"
+        moreHref="/notes"
+        moreLabel="View all notes"
+        className="animate-in stagger-3"
+      />
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         {notes.map((note) => (
           <ContentRow
             key={note.id}

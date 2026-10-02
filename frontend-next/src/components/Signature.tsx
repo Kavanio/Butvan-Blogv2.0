@@ -8,7 +8,7 @@ export function Signature({ className = "" }: { className?: string }) {
       viewBox="56 60 804 441"
       className={`h-14 w-auto text-[#9b3860] dark:text-[#fde3ef] ${className}`}
       role="img"
-      aria-label="Chloé Maillot"
+      aria-label="可梵 (Butvan)"
     >
       <path
         fill="currentColor"

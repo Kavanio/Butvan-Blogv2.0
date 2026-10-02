@@ -36,11 +36,11 @@ export default async function HomePage() {
       {/* 板块三：深度文章板块 (Article Section，同样沿用原版 Notes 极客列表排版) */}
       <ArticleSection articles={articles} />
 
-      {/* 板块四：摄影画廊板块 (Photo Section，全宽视口穿透流光卡片与邮票) */}
-      <PhotoSection photos={photos} />
-
-      {/* 板块五：友情链接板块 (Friend Section，位于最底部) */}
+      {/* 板块四：友情链接板块 (Friend Section) */}
       <FriendSection friends={friends} />
+
+      {/* 板块五：摄影相册画板 (Photo Section，100% 真实数据交互画板) */}
+      <PhotoSection photos={photos} />
 
       {/* 页尾右下角手写矢量签名 */}
       <footer className="mt-16 flex items-center justify-end sm:mt-12">

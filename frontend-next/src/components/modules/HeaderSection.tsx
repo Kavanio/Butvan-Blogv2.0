@@ -41,7 +41,7 @@ export function HeaderSection({ profile }: HeaderSectionProps) {
   return (
     <header className="relative z-30">
       {/* 顶部个人名字、职位与工具栏 */}
-      <div className="flex items-start justify-between gap-3">
+      <div className="animate-in stagger-1 relative z-20 flex items-start justify-between gap-3">
         <div className="flex flex-col">
           <h1 className="text-lede font-medium leading-snug text-gray-1200">
             {name}
@@ -51,29 +51,30 @@ export function HeaderSection({ profile }: HeaderSectionProps) {
           </span>
         </div>
 
-        {/* 主题切换工具按钮 */}
-        <div className="flex items-center gap-1 rounded-lg border border-gray-400 bg-gray-100 p-0.5 shadow-sm">
+        {/* 主题切换工具按钮 (原站同款圆形微触感按钮) */}
+        <div className="flex items-center gap-2">
           <button
             onClick={toggleTheme}
+            type="button"
             aria-label="Toggle theme"
-            className="inline-flex size-7 items-center justify-center rounded-md text-gray-1000 transition-colors hover:bg-gray-200 hover:text-gray-1200"
+            className="flex size-7 items-center justify-center rounded-full text-gray-1000 transition-colors duration-150 hover:text-gray-1200 cursor-pointer"
           >
-            {isDark ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
+            {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </button>
         </div>
       </div>
 
       {/* 实时时区时钟 */}
-      <div className="mt-2 mb-6">
+      <div className="animate-in stagger-1 mb-6 mt-2">
         <span className="font-mono text-micro tabular-nums text-gray-1000">
           {SITE_CONFIG.timezoneLabel}
-          <span className="mx-1 text-gray-600" aria-hidden="true">·</span>
+          <span className="mx-1 text-gray-900" aria-hidden="true">·</span>
           <span className="inline-block min-w-[62px]">{clock ?? "--:--:--"}</span>
         </span>
       </div>
 
       {/* 个人介绍段落（包含扑克牌展开式技术栈徽标） */}
-      <div className="space-y-3 text-base text-gray-1100 leading-relaxed">
+      <div className="animate-in stagger-2 space-y-4 text-base text-gray-1100 leading-relaxed">
         <p>
           {introLine1}
           {/* 扑克牌式层叠与扇形展开技术栈徽标 */}

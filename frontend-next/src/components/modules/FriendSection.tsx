@@ -60,8 +60,8 @@ export function FriendSection({ friends }: FriendSectionProps) {
   };
 
   return (
-    <section id="friends" className="mt-16 sm:mt-28">
-      <div className="mb-5 flex items-baseline justify-between">
+    <section id="friends" className="mt-16 sm:mt-32">
+      <div className="mb-5 flex items-baseline justify-between animate-in stagger-4">
         <h2 className="text-base font-[550] text-gray-1200 tracking-tight">
           Friends & Connections
         </h2>

@@ -32,6 +32,7 @@ const config: Config = {
           1100: "var(--color-gray-1100)",
           1200: "var(--color-gray-1200)",
         },
+        "preview-bg": "var(--color-preview-bg)",
       },
       fontSize: {
         micro: ["11px", { lineHeight: "14px" }],
@@ -41,7 +42,8 @@ const config: Config = {
         lede: ["15px", { lineHeight: "22px" }],
       },
       boxShadow: {
-        card: "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)",
+        card: "0px 0px 0px 1px rgba(0, 0, 0, 0.06), 0px 1px 2px -1px rgba(0, 0, 0, 0.06), 0px 2px 4px 0px rgba(0, 0, 0, 0.04)",
+        "card-hover": "0px 0px 0px 1px rgba(0, 0, 0, 0.08), 0px 1px 2px -1px rgba(0, 0, 0, 0.08), 0px 2px 4px 0px rgba(0, 0, 0, 0.06)",
       },
     },
   },

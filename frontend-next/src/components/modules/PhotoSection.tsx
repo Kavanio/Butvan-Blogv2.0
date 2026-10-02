@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
-import { Camera, Image as ImageIcon, Calendar } from "lucide-react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Camera, Image as ImageIcon, Calendar, X } from "lucide-react";
 import { useSound } from "@/hooks/useSound";
-import { SpringModal } from "@/components/ui/SpringModal";
 import { PhotoVO } from "@/types/album";
 import { albumService } from "@/services";
 import { formatDate } from "@/utils/date";
@@ -19,8 +18,7 @@ interface SlotPosition {
 }
 
 /**
- * 当真实照片较多（>= 5 张）时的 18 个黄金分布槽位坐标
- * 仅用于视觉排版定位，不包含任何硬编码假图片或虚假文案
+ * 原站 1040px 画板多照片黄金分布槽位 (纯坐标与尺寸，0死数据)
  */
 const MULTI_SLOTS: SlotPosition[] = [
   { left: 33, top: 41, rotate: -5, w: 140, aspect: "3/4" },
@@ -43,13 +41,8 @@ const MULTI_SLOTS: SlotPosition[] = [
   { left: 910, top: 180, rotate: -3, w: 130, aspect: "3/4" },
 ];
 
-/**
- * 根据照片总数计算最佳的槽位排版参数
- * 确保无论只有 1 张、少量几张还是多张照片，视觉上都居中平衡、典雅自然
- */
 function getSlotForIndex(index: number, total: number): SlotPosition {
   if (total === 1) {
-    // 单张照片：放置于画板黄金焦点，尺寸放大，居中精致呈现
     return { left: 410, top: 100, rotate: -2, w: 220, aspect: "4/5" };
   }
   if (total === 2) {
@@ -76,7 +69,6 @@ function getSlotForIndex(index: number, total: number): SlotPosition {
     ];
     return slots[index] || slots[0];
   }
-  // 5 张及以上，从多槽位模板中按序取用
   return MULTI_SLOTS[index % MULTI_SLOTS.length];
 }
 
@@ -100,9 +92,13 @@ interface RealCraftPhoto {
 }
 
 /**
- * 1040px 交互式照片剪贴画板 (Photo Scrapbook Board)
- * 100% 真实后端数据驱动，彻底杜绝任何死数据与本地假图
- * 具备自适应数量排版、物理自由拖拽、防误触全屏灯箱、胶片噪点与原生触感音效
+ * 100% 对齐原站 chloemaillot.fr 的交互式照片剪贴画板
+ * 核心细节特性：
+ * 1. 纯真实数据流，零假数据；
+ * 2. 真实 3D 透视角度 perspective(600px) rotate(var(--rot))；
+ * 3. 动态全息棱镜折射双层流动光斑 (Conic Rainbow Specular Halo Sheen)；
+ * 4. 悬停物理景深虚化 (Depth-of-field Blur: 3.5px) 与层叠置顶；
+ * 5. 防误触点击放大灯箱、胶片噪点与物理触感音效。
  */
 export function PhotoSection({ photos: initialPhotos }: PhotoSectionProps) {
   const boardRef = useRef<HTMLDivElement>(null);
@@ -120,7 +116,7 @@ export function PhotoSection({ photos: initialPhotos }: PhotoSectionProps) {
 
   const { playTick, playDroplet } = useSound();
 
-  // 客户端挂载后动态获取最新真实公开相册照片
+  // 客户端挂载后动态同步最新真实相册照片
   useEffect(() => {
     albumService
       .getPublicPhotos(1, 18)
@@ -134,13 +130,29 @@ export function PhotoSection({ photos: initialPhotos }: PhotoSectionProps) {
       });
   }, []);
 
-  const bringToFront = (id: string) => {
+  const bringToFront = useCallback((id: string) => {
     zCounter.current += 1;
     setZOrder((prev) => ({ ...prev, [id]: zCounter.current }));
-  };
+  }, []);
+
+  // 注入卡片局部的鼠标坐标与全息旋转角 (100% 对齐原版 --lx, --ly, --la 算法)
+  const handleCardMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const target = e.currentTarget;
+      const rect = target.getBoundingClientRect();
+      const lx = e.clientX - rect.left;
+      const ly = e.clientY - rect.top;
+      const la = ((e.clientX + e.clientY) * 0.22) % 360;
+
+      target.style.setProperty("--lx", `${lx}px`);
+      target.style.setProperty("--ly", `${ly}px`);
+      target.style.setProperty("--la", `${la}deg`);
+    },
+    []
+  );
 
   /**
-   * 仅处理有效真实照片，严禁任何写死假数据兜底填充
+   * 仅处理有效真实照片
    */
   const items: RealCraftPhoto[] = useMemo(() => {
     const validPhotos = (photoList || []).filter((p) => Boolean(p.url && p.url.trim()));
@@ -170,19 +182,31 @@ export function PhotoSection({ photos: initialPhotos }: PhotoSectionProps) {
     });
   }, [photoList]);
 
+  // 监听 ESC 键关闭全屏灯箱
+  useEffect(() => {
+    if (!activeItem) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveItem(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeItem]);
+
   return (
-    <section className="relative left-1/2 right-1/2 -mx-[50vw] my-16 w-screen overflow-hidden px-4 sm:px-6">
-      {/* 1040px 交互式照片拼贴画板 */}
+    <footer className="relative left-1/2 right-1/2 mt-20 sm:mt-32 -mx-[50vw] w-screen overflow-hidden px-4 sm:px-6">
+      {/* 1040px 交互式照片拼贴画板 (对齐原站尺寸与点阵背景) */}
       <div className="mx-auto max-w-[1040px] overflow-x-auto sm:overflow-visible py-4">
         <div
           ref={boardRef}
-          className="relative mx-auto h-[520px] w-[1040px] max-w-[1040px] overflow-hidden rounded-2xl border border-gray-400 bg-gray-100 shadow-xl select-none"
+          className="relative mx-auto h-[520px] w-[1040px] max-w-[1040px] overflow-hidden rounded-2xl border border-gray-400 bg-gray-100 dark:bg-[#141414] shadow-card select-none"
           style={{
             backgroundImage: "radial-gradient(circle, var(--color-gray-400) 1px, transparent 1.4px)",
             backgroundSize: "22px 22px",
           }}
         >
-          {/* 周围环境暗角柔光 */}
+          {/* 原站经典周围环境暗角柔光 */}
           <div
             className="pointer-events-none absolute inset-0 z-0"
             style={{
@@ -191,7 +215,7 @@ export function PhotoSection({ photos: initialPhotos }: PhotoSectionProps) {
             aria-hidden="true"
           />
 
-          {/* 状态一：真实照片为空时的优雅手作空状态（绝不以假数据充数） */}
+          {/* 状态一：真实照片为空时的优雅空状态（杜绝以死数据充数） */}
           {items.length === 0 && (
             <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
               <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-400/80 bg-white/70 dark:bg-gray-900/70 p-8 backdrop-blur-xs shadow-card max-w-sm">
@@ -210,7 +234,7 @@ export function PhotoSection({ photos: initialPhotos }: PhotoSectionProps) {
             </div>
           )}
 
-          {/* 状态二：仅渲染真实获取到的相册照片 */}
+          {/* 状态二：仅渲染真实获取到的相册照片卡片 */}
           {items.map((item, index) => {
             const isHovered = hoveredId === item.id;
             const hasHover = hoveredId !== null;
@@ -228,7 +252,6 @@ export function PhotoSection({ photos: initialPhotos }: PhotoSectionProps) {
                   dragStartTimeRef.current = Date.now();
                 }}
                 onDragEnd={() => {
-                  // 延时清除拖拽标记，防止松开鼠标瞬间误触发 click 弹窗放大
                   setTimeout(() => {
                     isDraggingRef.current = false;
                   }, 120);
@@ -243,8 +266,8 @@ export function PhotoSection({ photos: initialPhotos }: PhotoSectionProps) {
                   playTick();
                 }}
                 onMouseLeave={() => setHoveredId(null)}
+                onMouseMove={handleCardMouseMove}
                 onClick={(e) => {
-                  // 若刚才在拖拽，彻底拦截点击放大事件
                   if (
                     isDraggingRef.current ||
                     Date.now() - dragStartTimeRef.current < 200
@@ -256,9 +279,18 @@ export function PhotoSection({ photos: initialPhotos }: PhotoSectionProps) {
                   setActiveItem(item);
                   playDroplet();
                 }}
-                initial={{ rotate: item.rotate }}
-                whileHover={{ scale: 1.04, rotate: 0 }}
-                whileDrag={{ scale: 1.08, zIndex: 9999 }}
+                initial={{
+                  rotate: item.rotate,
+                }}
+                whileHover={{
+                  scale: 1.04,
+                  rotate: 0,
+                  transition: { duration: 0.2, ease: "easeOut" },
+                }}
+                whileDrag={{
+                  scale: 1.08,
+                  zIndex: 9999,
+                }}
                 animate={{
                   filter:
                     hasHover && !isHovered
@@ -267,23 +299,27 @@ export function PhotoSection({ photos: initialPhotos }: PhotoSectionProps) {
                 }}
                 transition={{
                   filter: { duration: 0.25, ease: "easeOut" },
-                  scale: { duration: 0.2 },
                 }}
-                className={`group absolute cursor-grab active:cursor-grabbing ${
+                className={`group absolute cursor-grab active:cursor-grabbing select-none border border-gray-400 bg-preview-bg shadow-card transition-shadow duration-300 hover:shadow-card-hover ${
                   item.round
-                    ? "rounded-full border border-gray-400 bg-white dark:bg-gray-900 p-1 shadow-card"
-                    : "rounded-xl border border-gray-400 bg-white dark:bg-gray-900 p-1.5 shadow-card"
+                    ? "rounded-full p-1"
+                    : "rounded-xl p-1.5"
                 }`}
                 style={{
                   left: item.left,
                   top: item.top,
                   width: item.w,
                   zIndex: currentZ,
+                  transform: `perspective(600px) rotate(${item.rotate}deg)`,
+                  WebkitTouchCallout: "none",
+                  WebkitUserSelect: "none",
+                  userSelect: "none",
+                  touchAction: "none",
                 }}
               >
-                {/* 真实照片卡片渲染 */}
+                {/* 真实照片实体展示 */}
                 <span
-                  className={`relative block h-full w-full overflow-hidden border border-gray-400 bg-gray-200 dark:bg-gray-800 ${
+                  className={`relative block h-full w-full overflow-hidden border border-gray-500 ${
                     item.round ? "rounded-full" : "rounded-lg"
                   }`}
                   style={{ aspectRatio: item.aspect }}
@@ -295,17 +331,34 @@ export function PhotoSection({ photos: initialPhotos }: PhotoSectionProps) {
                     draggable={false}
                     loading="lazy"
                   />
-                  {/* 微胶片噪点层 */}
+
+                  {/* 原站微胶片颗粒噪点层 */}
                   <span
-                    className="pointer-events-none absolute inset-0 opacity-20 mix-blend-overlay"
+                    className="pointer-events-none absolute inset-0 rounded-[inherit] mix-blend-overlay"
                     style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                      backgroundSize: "140px 140px",
+                      opacity: 0.28,
+                    }}
+                    aria-hidden="true"
+                  />
+
+                  {/* 原站惊艳的全息彩虹流动光斑层 (Conic Rainbow Specular Sheen) */}
+                  <span
+                    className="pointer-events-none absolute inset-0 rounded-[inherit] mix-blend-overlay opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    style={{
+                      background:
+                        "radial-gradient(230px at var(--lx, -999px) var(--ly, -999px), rgba(255,250,240,0.75), rgba(255,250,240,0) 70%), conic-gradient(from var(--la, 0deg) at var(--lx, -999px) var(--ly, -999px), rgba(255,196,214,0.5), rgba(255,228,178,0.5), rgba(196,235,214,0.5), rgba(198,212,255,0.5), rgba(240,200,255,0.5), rgba(255,196,214,0.5))",
+                      maskImage:
+                        "radial-gradient(230px at var(--lx, -999px) var(--ly, -999px), black, transparent 72%)",
+                      WebkitMaskImage:
+                        "radial-gradient(230px at var(--lx, -999px) var(--ly, -999px), black, transparent 72%)",
                     }}
                     aria-hidden="true"
                   />
                 </span>
 
-                {/* 照片下方微型标题说明（单张或较少照片时更显拍立得质感） */}
+                {/* 照片下方微型标签 (单张或较少照片时更具拍立得手作质感) */}
                 {!item.round && (
                   <div className="mt-1 px-0.5 flex items-center justify-between text-[11px] font-mono text-gray-1000 truncate">
                     <span className="truncate">{item.label}</span>
@@ -322,46 +375,86 @@ export function PhotoSection({ photos: initialPhotos }: PhotoSectionProps) {
         </div>
       </div>
 
-      {/* 点击卡片弹窗灯箱 (仅在单纯点击时触发，拖拽松开鼠标绝不误触发) */}
-      <SpringModal
-        isOpen={activeItem !== null}
-        onClose={() => setActiveItem(null)}
-        title={activeItem?.label}
-      >
+      {/* 原站同款全屏 Lightbox 弹窗 (带有 Esc 提示与大图全息光斑) */}
+      <AnimatePresence>
         {activeItem && (
-          <div className="flex flex-col items-center max-w-full">
-            <div className="max-h-[70vh] overflow-hidden rounded-xl border border-gray-400 bg-white dark:bg-gray-900 p-2 shadow-xl">
-              <img
-                src={activeItem.src}
-                alt={activeItem.label}
-                className="max-h-[60vh] w-auto rounded-lg object-contain"
-              />
-            </div>
-            
-            {/* 照片详细信息 */}
-            <div className="mt-4 flex flex-col items-center gap-1.5 text-center">
-              <p className="font-serif italic text-base text-gray-1200">
-                {activeItem.label}
-              </p>
-              
-              <div className="flex items-center gap-3 text-micro font-mono text-gray-1000">
-                {activeItem.albumTitle && (
-                  <span className="inline-flex items-center gap-1">
-                    <ImageIcon className="size-3 text-gray-600" />
-                    相册: {activeItem.albumTitle}
-                  </span>
-                )}
-                {activeItem.createdAt && (
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="size-3 text-gray-600" />
-                    {formatDate(activeItem.createdAt)}
-                  </span>
-                )}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.25 } }}
+            onClick={() => setActiveItem(null)}
+            className="fixed inset-0 z-[9997] flex items-center justify-center overscroll-contain bg-white/90 dark:bg-black/90 p-6 backdrop-blur-md cursor-zoom-out"
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ type: "spring", duration: 0.45, bounce: 0.05 }}
+              onClick={(e) => e.stopPropagation()}
+              onMouseMove={handleCardMouseMove}
+              className="relative flex flex-col items-center max-w-[85vw] max-h-[85vh] cursor-default"
+            >
+              <div className="relative overflow-hidden rounded-2xl border border-gray-400 bg-preview-bg p-2 shadow-2xl">
+                <img
+                  src={activeItem.src}
+                  alt={activeItem.label}
+                  className="max-h-[65vh] max-w-[80vw] rounded-xl object-contain pointer-events-none select-none"
+                  draggable={false}
+                />
+
+                {/* 弹窗大图全息彩虹光斑 */}
+                <span
+                  className="pointer-events-none absolute inset-0 rounded-[inherit] mix-blend-overlay"
+                  style={{
+                    background:
+                      "radial-gradient(320px at var(--lx, -999px) var(--ly, -999px), rgba(255,250,240,0.7), rgba(255,250,240,0) 70%), conic-gradient(from var(--la, 0deg) at var(--lx, -999px) var(--ly, -999px), rgba(255,196,214,0.45), rgba(255,228,178,0.45), rgba(196,235,214,0.45), rgba(198,212,255,0.45), rgba(240,200,255,0.45), rgba(255,196,214,0.45))",
+                    maskImage:
+                      "radial-gradient(320px at var(--lx, -999px) var(--ly, -999px), black, transparent 72%)",
+                    WebkitMaskImage:
+                      "radial-gradient(320px at var(--lx, -999px) var(--ly, -999px), black, transparent 72%)",
+                  }}
+                  aria-hidden="true"
+                />
+
+                <button
+                  onClick={() => setActiveItem(null)}
+                  className="absolute top-4 right-4 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-md transition-colors hover:bg-black/80 cursor-pointer"
+                  aria-label="Close"
+                >
+                  <X className="size-4" />
+                </button>
               </div>
-            </div>
-          </div>
+
+              {/* 弹窗底部标题信息 */}
+              <div className="mt-4 flex flex-col items-center gap-1.5 text-center">
+                <p className="font-serif italic text-base text-gray-1200">
+                  {activeItem.label}
+                </p>
+
+                <div className="flex items-center gap-3 text-micro font-mono text-gray-1000">
+                  {activeItem.albumTitle && (
+                    <span className="inline-flex items-center gap-1">
+                      <ImageIcon className="size-3 text-gray-600" />
+                      相册: {activeItem.albumTitle}
+                    </span>
+                  )}
+                  {activeItem.createdAt && (
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="size-3 text-gray-600" />
+                      {formatDate(activeItem.createdAt)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* 原站经典底部 ESC 键盘按键提示 */}
+              <span className="pointer-events-none mt-4 font-mono text-micro uppercase tracking-[0.15em] text-gray-1000 dark:text-white/50">
+                Press ESC or click anywhere to close
+              </span>
+            </motion.div>
+          </motion.div>
         )}
-      </SpringModal>
-    </section>
+      </AnimatePresence>
+    </footer>
   );
 }
