@@ -51,7 +51,7 @@ export default function FriendsPage() {
 
   const copyMySiteInfo = () => {
     playDroplet();
-    const text = `名称: ${SITE_CONFIG.name}\n简介: ${SITE_CONFIG.bio}\n网址: ${SITE_CONFIG.url}\n头像: ${SITE_CONFIG.url}/avatar.jpg`;
+    const text = `名称: ${SITE_CONFIG.name}\n简介: ${SITE_CONFIG.bio}\n网址: ${SITE_CONFIG.url}\n头像: ${SITE_CONFIG.avatarUrl}`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

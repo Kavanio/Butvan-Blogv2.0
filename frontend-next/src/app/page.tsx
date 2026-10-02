@@ -21,7 +21,7 @@ export default async function HomePage() {
     profileService.getProfile(),
     noteService.getPublicNotes({ page: 1, size: 6 }),
     articleService.getPublicArticles({ page: 1, size: 8 }),
-    albumService.getPublicPhotos(1, 15),
+    albumService.getPublicPhotos(1, 18),
     friendService.getApprovedFriends(),
   ]);
 

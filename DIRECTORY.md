@@ -612,7 +612,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 | `docx/wechat_login_sealed_record_refactor.md` | 项目文档 | 微信扫码登录 Java 17/21 sealed + record 架构重构详细指南 |
 | `frontend-next/src/app/page.tsx` | 新前台-首页 | 五大流动板块首页（Header、Note、Article、Photo、Friend） |
 | `frontend-next/src/components/core/ContentRow.tsx` | 新前台-组件 | 核心统一行组件（哈希确定性倾角微缩图 + 弹簧阻尼 + 音效） |
-| `frontend-next/src/components/modules/PhotoSection.tsx` | 新前台-组件 | 1040px 突破全宽交互式拍立得拼贴画板与打孔邮票集 |
+| `frontend-next/src/components/modules/PhotoSection.tsx` | 新前台-组件 | 1040px 突破全宽交互式真实相册剪贴画板（100% 真实数据驱动、自适应数量槽位、防误触全屏灯箱、物理自由拖拽） |
 | `frontend-next/src/services/client.ts` | 新前台-网络 | HttpClient 网络层（超时控制、IP 透传、离线优雅熔断兜底） |
 | `frontend-next/src/constants/fallbacks.ts` | 新前台-容灾 | 全量离线兜底数据仓库（后端离线保障前台秒级降级不白屏） |
 | `frontend-next/src/lib/sound.ts` | 新前台-音频 | 基于 Web Audio API 的程序化触觉反馈音效合成引擎 |

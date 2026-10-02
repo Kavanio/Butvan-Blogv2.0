@@ -5,13 +5,14 @@ import { PhotoVO } from "@/types/album";
 import { FriendLinkVO } from "@/types/friend";
 
 export const FALLBACK_PROFILE: ProfileVO = {
-  nickname: "Butvan",
-  avatarUrl: "/icon.svg",
-  bio: "Design systems, full-stack tools, and digital craftsmanship that lives in production.",
+  nickname: "可梵",
+  avatarUrl: "https://minio.server.butvan.top/blog2/USER_AVATAR/20260721/fbc00155-a6f0-4685-9067-fa1ab1c7356f.png",
+  bio: "JAVA / Agent / VibeCoding 开发者",
   socialLinks: {
-    github: "https://github.com/18755120710",
-    x: "https://x.com",
-    email: "butvan@example.com",
+    github: "https://github.com/agent-butvan",
+    email: "1973578950@qq.com",
+    introLine1: "大三后端开发｜敲代码｜热爱生活",
+    introLine2: "欢迎来到我的 Blog 交流学习，分享技术文章也分享生活帖子",
   },
 };
 

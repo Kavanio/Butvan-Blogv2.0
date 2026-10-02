@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowUpRight, Plus, Check } from "lucide-react";
 import { FriendLinkVO, FriendLinkApplyDTO } from "@/types/friend";
 import { SectionHeader } from "@/components/core/SectionHeader";
@@ -65,13 +66,22 @@ export function FriendSection({ friends }: FriendSectionProps) {
           Friends & Connections
         </h2>
 
-        <button
-          onClick={handleOpenApply}
-          className="group inline-flex items-center gap-1 font-mono text-micro text-gray-1000 transition-colors hover:text-gray-1200"
-        >
-          <Plus className="size-3 transition-transform group-hover:rotate-90 duration-200" />
-          <span>Apply</span>
-        </button>
+        <div className="flex items-center gap-2 font-mono text-micro text-gray-1000">
+          <Link
+            href="/friends"
+            className="transition-colors hover:text-gray-1200"
+          >
+            All friends
+          </Link>
+          <span className="text-gray-500" aria-hidden="true">·</span>
+          <button
+            onClick={handleOpenApply}
+            className="group inline-flex items-center gap-1 transition-colors hover:text-gray-1200 cursor-pointer"
+          >
+            <Plus className="size-3 transition-transform group-hover:rotate-90 duration-200" />
+            <span>Apply</span>
+          </button>
+        </div>
       </div>
 
       {/* 友链卡片网格 */}

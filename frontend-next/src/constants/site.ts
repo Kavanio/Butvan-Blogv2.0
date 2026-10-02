@@ -3,18 +3,18 @@
  */
 
 export const SITE_CONFIG = {
-  name: "Butvan",
-  title: "Butvan · Design Engineer & Developer",
-  url: "https://butvan.dev",
-  bio: "设计工程师，聚焦于数字系统构建与前端动效工程。",
-  description: "Crafting digital systems, design engineering, and code. Personal blog and digital garden of Butvan.",
-  author: "Butvan",
+  name: "可梵",
+  title: "可梵 (Butvan) · JAVA / Agent / VibeCoding 开发者",
+  url: "https://butvan.top",
+  bio: "大三后端开发｜敲代码｜热爱生活",
+  description: "JAVA / Agent / VibeCoding 开发者，记录代码、思考与生活。",
+  author: "可梵",
+  avatarUrl: "https://minio.server.butvan.top/blog2/USER_AVATAR/20260721/fbc00155-a6f0-4685-9067-fa1ab1c7356f.png",
   timezone: "Asia/Shanghai",
   timezoneLabel: "Beijing",
   socialLinks: {
-    github: "https://github.com/18755120710",
-    x: "https://x.com",
-    email: "mailto:butvan@example.com",
+    github: "https://github.com/agent-butvan",
+    email: "1973578950@qq.com",
   },
   spotify: {
     title: "WILDFLOWER",

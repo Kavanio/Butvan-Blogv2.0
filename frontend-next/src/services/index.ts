@@ -112,27 +112,32 @@ export const articleService = {
 };
 
 export const albumService = {
-  async getPublicPhotos(page = 1, size = 12): Promise<PhotoVO[]> {
+  /**
+   * 分页获取公开相册照片（时间线照片墙）
+   * 100% 真实数据驱动，不再向前端回退死数据
+   */
+  async getPublicPhotos(page = 1, size = 18): Promise<PhotoVO[]> {
     try {
       const res = await http.get<PageResult<any>>(
         `/public/photos?page=${page}&size=${size}`
       );
-      if (res?.records && res.records.length > 0) {
+      if (res && Array.isArray(res.records)) {
         return res.records.map((item: any) => ({
           id: item.id,
           url: item.fileUrl || item.url || "",
           thumbnailUrl: item.fileUrl || item.thumbnailUrl || item.url || "",
           caption: item.caption || item.albumTitle || "",
-          albumTitle: item.albumTitle,
-          albumSlug: item.albumSlug,
+          albumTitle: item.albumTitle || "随拍",
+          albumSlug: item.albumSlug || "",
           createdAt: item.createdAt,
           width: item.width,
           height: item.height,
         }));
       }
-      return FALLBACK_PHOTOS;
-    } catch {
-      return FALLBACK_PHOTOS;
+      return [];
+    } catch (err) {
+      console.warn("获取公开相册照片失败:", err);
+      return [];
     }
   },
 };
