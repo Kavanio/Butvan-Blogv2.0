@@ -19,6 +19,7 @@ export interface NoteItemVO {
 
 export interface NoteDetailVO extends NoteItemVO {
   content: string;
+  contentHtml?: string;
 }
 
 export interface NoteQueryDTO {

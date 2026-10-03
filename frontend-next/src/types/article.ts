@@ -32,8 +32,11 @@ export interface ArticleItemVO {
 export interface ArticleDetailVO extends ArticleItemVO {
   content: string;
   contentHtml?: string;
+  authorName?: string;
+  updatedAt?: string;
   isAllowComment?: boolean;
   tagNames?: string[];
+  relatedArticles?: ArticleItemVO[];
 }
 
 export interface ArticleQueryDTO {

@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { marked } from "marked";
 import { motion } from "framer-motion";
 import { ArrowLeft, Heart, MapPin, SunMedium } from "lucide-react";
 import { NoteDetailVO } from "@/types/note";
@@ -10,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { useSound } from "@/hooks/useSound";
 import { formatDate } from "@/utils/date";
 import { noteService } from "@/services";
+import { MarkdownRenderer } from "@/components/article/MarkdownRenderer";
 
 interface NoteDetailClientProps {
   note: NoteDetailVO;
@@ -19,14 +19,6 @@ export function NoteDetailClient({ note }: NoteDetailClientProps) {
   const [likes, setLikes] = useState(note.likeCount || 0);
   const [hasLiked, setHasLiked] = useState(false);
   const { playSparkle, playTick } = useSound();
-
-  const htmlContent = useMemo(() => {
-    try {
-      return marked.parse(note.content || "", { async: false }) as string;
-    } catch {
-      return note.content || "";
-    }
-  }, [note.content]);
 
   const handleLike = async () => {
     if (hasLiked) return;
@@ -83,9 +75,11 @@ export function NoteDetailClient({ note }: NoteDetailClientProps) {
           </div>
         </div>
 
-        <article
+        {/* 使用统一 MarkdownRenderer 渲染 */}
+        <MarkdownRenderer
+          content={note.content}
+          contentHtml={note.contentHtml}
           className="prose-editorial"
-          dangerouslySetInnerHTML={{ __html: htmlContent }}
         />
 
         <div className="mt-14 pt-6 border-t border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-between">
