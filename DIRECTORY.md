@@ -119,7 +119,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │       │       ├── ArticleSection.tsx         #         深度架构长文列表板块
 │       │       ├── PhotoSection.tsx           #         1040px 交互式照片剪贴画板（100%还原图1目标样式 + 防拖拽误触发放大 + 动态融合相册）
 │       │       ├── FriendSection.tsx          #         底部邻居友链展示与申请板块
-│       │       ├── QuoteWallSection.tsx       #         ★ 极简金句墙收尾页脚（零线条/零边框非对称文字瀑布流 + 阅读聚焦沉浸视效 + 轻触复制）
+│       │       ├── QuoteWallSection.tsx       #         ★ 极简全宽金句墙页脚（撑满1040px视口 + 纯真实数据流 + 仅展示句子与日期 + 高度随内容自适应延展）
 │       │       └── CommentSection.tsx         #         树状嵌套高可靠评论系统（乐观更新）
 │       ├── services/                          #     🌐 统一数据服务防腐层
 │       │   ├── client.ts                      #       HttpClient 封装（超时重试、真实 IP 透传、熔断捕获）
@@ -629,7 +629,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 | `frontend-next/src/components/ui/Skeleton.tsx` | 新前台-骨架 | 极客流光骨架屏套件（ContentRowSkeleton、DetailSkeleton、HomePageSkeleton） |
 | `frontend-next/src/components/core/ContentRow.tsx` | 新前台-组件 | 核心统一行组件（哈希确定性倾角微缩图 + 弹簧阻尼 + 音效） |
 | `frontend-next/src/components/modules/PhotoSection.tsx` | 新前台-组件 | 1040px 突破全宽交互式真实相册剪贴画板（100% 真实数据驱动、自适应数量槽位、防误触全屏灯箱、物理自由拖拽） |
-| `frontend-next/src/components/modules/QuoteWallSection.tsx` | 新前台-组件 | 极简金句墙收尾页脚（零线条/零边框非对称文字瀑布流 + 阅读聚焦沉浸视效 + 轻触复制与触感反馈） |
+| `frontend-next/src/components/modules/QuoteWallSection.tsx` | 新前台-组件 | 极简全宽金句墙页脚（撑满1040px视口 + 纯真实数据驱动 + 仅展示句子与日期 + 高度自适应延展） |
 | `frontend-next/src/types/quote.ts` | 新前台-模型 | 前台已审核金句业务实体与分页传输契约模型 |
 | `frontend-next/src/services/client.ts` | 新前台-网络 | HttpClient 网络层（超时控制、IP 透传、离线优雅熔断兜底） |
 | `frontend-next/src/constants/fallbacks.ts` | 新前台-容灾 | 全量离线兜底数据仓库（后端离线保障前台秒级降级不白屏） |

@@ -1,38 +1,20 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { QuoteItemVO } from "@/types/quote";
 import { quoteService } from "@/services";
 import { useSound } from "@/hooks/useSound";
 
 interface QuoteWallSectionProps {
-  /** 服务端预取的初始金句列表 */
+  /** 服务端全量预取的真实金句列表 */
   quotes?: QuoteItemVO[];
 }
 
 /**
- * 将后台视觉字号映射为极简前台流式排版字号
+ * 格式化金句创建日期为极简年月（例如 2026.09）
  *
- * @param displaySize 后台配置的字号枚举（SMALL | MEDIUM | LARGE）
- * @returns 对应的字号与行距 Tailwind 类名
- */
-function getQuoteTextClass(displaySize?: string): string {
-  switch (displaySize) {
-    case "LARGE":
-      return "text-[1.125rem] sm:text-[1.25rem] leading-[1.75] font-serif font-normal";
-    case "SMALL":
-      return "text-[0.875rem] sm:text-[0.9375rem] leading-[1.65] font-sans font-normal";
-    case "MEDIUM":
-    default:
-      return "text-[0.975rem] sm:text-[1.0625rem] leading-[1.7] font-serif font-normal";
-  }
-}
-
-/**
- * 格式化金句创建年份/日期（可选极简展示）
- *
- * @param isoDateString ISO 格式时间字符串
- * @returns 极简格式日期（如 2026.09）
+ * @param isoDateString 后端返回的 ISO 格式时间字符串
+ * @returns 格式化后的极简年月字符串
  */
 function formatQuoteDate(isoDateString?: string): string {
   if (!isoDateString) return "";
@@ -48,86 +30,60 @@ function formatQuoteDate(isoDateString?: string): string {
 }
 
 /**
- * 首页最底部极简金句墙组件（Quote Wall Footer）
+ * 首页最底部极简全宽金句墙页脚（Quote Wall Footer）
  *
- * 设计哲学：
- * 1. 语义化作为首页 footer，收尾全站精神内核；
- * 2. 纯粹只展示金句与署名出处，剔除一切传统页脚杂芜；
- * 3. 彻底杜绝任何线条、边框、卡片包裹与分割阴影，字与底色完全相融；
- * 4. 采用非对称双列文字流瀑布排布，紧凑自然、富有文人呼吸感；
- * 5. 交互集成阅读聚焦视效（Focus Lens）、点击无感复制与微声学触感。
+ * 核心规范：
+ * 1. 默认破宽撑满 1040px 黄金阅读视口，与上方画板对齐；
+ * 2. 纯真实数据流驱动，严禁任何假数据兜底；
+ * 3. 默认一次性全量加载全部金句，杜绝分页与“加载更多”多余按钮；
+ * 4. 默认只展示“句子内容”与“日期”，绝不展示作者、出处与破折号；
+ * 5. 零线条、零边框、零卡片阴影，纯粹文字流融入页面底色；
+ * 6. 随着金句变多，高度自然向下生长；
+ * 7. 支持双列错落流式排版、沉浸阅读聚焦视效与轻触快速复制。
  */
 export function QuoteWallSection({ quotes: initialQuotes = [] }: QuoteWallSectionProps) {
   const [quotes, setQuotes] = useState<QuoteItemVO[]>(initialQuotes);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [page, setPage] = useState<number>(1);
-  const [hasMore, setHasMore] = useState<boolean>(true);
-  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
 
-  const { playDroplet, playTick } = useSound();
+  const { playDroplet } = useSound();
+
+  // 客户端挂载后动态同步最新真实金句（100% 真实数据流，零假数据）
+  useEffect(() => {
+    quoteService
+      .getAllPublicQuotes()
+      .then((data) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setQuotes(data);
+        }
+      })
+      .catch((err) => {
+        console.warn("客户端同步金句失败:", err);
+      });
+  }, []);
 
   /**
-   * 点击单条金句触发轻量复制到剪贴板，并伴随微触感反馈
+   * 点击单条金句复制内容至剪贴板，伴随微触感水滴音效
    *
    * @param quote 被点击的目标金句
    */
   const handleCopyQuote = useCallback(
     async (quote: QuoteItemVO) => {
       try {
-        const textToCopy = `${quote.content}${
-          quote.authorName ? ` —— ${quote.authorName}` : ""
-        }${quote.source ? `《${quote.source}》` : ""}`;
-        await navigator.clipboard.writeText(textToCopy);
+        await navigator.clipboard.writeText(quote.content);
         playDroplet();
         setCopiedId(quote.id);
         setTimeout(() => {
           setCopiedId((current) => (current === quote.id ? null : current));
-        }, 1800);
+        }, 1600);
       } catch {
-        // 剪贴板权限或异常降级
+        // 剪贴板异常降级
       }
     },
     [playDroplet]
   );
 
-  /**
-   * 拾取加载更多金句（无痕平滑追加到文字流中）
-   */
-  const handleLoadMore = useCallback(async () => {
-    if (isLoadingMore || !hasMore) return;
-    setIsLoadingMore(true);
-    playTick();
-
-    try {
-      const nextPage = page + 1;
-      const moreQuotes = await quoteService.getPublicQuotes({
-        page: nextPage,
-        size: 6,
-      });
-
-      if (moreQuotes && moreQuotes.length > 0) {
-        // 过滤重复数据
-        setQuotes((prev) => {
-          const existingIds = new Set(prev.map((q) => q.id));
-          const filtered = moreQuotes.filter((q) => !existingIds.has(q.id));
-          if (filtered.length === 0) {
-            setHasMore(false);
-            return prev;
-          }
-          return [...prev, ...filtered];
-        });
-        setPage(nextPage);
-      } else {
-        setHasMore(false);
-      }
-    } catch {
-      setHasMore(false);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [page, hasMore, isLoadingMore, playTick]);
-
+  // 纯真实数据驱动：无真实数据时保持安静，绝不塞假数据
   if (!quotes || quotes.length === 0) {
     return null;
   }
@@ -135,87 +91,49 @@ export function QuoteWallSection({ quotes: initialQuotes = [] }: QuoteWallSectio
   return (
     <footer
       id="quote-wall"
-      className="mt-20 sm:mt-28 mb-12 sm:mb-20 w-full select-none"
       aria-label="金句语录墙"
+      className="relative left-1/2 right-1/2 mt-20 sm:mt-28 mb-16 sm:mb-24 -mx-[50vw] w-screen px-4 sm:px-6 md:px-8 select-none"
     >
-      {/* 极简非对称多列文字瀑布流：无任何卡片外框、无任何线条 */}
-      <div className="columns-1 sm:columns-2 gap-x-10 [column-fill:_balance]">
-        {quotes.map((quote) => {
-          const isHovered = hoveredId === quote.id;
-          const isCopied = copiedId === quote.id;
-          const isDimmed = hoveredId !== null && !isHovered;
-          const dateStr = formatQuoteDate(quote.createdAt);
+      {/* 撑满全宽容器（最大宽 1040px，与上方相册画板宽度对齐） */}
+      <div className="mx-auto max-w-[1040px] w-full">
+        {/* 双列极简文字瀑布流：无边框、无线条、高度随内容自适应延展 */}
+        <div className="columns-1 md:columns-2 gap-x-16 lg:gap-x-20 [column-fill:_balance]">
+          {quotes.map((quote) => {
+            const isHovered = hoveredId === quote.id;
+            const isCopied = copiedId === quote.id;
+            const isDimmed = hoveredId !== null && !isHovered;
+            const dateStr = formatQuoteDate(quote.createdAt);
 
-          return (
-            <article
-              key={quote.id}
-              onMouseEnter={() => setHoveredId(quote.id)}
-              onMouseLeave={() => setHoveredId(null)}
-              onClick={() => handleCopyQuote(quote)}
-              className={`group relative break-inside-avoid mb-9 cursor-pointer transition-opacity duration-300 ${
-                isDimmed ? "opacity-35" : "opacity-100"
-              }`}
-            >
-              {/* 金句主体文字排版 */}
-              <p
-                className={`m-0 text-gray-1200 dark:text-gray-1200 transition-colors duration-200 ${getQuoteTextClass(
-                  quote.displaySize
-                )}`}
+            return (
+              <article
+                key={quote.id}
+                onMouseEnter={() => setHoveredId(quote.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                onClick={() => handleCopyQuote(quote)}
+                className={`group relative break-inside-avoid mb-10 sm:mb-12 cursor-pointer transition-opacity duration-300 ${
+                  isDimmed ? "opacity-35" : "opacity-100"
+                }`}
               >
-                {quote.content}
-              </p>
+                {/* 1. 金句正文（仅展示句子本身，保留换行） */}
+                <p className="m-0 font-serif text-[1.05rem] sm:text-[1.125rem] leading-[1.8] text-gray-1200 dark:text-gray-1200 whitespace-pre-line transition-colors duration-200">
+                  {quote.content}
+                </p>
 
-              {/* 金句署名、出处与微型复制提示（零线条、纯文字流） */}
-              <div className="mt-2.5 flex items-center justify-between text-caption font-mono text-gray-800 dark:text-gray-900 transition-colors duration-200">
-                <div className="flex items-center gap-1.5 truncate">
-                  {quote.authorName && (
-                    <span className="truncate">
-                      — {quote.authorName}
-                    </span>
-                  )}
-                  {quote.source && (
-                    <span className="truncate opacity-80">
-                      · {quote.source}
-                    </span>
-                  )}
-                </div>
-
-                <div className="shrink-0 flex items-center gap-2 text-micro">
-                  {/* 点击后的极简微气泡状态 */}
+                {/* 2. 极简日期展示（仅展示日期，点击复制时显示微提示） */}
+                <div className="mt-2.5 flex items-center justify-end font-mono text-[11px] text-gray-800 dark:text-gray-900 transition-colors duration-200">
                   {isCopied ? (
                     <span className="text-emerald-600 dark:text-emerald-400 font-sans tracking-tight animate-in">
                       已复制
                     </span>
                   ) : (
-                    dateStr && (
-                      <span className="opacity-60">{dateStr}</span>
-                    )
+                    dateStr && <span>{dateStr}</span>
                   )}
                 </div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-
-      {/* 底部极简纯文本操作器：零边框、零阴影、纯净呼吸 */}
-      {hasMore && (
-        <div className="mt-8 flex justify-center">
-          <button
-            type="button"
-            onClick={handleLoadMore}
-            disabled={isLoadingMore}
-            className="group inline-flex items-center gap-2 bg-transparent p-0 text-caption font-mono text-gray-800 dark:text-gray-900 hover:text-gray-1200 dark:hover:text-gray-1200 transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <span className="inline-block transition-transform duration-300 group-hover:rotate-180">
-              ✦
-            </span>
-            <span>
-              {isLoadingMore ? "正在拾取更多句子..." : "拾取更多句子"}
-            </span>
-          </button>
+              </article>
+            );
+          })}
         </div>
-      )}
+      </div>
     </footer>
   );
 }

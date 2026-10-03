@@ -17,7 +17,6 @@ import {
   FALLBACK_ARTICLES,
   FALLBACK_PHOTOS,
   FALLBACK_FRIENDS,
-  FALLBACK_QUOTES,
 } from "@/constants/fallbacks";
 
 export const profileService = {
@@ -183,22 +182,41 @@ export const commentService = {
 
 export const quoteService = {
   /**
-   * 分页获取已审核通过的公开金句
-   * @param query 查询参数（页码、条数）
-   * @returns 金句列表（具备优雅离线兜底降级）
+   * 一次性全量获取所有已审核通过的公开金句
+   * 100% 真实数据驱动，绝不塞入任何虚假数据
+   * @returns 真实金句列表
    */
-  async getPublicQuotes(query?: QuoteQueryDTO): Promise<QuoteItemVO[]> {
+  async getAllPublicQuotes(): Promise<QuoteItemVO[]> {
     try {
-      const params = new URLSearchParams();
-      params.append("page", String(query?.page || 1));
-      params.append("size", String(query?.size || 12));
-      const res = await http.get<PageResult<QuoteItemVO>>(`/quotes?${params.toString()}`);
-      if (res && Array.isArray(res.records) && res.records.length > 0) {
-        return res.records;
+      // 后端单页最大限制为 48 条，首屏请求第一页
+      const res = await http.get<PageResult<QuoteItemVO>>(`/quotes?page=1&size=48`);
+      if (!res || !Array.isArray(res.records)) {
+        return [];
       }
-      return FALLBACK_QUOTES;
-    } catch {
-      return FALLBACK_QUOTES;
+      const allRecords = [...res.records];
+      const total = res.total || allRecords.length;
+
+      // 若总条数超过单页上限，并发拉取剩余页数，确保一次性全量加载
+      if (total > 48) {
+        const totalPages = Math.ceil(total / 48);
+        const restPagePromises = [];
+        for (let p = 2; p <= totalPages; p++) {
+          restPagePromises.push(
+            http.get<PageResult<QuoteItemVO>>(`/quotes?page=${p}&size=48`)
+          );
+        }
+        const restResults = await Promise.all(restPagePromises);
+        for (const pageRes of restResults) {
+          if (pageRes && Array.isArray(pageRes.records)) {
+            allRecords.push(...pageRes.records);
+          }
+        }
+      }
+
+      return allRecords;
+    } catch (err) {
+      console.warn("获取公开金句失败:", err);
+      return [];
     }
   },
 };

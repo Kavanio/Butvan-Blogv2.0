@@ -3,7 +3,6 @@ import { ArticleItemVO } from "@/types/article";
 import { NoteItemVO } from "@/types/note";
 import { PhotoVO } from "@/types/album";
 import { FriendLinkVO } from "@/types/friend";
-import { QuoteItemVO } from "@/types/quote";
 
 export const FALLBACK_PROFILE: ProfileVO = {
   nickname: "可梵",
@@ -119,81 +118,4 @@ export const FALLBACK_FRIENDS: FriendLinkVO[] = [
   },
 ];
 
-/**
- * 极简金句墙兜底数据集（离线或弱网下稳定保证全站无缝呈现）
- */
-export const FALLBACK_QUOTES: QuoteItemVO[] = [
-  {
-    id: 1,
-    content: "但行好事，莫问前程。",
-    authorName: "可梵",
-    source: "座右铭",
-    displaySize: "LARGE",
-    isPinned: true,
-    createdAt: "2026-09-01T00:00:00",
-  },
-  {
-    id: 2,
-    content: "Stay hungry, stay foolish.",
-    authorName: "Steve Jobs",
-    source: "Stanford Speech",
-    displaySize: "MEDIUM",
-    isPinned: false,
-    createdAt: "2026-08-20T00:00:00",
-  },
-  {
-    id: 3,
-    content: "总有起风的清晨，总有绚烂的黄昏。",
-    authorName: "史铁生",
-    source: "病隙碎笔",
-    displaySize: "MEDIUM",
-    isPinned: false,
-    createdAt: "2026-08-15T00:00:00",
-  },
-  {
-    id: 4,
-    content: "Simplicity is the ultimate sophistication.",
-    authorName: "Leonardo da Vinci",
-    source: "Notebooks",
-    displaySize: "SMALL",
-    isPinned: false,
-    createdAt: "2026-07-28T00:00:00",
-  },
-  {
-    id: 5,
-    content: "自由不是随心所欲，而是自我主宰。",
-    authorName: "康德",
-    source: "实践理性批判",
-    displaySize: "MEDIUM",
-    isPinned: false,
-    createdAt: "2026-07-10T00:00:00",
-  },
-  {
-    id: 6,
-    content: "Programs must be written for people to read, and only incidentally for machines to execute.",
-    authorName: "Harold Abelson",
-    source: "SICP",
-    displaySize: "SMALL",
-    isPinned: false,
-    createdAt: "2026-06-30T00:00:00",
-  },
-  {
-    id: 7,
-    content: "人生是旷野，不是轨道。",
-    authorName: "佚名",
-    source: null,
-    displaySize: "LARGE",
-    isPinned: false,
-    createdAt: "2026-06-18T00:00:00",
-  },
-  {
-    id: 8,
-    content: "把注意力从复杂的过度工程收缩回文字、排版与内容本身。",
-    authorName: "可梵",
-    source: "全栈手记",
-    displaySize: "SMALL",
-    isPinned: false,
-    createdAt: "2026-06-01T00:00:00",
-  },
-];
 

@@ -24,7 +24,7 @@ export default async function HomePage() {
     articleService.getPublicArticles({ page: 1, size: 8 }),
     albumService.getPublicPhotos(1, 18),
     friendService.getApprovedFriends(),
-    quoteService.getPublicQuotes({ page: 1, size: 8 }),
+    quoteService.getAllPublicQuotes(),
   ]);
 
   return (
