@@ -23,10 +23,24 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Butvan · Design Engineer & Full-Stack Developer",
-  description: "Personal blog and digital garden of Butvan. Product thinking, design engineering, and creativity.",
+  title: "可梵的个人博客",
+  description: "但行好事，莫问前程。专注于 Web 全栈开发、AI 架构探秘与后端高并发实践，记录技术思考与生活感悟。",
   icons: {
-    icon: "/icon.svg",
+    icon: "https://minio.server.butvan.top/blog2/USER_AVATAR/20260721/fbc00155-a6f0-4685-9067-fa1ab1c7356f.png",
+    shortcut: "https://minio.server.butvan.top/blog2/USER_AVATAR/20260721/fbc00155-a6f0-4685-9067-fa1ab1c7356f.png",
+    apple: "https://minio.server.butvan.top/blog2/USER_AVATAR/20260721/fbc00155-a6f0-4685-9067-fa1ab1c7356f.png",
+  },
+  openGraph: {
+    title: "可梵的个人博客",
+    description: "但行好事，莫问前程。专注于 Web 全栈开发、AI 架构探秘与后端高并发实践，记录技术思考与生活感悟。",
+    images: [
+      {
+        url: "https://minio.server.butvan.top/blog2/USER_AVATAR/20260721/fbc00155-a6f0-4685-9067-fa1ab1c7356f.png",
+        width: 400,
+        height: 400,
+        alt: "可梵",
+      },
+    ],
   },
   other: {
     google: "notranslate",
@@ -47,6 +61,8 @@ export default function RootLayout({
     >
       <head>
         <meta name="google" content="notranslate" />
+        <link rel="icon" href="https://minio.server.butvan.top/blog2/USER_AVATAR/20260721/fbc00155-a6f0-4685-9067-fa1ab1c7356f.png" />
+        <link rel="apple-touch-icon" href="https://minio.server.butvan.top/blog2/USER_AVATAR/20260721/fbc00155-a6f0-4685-9067-fa1ab1c7356f.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`,

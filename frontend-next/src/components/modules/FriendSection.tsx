@@ -97,7 +97,10 @@ export function FriendSection({ friends }: FriendSectionProps) {
           >
             <div className="relative size-8 shrink-0 overflow-hidden rounded-full border border-gray-400 bg-gray-200">
               <Image
-                src={friend.avatarUrl || "/icon.svg"}
+                src={
+                  friend.avatarUrl ||
+                  "https://minio.server.butvan.top/blog2/USER_AVATAR/20260721/fbc00155-a6f0-4685-9067-fa1ab1c7356f.png"
+                }
                 alt={friend.name}
                 fill
                 className="object-cover"

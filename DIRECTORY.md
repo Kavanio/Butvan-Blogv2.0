@@ -620,6 +620,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 | `docx/database/migration-v0.9.sql` | 数据库 | PostgreSQL v0.9 迁移脚本（实现 GitHub 和 2FA 安全绑定与双重认证） |
 | `docx/wechat_login_sealed_record_refactor.md` | 项目文档 | 微信扫码登录 Java 17/21 sealed + record 架构重构详细指南 |
 | `frontend-next/src/app/page.tsx` | 新前台-首页 | 五大流动板块首页（Header、Note、Article、Photo、Friend） |
+| `frontend-next/src/app/favicon.ico` | 新前台-图标 | 继承并完全对齐旧版个人博客专属高保真 Favicon 图标 |
 | `frontend-next/src/components/core/ContentRow.tsx` | 新前台-组件 | 核心统一行组件（哈希确定性倾角微缩图 + 弹簧阻尼 + 音效） |
 | `frontend-next/src/components/modules/PhotoSection.tsx` | 新前台-组件 | 1040px 突破全宽交互式真实相册剪贴画板（100% 真实数据驱动、自适应数量槽位、防误触全屏灯箱、物理自由拖拽） |
 | `frontend-next/src/services/client.ts` | 新前台-网络 | HttpClient 网络层（超时控制、IP 透传、离线优雅熔断兜底） |

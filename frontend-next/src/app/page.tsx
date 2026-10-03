@@ -11,7 +11,6 @@ import { NoteSection } from "@/components/modules/NoteSection";
 import { ArticleSection } from "@/components/modules/ArticleSection";
 import { PhotoSection } from "@/components/modules/PhotoSection";
 import { FriendSection } from "@/components/modules/FriendSection";
-import { Signature } from "@/components/Signature";
 
 export const revalidate = 60; // 每 60 秒增量静态刷新 (ISR)
 
@@ -42,10 +41,8 @@ export default async function HomePage() {
       {/* 板块五：摄影相册画板 (Photo Section，100% 真实数据交互画板) */}
       <PhotoSection photos={photos} />
 
-      {/* 页尾右下角手写矢量签名 */}
-      <footer className="mt-16 flex items-center justify-end sm:mt-12">
-        <Signature />
-      </footer>
+      {/* 页尾留白 */}
+      <footer className="mt-16 sm:mt-12" />
     </main>
   );
 }

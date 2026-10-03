@@ -106,14 +106,14 @@ export const FALLBACK_FRIENDS: FriendLinkVO[] = [
     id: 2,
     name: "Chloé Maillot",
     url: "https://chloemaillot.fr",
-    avatarUrl: "/icon.svg",
+    avatarUrl: "https://minio.server.butvan.top/blog2/USER_AVATAR/20260721/fbc00155-a6f0-4685-9067-fa1ab1c7356f.png",
     description: "Design Engineer based in Paris. Ships what she designs.",
   },
   {
     id: 3,
     name: "Next.js Lab",
     url: "https://nextjs.org",
-    avatarUrl: "/icon.svg",
+    avatarUrl: "https://minio.server.butvan.top/blog2/USER_AVATAR/20260721/fbc00155-a6f0-4685-9067-fa1ab1c7356f.png",
     description: "The React Framework for the Web. Performance and typography.",
   },
 ];
