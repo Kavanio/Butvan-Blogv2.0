@@ -95,6 +95,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │       ├── components/                        #     🧩 组件层
 │       │   ├── ui/                            #       纯原子 UI 原语（无业务依赖）
 │       │   │   ├── Badge.tsx                  #         微状态/分类彩色徽章
+│       │   │   ├── VerifiedBadge.tsx          #         站长大V认证蓝标徽章（带微悬浮气泡浮层提示）
 │       │   │   ├── NoiseOverlay.tsx           #         胶片微噪点图层
 │       │   │   ├── SpringModal.tsx            #         物理阻尼弹簧模态框
 │       │   │   └── TextLink.tsx               #         下划线交互文字链

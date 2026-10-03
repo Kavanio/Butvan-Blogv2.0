@@ -2,7 +2,7 @@
 
 import React from "react";
 
-export type BadgeTone = "pink" | "gray" | "emerald";
+export type BadgeTone = "pink" | "blue" | "gray" | "emerald";
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -12,7 +12,8 @@ interface BadgeProps {
 
 export function Badge({ children, tone = "gray", className = "" }: BadgeProps) {
   const toneStyles: Record<BadgeTone, string> = {
-    pink: "bg-[#fde3ef] text-[#9b3860] dark:bg-[#462134] dark:text-[#f2aed0]",
+    blue: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
+    pink: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
     gray: "bg-gray-300 text-gray-1000",
     emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
   };

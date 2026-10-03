@@ -6,6 +6,7 @@ import { MessageSquare, Heart, CornerDownRight, Send, CheckCircle2, AlertCircle,
 import { commentService } from "@/services";
 import { CommentVO, CommentCreateDTO } from "@/types/comment";
 import { Badge } from "@/components/ui/Badge";
+import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { useSound } from "@/hooks/useSound";
 import { formatDate } from "@/utils/date";
 
@@ -143,7 +144,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                 className="w-7 h-7 rounded-full object-cover shadow-xs"
               />
             ) : (
-              <div className="w-7 h-7 rounded-full bg-linear-to-br from-pink-500 to-rose-600 text-white font-mono text-xs flex items-center justify-center font-bold shadow-xs">
+              <div className="w-7 h-7 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 text-white font-mono text-xs flex items-center justify-center font-bold shadow-xs">
                 {avatarLetter}
               </div>
             )}
@@ -153,7 +154,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                   href={item.visitorWebsite}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-semibold text-xs text-gray-900 dark:text-gray-100 hover:text-pink-600 underline decoration-gray-300 underline-offset-2 transition-colors"
+                  className="font-semibold text-xs text-gray-900 dark:text-gray-100 hover:text-blue-600 underline decoration-gray-300 underline-offset-2 transition-colors"
                 >
                   {item.nickname}
                 </a>
@@ -162,11 +163,11 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                   {item.nickname}
                 </span>
               )}
-              {item.isAuthor && <Badge tone="pink">博主</Badge>}
+              {item.isAuthor && <VerifiedBadge type="admin" />}
               {item.isPinned && <Badge tone="emerald">置顶</Badge>}
               {item.replyTo && (
                 <span className="text-xs text-gray-600 dark:text-gray-400">
-                  回复 <span className="font-medium text-pink-600 dark:text-pink-400">@{item.replyTo}</span>
+                  回复 <span className="font-medium text-blue-600 dark:text-blue-400">@{item.replyTo}</span>
                 </span>
               )}
             </div>
@@ -259,12 +260,12 @@ export function CommentSection({ articleId }: CommentSectionProps) {
           >
             <form onSubmit={handleSubmit} className="space-y-3">
               {replyTarget && (
-                <div className="flex items-center justify-between bg-pink-50 dark:bg-pink-950/40 px-3.5 py-2 rounded-xl text-xs text-pink-700 dark:text-pink-300">
+                <div className="flex items-center justify-between bg-blue-50/90 dark:bg-blue-950/40 px-3.5 py-2 rounded-xl text-xs text-blue-700 dark:text-blue-300">
                   <span>回复 @{replyTarget.nickname}：</span>
                   <button
                     type="button"
                     onClick={() => setReplyTarget(null)}
-                    className="text-xs font-medium underline hover:text-pink-900 dark:hover:text-pink-200 cursor-pointer"
+                    className="text-xs font-medium underline hover:text-blue-900 dark:hover:text-blue-200 cursor-pointer"
                   >
                     取消回复
                   </button>
