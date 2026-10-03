@@ -76,7 +76,7 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
   return (
     <div className="min-h-screen bg-[var(--color-gray-bg)] text-[var(--color-gray-1200)] selection:bg-[#fde3ef] selection:text-[#9b3860]">
       <main className="max-w-[40.5rem] mx-auto px-6 pt-8 sm:pt-12 pb-24">
-        {/* 顶部极简导航栏 (← 圆形按钮 + EN · FR + 主题切换，返回文章归档列表) */}
+        {/* 顶部极简导航栏 (← 圆形按钮 + 主题切换，返回文章归档列表) */}
         <DetailHeader backHref="/article" />
 
         {/* 标题前置微型 Meta 摘要：Sep 21, 2026 · Category · 10 min */}
