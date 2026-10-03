@@ -21,3 +21,15 @@ export function getTitleTilt(title: string): string {
   const sign = hash % 2 === 0 ? -1 : 1;
   return `${sign * mag}deg`;
 }
+
+/**
+ * 依据手记标题计算精致适度的默认微倾角（-3.5deg ~ 3.5deg，避开 0deg）
+ * 适合常态拍立得封面卡片微倾摆放，手感自然不过度
+ */
+export function getNoteTilt(title: string): string {
+  const hash = Math.abs(stringHash(title));
+  const magnitudes = [1.5, 2, 2.5, 3, 3.5];
+  const mag = magnitudes[hash % magnitudes.length];
+  const sign = hash % 2 === 0 ? -1 : 1;
+  return `${sign * mag}deg`;
+}

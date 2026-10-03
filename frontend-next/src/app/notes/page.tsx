@@ -9,6 +9,15 @@ import { ContentRow } from "@/components/core/ContentRow";
 import { useSound } from "@/hooks/useSound";
 import { formatDate } from "@/utils/date";
 
+const DEFAULT_NOTE_COVERS = [
+  "/images/craft/matcha.jpg",
+  "/images/craft/cafe.jpg",
+  "/images/craft/cat-table.jpg",
+  "/images/craft/flowers.jpg",
+  "/images/craft/greenhouse.jpg",
+  "/images/craft/car-watercolor.jpg",
+];
+
 export default function NoteArchivePage() {
   const [notes, setNotes] = useState<NoteItemVO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,7 +142,7 @@ export default function NoteArchivePage() {
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center text-xs text-gray-500 font-mono">未搜索到相关手记</div>
           ) : (
-            filtered.map((item) => (
+            filtered.map((item, index) => (
               <ContentRow
                 key={item.id}
                 title={item.title}
@@ -141,7 +150,12 @@ export default function NoteArchivePage() {
                 badge={item.mood}
                 badgeTone="pink"
                 href={`/notes/${item.slug || item.id}`}
-                thumb={item.coverImageUrl}
+                thumb={
+                  item.coverImageUrl ||
+                  DEFAULT_NOTE_COVERS[index % DEFAULT_NOTE_COVERS.length]
+                }
+                showThumb={true}
+                tiltDefault={true}
               />
             ))
           )}

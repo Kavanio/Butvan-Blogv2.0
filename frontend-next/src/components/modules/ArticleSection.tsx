@@ -32,7 +32,8 @@ export function ArticleSection({ articles }: ArticleSectionProps) {
             badge={article.categoryName}
             badgeTone="gray"
             isPinned={article.isPinned}
-            showThumb={true}
+            // 遵循设计：文章列表中不展示右侧缩略图，保持纯文字与日期干净对齐
+            showThumb={false}
           />
         ))}
       </div>

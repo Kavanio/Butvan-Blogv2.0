@@ -12,6 +12,7 @@ export interface NoteItemVO {
   weather?: string;
   location?: string;
   coverImageUrl?: string;
+  coverImageUrls?: string[];
   publishedAt: string;
   viewCount?: number;
   likeCount?: number;
