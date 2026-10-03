@@ -28,6 +28,13 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
   const [copied, setCopied] = useState(false);
   const { playSparkle, playDroplet } = useSound();
 
+  // 确保进入文章详情页时始终处于页面最顶部
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, []);
+
   // 本地持久化已点赞状态
   useEffect(() => {
     if (typeof window === "undefined") return;

@@ -114,6 +114,7 @@ export function ContentRow({
   return (
     <Link
       href={href}
+      scroll={true}
       onMouseEnter={playTick}
       onClick={playRelease}
       className="block w-full"

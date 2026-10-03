@@ -17,6 +17,27 @@ interface PageTransitionProps {
 export function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname();
 
+  // 路由发生切换时，确保新页面始终从最顶端开始呈现
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      if ("scrollRestoration" in window.history) {
+        window.history.scrollRestoration = "manual";
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+
+      // 在下一帧与微任务中二次确认，彻底消除异步组件水合与高度重算导致的滚动位置回退
+      const raf = requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      });
+
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [pathname]);
+
   return (
     <motion.div
       key={pathname}

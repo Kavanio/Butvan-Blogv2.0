@@ -27,6 +27,13 @@ export function NoteDetailClient({ note }: NoteDetailClientProps) {
   const [copied, setCopied] = useState(false);
   const { playSparkle, playDroplet } = useSound();
 
+  // 确保进入手记详情页时始终处于页面最顶部
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, []);
+
   const handleLike = async () => {
     if (hasLiked) return;
     playSparkle();
