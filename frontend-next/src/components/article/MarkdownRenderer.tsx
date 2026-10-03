@@ -54,6 +54,7 @@ export function MarkdownRenderer({
       return { cleanHtml: "", headings: [] };
     }
 
+    let headingIndex = 0;
     const headingList: TocItem[] = [];
     const inst = new Marked({
       gfm: true,
@@ -64,13 +65,14 @@ export function MarkdownRenderer({
       renderer: {
         heading({ text, depth }) {
           const plainText = text.replace(/<[^>]+>/g, "").trim();
+          headingIndex += 1;
           const slug =
             "heading-" +
             plainText
               .toLowerCase()
               .replace(/[^\w\u4e00-\u9fa5]+/g, "-")
               .replace(/^-+|-+$/g, "");
-          const id = slug || `heading-${Math.random().toString(36).slice(2, 7)}`;
+          const id = slug && slug !== "heading-" ? slug : `heading-${headingIndex}`;
 
           if (depth === 2 || depth === 3) {
             headingList.push({ id, text: plainText, level: depth });
@@ -238,9 +240,10 @@ export function MarkdownRenderer({
       <div
         className={`${className} max-w-none`}
         onClick={handleContainerClick}
+        suppressHydrationWarning
       >
         {!reactContent ? (
-          <div dangerouslySetInnerHTML={{ __html: cleanHtml }} />
+          <div dangerouslySetInnerHTML={{ __html: cleanHtml }} suppressHydrationWarning />
         ) : (
           reactContent
         )}

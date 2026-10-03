@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ShieldCheck, Copy, Check, ExternalLink } from "lucide-react";
 import { useSound } from "@/hooks/useSound";
 
@@ -13,6 +13,7 @@ interface ArticleCopyrightProps {
 /**
  * 文章原创版权声明微型卡片
  * 紧凑布局，提供 CC BY-NC-SA 4.0 协议和一键复制本文链接
+ * 安全处理 SSR Hydration，避免客户端/服务端 window.location 不匹配报错
  */
 export function ArticleCopyright({
   title,
@@ -20,16 +21,23 @@ export function ArticleCopyright({
   url,
 }: ArticleCopyrightProps) {
   const [copied, setCopied] = useState(false);
+  const [articleUrl, setArticleUrl] = useState<string>(url || "");
   const { playDroplet } = useSound();
 
-  const articleUrl =
-    url || (typeof window !== "undefined" ? window.location.href : "");
+  // 严格在客户端挂载后再同步真实的浏览器地址，消除 SSR Hydration Mismatch
+  useEffect(() => {
+    if (!url && typeof window !== "undefined") {
+      setArticleUrl(window.location.href);
+    }
+  }, [url]);
 
   const handleCopy = () => {
-    if (!articleUrl) return;
+    const targetUrl =
+      articleUrl || (typeof window !== "undefined" ? window.location.href : "");
+    if (!targetUrl) return;
     playDroplet();
     if (typeof window !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(articleUrl);
+      navigator.clipboard.writeText(targetUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -51,8 +59,11 @@ export function ArticleCopyright({
         <div className="flex items-start gap-1">
           <span className="text-gray-400 dark:text-gray-500 shrink-0">本文链接：</span>
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="truncate max-w-[280px] sm:max-w-md text-gray-700 dark:text-gray-300">
-              {articleUrl}
+            <span
+              className="truncate max-w-[280px] sm:max-w-md text-gray-700 dark:text-gray-300"
+              suppressHydrationWarning
+            >
+              {articleUrl || "..."}
             </span>
             <button
               onClick={handleCopy}
