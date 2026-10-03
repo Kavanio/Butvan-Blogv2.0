@@ -17,7 +17,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
   const [comments, setComments] = useState<CommentVO[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isFormExpanded, setIsFormExpanded] = useState(false);
   const [replyTarget, setReplyTarget] = useState<CommentVO | null>(null);
   const [likedMap, setLikedMap] = useState<Record<number, boolean>>({});
   const [likeCounts, setLikeCounts] = useState<Record<number, number>>({});
@@ -195,7 +195,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
             onClick={() => {
               playTick();
               setReplyTarget(item);
-              setIsExpanded(true);
+              setIsFormExpanded(true);
             }}
             className="inline-flex items-center gap-1.5 hover:text-gray-950 dark:hover:text-white transition-colors cursor-pointer"
           >
@@ -216,16 +216,8 @@ export function CommentSection({ articleId }: CommentSectionProps) {
 
   return (
     <section className="mt-12 pt-4">
-      {/* 读者见解可折叠标题栏（默认收起，点击平滑展开） */}
-      <button
-        type="button"
-        onClick={() => {
-          playTick();
-          setIsExpanded(!isExpanded);
-        }}
-        className="w-full flex items-center justify-between py-2.5 text-left group cursor-pointer transition-colors"
-        aria-expanded={isExpanded}
-      >
+      {/* 区域 1 顶部标题栏与表单折叠切换器 */}
+      <div className="flex items-center justify-between py-2.5">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-gray-700 dark:text-gray-300" />
           <h3 className="text-sm font-semibold tracking-tight text-gray-900 dark:text-gray-100">
@@ -236,29 +228,36 @@ export function CommentSection({ articleId }: CommentSectionProps) {
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors">
-          <span className="font-mono">{isExpanded ? "收起" : "展开讨论"}</span>
-          {isExpanded ? (
+        <button
+          type="button"
+          onClick={() => {
+            playTick();
+            setIsFormExpanded(!isFormExpanded);
+          }}
+          className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors cursor-pointer"
+          aria-expanded={isFormExpanded}
+        >
+          <span className="font-mono">{isFormExpanded ? "收起" : "参与讨论"}</span>
+          {isFormExpanded ? (
             <ChevronUp className="w-4 h-4" />
           ) : (
             <ChevronDown className="w-4 h-4" />
           )}
-        </div>
-      </button>
+        </button>
+      </div>
 
-      {/* 折叠/展开内容区 */}
+      {/* 区域 1：输入发表表单（默认收起，点击平滑展开） */}
       <AnimatePresence initial={false}>
-        {isExpanded && (
+        {isFormExpanded && (
           <motion.div
-            key="comment-expandable-content"
+            key="comment-form-container"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="overflow-hidden pt-4"
+            className="overflow-hidden pt-3 pb-5"
           >
-            {/* 发表/回复表单（无多余边框，发送按钮固定在 textarea 右下角） */}
-            <form onSubmit={handleSubmit} className="mb-8 space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-3">
               {replyTarget && (
                 <div className="flex items-center justify-between bg-pink-50 dark:bg-pink-950/40 px-3.5 py-2 rounded-xl text-xs text-pink-700 dark:text-pink-300">
                   <span>回复 @{replyTarget.nickname}：</span>
@@ -343,20 +342,22 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                 )}
               </AnimatePresence>
             </form>
-
-            {/* 评论展示列表 */}
-            {loading ? (
-              <div className="py-8 text-center text-xs text-gray-600 font-mono">加载讨论中...</div>
-            ) : comments.length === 0 ? (
-              <div className="py-8 text-center text-xs text-gray-600 font-mono">暂无见解，欢迎抢先沙发留念 ☕️</div>
-            ) : (
-              <div className="flex flex-col gap-1.5">
-                {comments.map((c) => renderComment(c))}
-              </div>
-            )}
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 区域 2：评论展示列表（常驻展示，不收起） */}
+      <div className="mt-2">
+        {loading ? (
+          <div className="py-8 text-center text-xs text-gray-600 font-mono">加载讨论中...</div>
+        ) : comments.length === 0 ? (
+          <div className="py-8 text-center text-xs text-gray-600 font-mono">暂无见解，欢迎抢先沙发留念 ☕️</div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            {comments.map((c) => renderComment(c))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }
