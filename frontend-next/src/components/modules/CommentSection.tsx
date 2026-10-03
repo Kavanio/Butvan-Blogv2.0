@@ -311,14 +311,18 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                   className="w-full text-xs px-3.5 pt-3 pb-11 rounded-xl bg-gray-100/80 hover:bg-gray-100 focus:bg-gray-200/60 dark:bg-gray-850/70 dark:hover:bg-gray-850 dark:focus:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-none outline-none focus:outline-none ring-0 focus:ring-0 transition-colors resize-y min-h-[96px]"
                 />
 
-                {/* 固定在 textarea 右下角的发送按钮 */}
+                {/* 固定在 textarea 右下角的发送按钮（输入内容后高亮天蓝色） */}
                 <div className="absolute right-2.5 bottom-2.5 z-10">
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gray-900 hover:bg-black text-white dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-xs font-medium active:scale-95 transition-all disabled:opacity-50 cursor-pointer shadow-xs"
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 shadow-xs ${
+                      formData.content.trim().length > 0
+                        ? "bg-sky-500 hover:bg-sky-600 text-white shadow-sky-500/20 active:scale-95 cursor-pointer"
+                        : "bg-gray-200/80 text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed"
+                    } ${submitting ? "opacity-60 cursor-wait" : ""}`}
                   >
-                    <Send className="w-3.5 h-3.5" />
+                    <Send className={`w-3.5 h-3.5 ${formData.content.trim().length > 0 ? "text-white" : "text-gray-400 dark:text-gray-500"}`} />
                     <span>{submitting ? "提交中..." : "发表评论"}</span>
                   </button>
                 </div>
