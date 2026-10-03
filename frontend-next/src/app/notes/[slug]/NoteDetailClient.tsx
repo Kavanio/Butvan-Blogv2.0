@@ -51,8 +51,8 @@ export function NoteDetailClient({ note }: NoteDetailClientProps) {
   return (
     <div className="min-h-screen bg-[var(--color-gray-bg)] text-[var(--color-gray-1200)] selection:bg-[#fde3ef] selection:text-[#9b3860]">
       <main className="max-w-[40.5rem] mx-auto px-6 pt-8 sm:pt-12 pb-24">
-        {/* 顶部极简导航栏 (← 圆形按钮 + EN · FR + 主题切换) */}
-        <DetailHeader backHref="/" />
+        {/* 顶部极简导航栏 (← 圆形按钮 + EN · FR + 主题切换，返回手记归档列表) */}
+        <DetailHeader backHref="/notes" />
 
         {/* 标题前置微型 Meta 摘要：Sep 21, 2026 · Mood / Weather */}
         <div className="text-xs sm:text-[13px] text-gray-800 dark:text-gray-400 font-mono tracking-tight mb-3">
@@ -80,17 +80,6 @@ export function NoteDetailClient({ note }: NoteDetailClientProps) {
             </p>
             <div className="w-full h-px bg-gray-200/80 dark:bg-gray-800/80 mb-10" />
           </>
-        )}
-
-        {/* 封面图（若存在） */}
-        {note.coverImageUrl && (
-          <div className="my-8 overflow-hidden rounded-xl border border-gray-200/60 dark:border-gray-800/60">
-            <img
-              src={note.coverImageUrl}
-              alt={note.title}
-              className="w-full object-cover max-h-80"
-            />
-          </div>
         )}
 
         {/* 沉浸式 Markdown 正文 */}

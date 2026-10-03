@@ -261,14 +261,15 @@ export function MarkdownRenderer({
           props.id = element.getAttribute("id");
         }
 
-        // 拦截图片增强
+        // 拦截图片增强（自适应原图宽高比，避免 object-cover 截断技术图表）
         if (tagName === "img") {
           const rawSrc = element.getAttribute("src") || "";
           props.src = rawSrc;
           props.alt = element.getAttribute("alt") || "";
+          props.loading = "lazy";
           props.className = `${
             element.getAttribute("class") || ""
-          } cursor-zoom-in hover:opacity-95 transition-opacity rounded-xl max-h-[520px] object-cover shadow-sm`;
+          } cursor-zoom-in hover:opacity-95 transition-opacity rounded-xl max-w-full h-auto shadow-sm my-4`;
         }
 
         if (tagName === "a") {
@@ -346,17 +347,22 @@ export function MarkdownRenderer({
 
   return (
     <>
-      <div
-        className={`${className} max-w-none`}
-        onClick={handleContainerClick}
-        suppressHydrationWarning
-      >
-        {!reactContent ? (
-          <div dangerouslySetInnerHTML={{ __html: cleanHtml }} suppressHydrationWarning />
-        ) : (
-          reactContent
-        )}
-      </div>
+      {!reactContent ? (
+        <div
+          className={`${className} max-w-none`}
+          onClick={handleContainerClick}
+          dangerouslySetInnerHTML={{ __html: cleanHtml }}
+          suppressHydrationWarning
+        />
+      ) : (
+        <div
+          className={`${className} max-w-none`}
+          onClick={handleContainerClick}
+          suppressHydrationWarning
+        >
+          {reactContent}
+        </div>
+      )}
 
       {/* 图片全屏预览模态框 */}
       <ImagePreviewModal
