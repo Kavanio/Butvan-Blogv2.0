@@ -2,9 +2,47 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Marked } from "marked";
+import { ExternalLink } from "lucide-react";
 import { MarkdownCodeBlock } from "./MarkdownCodeBlock";
 import { ImagePreviewModal } from "./ImagePreviewModal";
 import { TocItem } from "./ArticleToc";
+
+// 常见 HTML 属性名与 React JSX 驼峰属性名映射表
+const ATTR_MAP: Record<string, string> = {
+  allowfullscreen: "allowFullScreen",
+  frameborder: "frameBorder",
+  colspan: "colSpan",
+  rowspan: "rowSpan",
+  autocomplete: "autoComplete",
+  autofocus: "autoFocus",
+  autoplay: "autoPlay",
+  crossorigin: "crossOrigin",
+  tabindex: "tabIndex",
+  readonly: "readOnly",
+  maxlength: "maxLength",
+  cellpadding: "cellPadding",
+  cellspacing: "cellSpacing",
+  contenteditable: "contentEditable",
+  spellcheck: "spellCheck",
+};
+
+/**
+ * 将原生 CSS 行内 style 字符串解析为 React style 对象映射
+ */
+function parseStyleString(styleStr: string): Record<string, string> {
+  const styleObj: Record<string, string> = {};
+  if (!styleStr) return styleObj;
+  styleStr.split(";").forEach((rule) => {
+    const [k, v] = rule.split(":");
+    if (k && v) {
+      const camelKey = k
+        .trim()
+        .replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+      styleObj[camelKey] = v.trim();
+    }
+  });
+  return styleObj;
+}
 
 interface MarkdownRendererProps {
   content?: string;
@@ -146,7 +184,72 @@ export function MarkdownRenderer({
           }
         }
 
-        // 构建 React 属性
+        // 拦截 <iframe> 标签并进行精美 macOS 窗口卡片包装
+        if (tagName === "iframe") {
+          const rawSrc = element.getAttribute("src") || "";
+          const rawTitle =
+            element.getAttribute("title") ||
+            element.getAttribute("name") ||
+            "HTML 交互页面演示";
+          const allowFullScreen =
+            element.hasAttribute("allowfullscreen") ||
+            element.getAttribute("allowfullscreen") === "true";
+          const inlineStyle = parseStyleString(element.getAttribute("style") || "");
+
+          return (
+            <div
+              key={`iframe-card-${index}`}
+              className="my-6 not-prose rounded-xl border border-gray-200/80 dark:border-gray-800/80 bg-white dark:bg-[#121214] overflow-hidden shadow-sm transition-all"
+            >
+              {/* 顶部 macOS 窗口控制栏 */}
+              <div className="flex items-center justify-between px-3.5 py-2 bg-gray-50/80 dark:bg-gray-900/60 border-b border-gray-200/60 dark:border-gray-800/60 text-xs select-none">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]/90 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]/90 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#27c93f]/90 inline-block" />
+                  </div>
+                  <span className="truncate max-w-[240px] sm:max-w-[360px] font-mono text-[11px] text-gray-700 dark:text-gray-300 font-medium">
+                    {rawTitle}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-medium font-mono">
+                    HTML 预览
+                  </span>
+                  {rawSrc && (
+                    <a
+                      href={rawSrc}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="在新标签页独立打开预览"
+                      className="p-1 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* iframe 真正嵌入区 */}
+              <iframe
+                src={rawSrc}
+                title={rawTitle}
+                style={{
+                  width: inlineStyle.width || "100%",
+                  height: inlineStyle.height || "450px",
+                  border: "none",
+                  ...inlineStyle,
+                }}
+                className="w-full min-h-[380px] border-none bg-white block"
+                allowFullScreen={allowFullScreen}
+              />
+            </div>
+          );
+        }
+
+        // 构建通用 React 属性映射
         const props: Record<string, any> = {
           key: `${tagName}-${index}`,
         };
@@ -180,19 +283,25 @@ export function MarkdownRenderer({
 
         for (let i = 0; i < element.attributes.length; i++) {
           const attr = element.attributes[i];
+          const attrNameLower = attr.name.toLowerCase();
+
           if (
             ["class", "id", "src", "alt", "href", "target", "rel"].includes(
-              attr.name
+              attrNameLower
             )
           ) {
             continue;
           }
           if (attr.name.startsWith("on")) continue;
 
-          let reactAttrName = attr.name;
-          if (attr.name === "colspan") reactAttrName = "colSpan";
-          if (attr.name === "rowspan") reactAttrName = "rowSpan";
+          // 核心修复：将 HTML style 字符串解析为 React 对象映射，防止 Runtime Error
+          if (attrNameLower === "style") {
+            props.style = parseStyleString(attr.value);
+            continue;
+          }
 
+          // 核心修复：转换 allowfullscreen -> allowFullScreen 等 React 驼峰属性
+          const reactAttrName = ATTR_MAP[attrNameLower] || attr.name;
           props[reactAttrName] = attr.value;
         }
 
