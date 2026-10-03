@@ -17,7 +17,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
   const [comments, setComments] = useState<CommentVO[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [replyTarget, setReplyTarget] = useState<CommentVO | null>(null);
   const [likedMap, setLikedMap] = useState<Record<number, boolean>>({});
   const [likeCounts, setLikeCounts] = useState<Record<number, number>>({});
@@ -279,7 +279,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                   placeholder="昵称 *"
                   value={formData.visitorName}
                   onChange={(e) => setFormData({ ...formData, visitorName: e.target.value })}
-                  className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all"
+                  className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/80 hover:bg-gray-100 focus:bg-gray-200/60 dark:bg-gray-850/70 dark:hover:bg-gray-850 dark:focus:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-none outline-none focus:outline-none ring-0 focus:ring-0 transition-colors"
                 />
                 <input
                   type="email"
@@ -287,14 +287,14 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                   placeholder="邮箱 (不公开，用于头像) *"
                   value={formData.visitorEmail}
                   onChange={(e) => setFormData({ ...formData, visitorEmail: e.target.value })}
-                  className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all"
+                  className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/80 hover:bg-gray-100 focus:bg-gray-200/60 dark:bg-gray-850/70 dark:hover:bg-gray-850 dark:focus:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-none outline-none focus:outline-none ring-0 focus:ring-0 transition-colors"
                 />
                 <input
                   type="url"
                   placeholder="个人主页 (选填)"
                   value={formData.visitorWebsite}
                   onChange={(e) => setFormData({ ...formData, visitorWebsite: e.target.value })}
-                  className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all"
+                  className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/80 hover:bg-gray-100 focus:bg-gray-200/60 dark:bg-gray-850/70 dark:hover:bg-gray-850 dark:focus:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-none outline-none focus:outline-none ring-0 focus:ring-0 transition-colors"
                 />
               </div>
 
@@ -306,7 +306,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                   placeholder="写下你的想法，支持 Markdown 语法..."
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  className="w-full text-xs px-3.5 pt-3 pb-11 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all resize-y min-h-[96px]"
+                  className="w-full text-xs px-3.5 pt-3 pb-11 rounded-xl bg-gray-100/80 hover:bg-gray-100 focus:bg-gray-200/60 dark:bg-gray-850/70 dark:hover:bg-gray-850 dark:focus:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-none outline-none focus:outline-none ring-0 focus:ring-0 transition-colors resize-y min-h-[96px]"
                 />
 
                 {/* 固定在 textarea 右下角的发送按钮 */}
