@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Heart, CornerDownRight, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { MessageSquare, Heart, CornerDownRight, Send, CheckCircle2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { commentService } from "@/services";
 import { CommentVO, CommentCreateDTO } from "@/types/comment";
 import { Badge } from "@/components/ui/Badge";
@@ -17,6 +17,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
   const [comments, setComments] = useState<CommentVO[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [replyTarget, setReplyTarget] = useState<CommentVO | null>(null);
   const [likedMap, setLikedMap] = useState<Record<number, boolean>>({});
   const [likeCounts, setLikeCounts] = useState<Record<number, number>>({});
@@ -194,6 +195,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
             onClick={() => {
               playTick();
               setReplyTarget(item);
+              setIsExpanded(true);
             }}
             className="inline-flex items-center gap-1.5 hover:text-gray-950 dark:hover:text-white transition-colors cursor-pointer"
           >
@@ -214,109 +216,147 @@ export function CommentSection({ articleId }: CommentSectionProps) {
 
   return (
     <section className="mt-12 pt-4">
-      <div className="flex items-center justify-between mb-5">
+      {/* 读者见解可折叠标题栏（默认收起，点击平滑展开） */}
+      <button
+        type="button"
+        onClick={() => {
+          playTick();
+          setIsExpanded(!isExpanded);
+        }}
+        className="w-full flex items-center justify-between py-2.5 text-left group cursor-pointer transition-colors"
+        aria-expanded={isExpanded}
+      >
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-gray-700 dark:text-gray-300" />
           <h3 className="text-sm font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            读者见解 / Discussions ({comments.length})
+            读者见解 / Discussions
           </h3>
-        </div>
-        <span className="text-xs text-gray-600 dark:text-gray-400 font-mono">Markdown 支持 • 友善交流</span>
-      </div>
-
-      {/* 发表/回复表单（无多余边框卡片，扁平融入页面） */}
-      <form onSubmit={handleSubmit} className="mb-8 space-y-3">
-        {replyTarget && (
-          <div className="flex items-center justify-between bg-pink-50 dark:bg-pink-950/40 px-3.5 py-2 rounded-xl text-xs text-pink-700 dark:text-pink-300">
-            <span>回复 @{replyTarget.nickname}：</span>
-            <button
-              type="button"
-              onClick={() => setReplyTarget(null)}
-              className="text-xs font-medium underline hover:text-pink-900 dark:hover:text-pink-200 cursor-pointer"
-            >
-              取消回复
-            </button>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          <input
-            type="text"
-            required
-            placeholder="昵称 *"
-            value={formData.visitorName}
-            onChange={(e) => setFormData({ ...formData, visitorName: e.target.value })}
-            className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all"
-          />
-          <input
-            type="email"
-            required
-            placeholder="邮箱 (不公开，用于头像) *"
-            value={formData.visitorEmail}
-            onChange={(e) => setFormData({ ...formData, visitorEmail: e.target.value })}
-            className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all"
-          />
-          <input
-            type="url"
-            placeholder="个人主页 (选填)"
-            value={formData.visitorWebsite}
-            onChange={(e) => setFormData({ ...formData, visitorWebsite: e.target.value })}
-            className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all"
-          />
+          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-mono font-medium">
+            {comments.length}
+          </span>
         </div>
 
-        <textarea
-          required
-          rows={3}
-          placeholder="写下你的想法，支持 Markdown 语法..."
-          value={formData.content}
-          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-          className="w-full text-xs px-3.5 py-3 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all resize-y min-h-[90px]"
-        />
+        <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors">
+          <span className="font-mono">{isExpanded ? "收起" : "展开讨论"}</span>
+          {isExpanded ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
+        </div>
+      </button>
 
-        <div className="flex items-center justify-between pt-1">
-          <AnimatePresence mode="wait">
-            {statusMessage && (
-              <motion.div
-                initial={{ opacity: 0, x: -5 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0 }}
-                className={`inline-flex items-center gap-1.5 text-xs font-medium ${
-                  statusMessage.type === "success" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                }`}
-              >
-                {statusMessage.type === "success" ? (
-                  <CheckCircle2 className="w-4 h-4" />
-                ) : (
-                  <AlertCircle className="w-4 h-4" />
+      {/* 折叠/展开内容区 */}
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            key="comment-expandable-content"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="overflow-hidden pt-4"
+          >
+            {/* 发表/回复表单（无多余边框，发送按钮固定在 textarea 右下角） */}
+            <form onSubmit={handleSubmit} className="mb-8 space-y-3">
+              {replyTarget && (
+                <div className="flex items-center justify-between bg-pink-50 dark:bg-pink-950/40 px-3.5 py-2 rounded-xl text-xs text-pink-700 dark:text-pink-300">
+                  <span>回复 @{replyTarget.nickname}：</span>
+                  <button
+                    type="button"
+                    onClick={() => setReplyTarget(null)}
+                    className="text-xs font-medium underline hover:text-pink-900 dark:hover:text-pink-200 cursor-pointer"
+                  >
+                    取消回复
+                  </button>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <input
+                  type="text"
+                  required
+                  placeholder="昵称 *"
+                  value={formData.visitorName}
+                  onChange={(e) => setFormData({ ...formData, visitorName: e.target.value })}
+                  className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all"
+                />
+                <input
+                  type="email"
+                  required
+                  placeholder="邮箱 (不公开，用于头像) *"
+                  value={formData.visitorEmail}
+                  onChange={(e) => setFormData({ ...formData, visitorEmail: e.target.value })}
+                  className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all"
+                />
+                <input
+                  type="url"
+                  placeholder="个人主页 (选填)"
+                  value={formData.visitorWebsite}
+                  onChange={(e) => setFormData({ ...formData, visitorWebsite: e.target.value })}
+                  className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all"
+                />
+              </div>
+
+              {/* 相对定位容器：textarea 与固定在右下角的发送按钮 */}
+              <div className="relative">
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="写下你的想法，支持 Markdown 语法..."
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  className="w-full text-xs px-3.5 pt-3 pb-11 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all resize-y min-h-[96px]"
+                />
+
+                {/* 固定在 textarea 右下角的发送按钮 */}
+                <div className="absolute right-2.5 bottom-2.5 z-10">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gray-900 hover:bg-black text-white dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-xs font-medium active:scale-95 transition-all disabled:opacity-50 cursor-pointer shadow-xs"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{submitting ? "提交中..." : "发表评论"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 状态提示信息 */}
+              <AnimatePresence mode="wait">
+                {statusMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    className={`inline-flex items-center gap-1.5 text-xs font-medium pt-0.5 ${
+                      statusMessage.type === "success" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                    }`}
+                  >
+                    {statusMessage.type === "success" ? (
+                      <CheckCircle2 className="w-4 h-4" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4" />
+                    )}
+                    <span>{statusMessage.text}</span>
+                  </motion.div>
                 )}
-                <span>{statusMessage.text}</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <div className="ml-auto">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-gray-900 hover:bg-black text-white dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-xs font-medium active:scale-95 transition-all disabled:opacity-50 cursor-pointer shadow-xs"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>{submitting ? "提交中..." : "发表评论"}</span>
-            </button>
-          </div>
-        </div>
-      </form>
+              </AnimatePresence>
+            </form>
 
-      {/* 评论展示列表 */}
-      {loading ? (
-        <div className="py-8 text-center text-xs text-gray-600 font-mono">加载讨论中...</div>
-      ) : comments.length === 0 ? (
-        <div className="py-8 text-center text-xs text-gray-600 font-mono">暂无见解，欢迎抢先沙发留念 ☕️</div>
-      ) : (
-        <div className="flex flex-col gap-1.5">
-          {comments.map((c) => renderComment(c))}
-        </div>
-      )}
+            {/* 评论展示列表 */}
+            {loading ? (
+              <div className="py-8 text-center text-xs text-gray-600 font-mono">加载讨论中...</div>
+            ) : comments.length === 0 ? (
+              <div className="py-8 text-center text-xs text-gray-600 font-mono">暂无见解，欢迎抢先沙发留念 ☕️</div>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {comments.map((c) => renderComment(c))}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
