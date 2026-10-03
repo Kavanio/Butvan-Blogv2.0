@@ -6,6 +6,7 @@ import { ArrowLeft, Sparkles, Search } from "lucide-react";
 import { noteService } from "@/services";
 import { NoteItemVO } from "@/types/note";
 import { ContentRow } from "@/components/core/ContentRow";
+import { ContentRowSkeleton } from "@/components/ui/Skeleton";
 import { useSound } from "@/hooks/useSound";
 import { formatDate } from "@/utils/date";
 
@@ -138,7 +139,11 @@ export default function NoteArchivePage() {
         {/* 手记列表 */}
         <div className="flex flex-col">
           {loading ? (
-            <div className="py-12 text-center text-xs text-gray-500 font-mono">加载手记归档中...</div>
+            <div className="flex flex-col gap-2 py-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <ContentRowSkeleton key={i} hasThumb={true} />
+              ))}
+            </div>
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center text-xs text-gray-500 font-mono">未搜索到相关手记</div>
           ) : (

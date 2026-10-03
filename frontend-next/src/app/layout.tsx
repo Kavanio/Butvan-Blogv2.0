@@ -1,6 +1,9 @@
+import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { I18nProvider } from "@/lib/i18n";
+import { TopProgressBar } from "@/components/ui/TopProgressBar";
+import { PageTransition } from "@/components/ui/PageTransition";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -70,8 +73,11 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen relative antialiased transition-colors duration-200">
+        <Suspense fallback={null}>
+          <TopProgressBar />
+        </Suspense>
         <I18nProvider>
-          {children}
+          <PageTransition>{children}</PageTransition>
 
           {/* 全局胶片噪点纹理层（0.05 不透明度消除屏幕塑料感） */}
           <div

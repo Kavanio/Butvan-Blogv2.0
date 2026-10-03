@@ -6,6 +6,7 @@ import { ArrowLeft, BookOpen, Search } from "lucide-react";
 import { articleService } from "@/services";
 import { ArticleItemVO } from "@/types/article";
 import { ContentRow } from "@/components/core/ContentRow";
+import { ContentRowSkeleton } from "@/components/ui/Skeleton";
 import { useSound } from "@/hooks/useSound";
 import { formatDate } from "@/utils/date";
 
@@ -140,7 +141,11 @@ export default function ArticleArchivePage() {
         {/* 文章列表 */}
         <div className="flex flex-col">
           {loading ? (
-            <div className="py-12 text-center text-xs text-gray-500 font-mono">加载全量文章归档中...</div>
+            <div className="flex flex-col gap-2 py-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <ContentRowSkeleton key={i} hasThumb={false} />
+              ))}
+            </div>
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center text-xs text-gray-500 font-mono">未搜索到相关文章</div>
           ) : (

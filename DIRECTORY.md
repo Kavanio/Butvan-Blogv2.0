@@ -621,6 +621,10 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 | `docx/wechat_login_sealed_record_refactor.md` | 项目文档 | 微信扫码登录 Java 17/21 sealed + record 架构重构详细指南 |
 | `frontend-next/src/app/page.tsx` | 新前台-首页 | 五大流动板块首页（Header、Note、Article、Photo、Friend） |
 | `frontend-next/src/app/favicon.ico` | 新前台-图标 | 继承并完全对齐旧版个人博客专属高保真 Favicon 图标 |
+| `frontend-next/src/app/loading.tsx` | 新前台-加载 | 首页及全站默认首屏 Suspense 流光骨架屏 |
+| `frontend-next/src/components/ui/TopProgressBar.tsx` | 新前台-动效 | 全局天蓝色顶栏路由加载进度条（拦截链接点击、即时微光反馈） |
+| `frontend-next/src/components/ui/PageTransition.tsx` | 新前台-动效 | 全局页面级 Framer Motion 平滑淡入与机械阻尼微位移过渡容器 |
+| `frontend-next/src/components/ui/Skeleton.tsx` | 新前台-骨架 | 极客流光骨架屏套件（ContentRowSkeleton、DetailSkeleton、HomePageSkeleton） |
 | `frontend-next/src/components/core/ContentRow.tsx` | 新前台-组件 | 核心统一行组件（哈希确定性倾角微缩图 + 弹簧阻尼 + 音效） |
 | `frontend-next/src/components/modules/PhotoSection.tsx` | 新前台-组件 | 1040px 突破全宽交互式真实相册剪贴画板（100% 真实数据驱动、自适应数量槽位、防误触全屏灯箱、物理自由拖拽） |
 | `frontend-next/src/services/client.ts` | 新前台-网络 | HttpClient 网络层（超时控制、IP 透传、离线优雅熔断兜底） |

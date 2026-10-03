@@ -367,3 +367,35 @@ body {
   animation-delay: 180ms;
 }
 
+/* 极客骨架屏流动高光 (Shimmer Skeleton Pulse) */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(229, 231, 235, 0.45) 0%,
+    rgba(243, 244, 246, 0.9) 50%,
+    rgba(229, 231, 235, 0.45) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(38, 38, 38, 0.5) 0%,
+    rgba(65, 65, 65, 0.85) 50%,
+    rgba(38, 38, 38, 0.5) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
