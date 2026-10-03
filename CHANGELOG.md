@@ -2,6 +2,27 @@
 
 本文档记录 **Butvan Blog 2.0** 的全部版本更新明细与发版履历，遵循 [Semantic Versioning 2.0.0](https://semver.org/lang/zh-CN/) 版本规范。
 
+## v2.2.0
+
+- **发布日期（Asia/Shanghai）**：2026-10-03
+- **对比基线**：v2.1.5...v2.2.0
+- **发布通道**：Stable
+
+在全新 Next.js 极客前台 (`frontend-next`) 首页最底部新增“极简金句墙”页脚（Quote Wall Footer），打破传统臃肿页脚边界，以纯粹通透的非对称文字流呈现博主技术哲学与人生格言。
+
+### 新增功能与特性
+
+- **极简无边框金句墙（Quote Wall Footer）**：作为首页语义化收尾页脚，零线条、零 border、零卡片阴影，纯粹文字与背景浑然一体，彻底摒弃传统页脚的繁复冗余。
+- **非对称双列文字瀑布流**：采用优雅的 CSS 多列流式排版（`columns-1 sm:columns-2`），金句长短与字号（LARGE/MEDIUM/SMALL）自适应呼吸，消除留白过度，保持紧凑自然的高级文人排印质感。
+- **阅读聚焦与微声学交互（Focus Lens & Acoustic Haptics）**：鼠标掠过单条金句时触发全景聚焦，其余金句平滑微降透明度；支持点击金句快速一键复制并伴随 Web Audio 拟真水滴音效反馈。
+- **动态拾取与离线兜底服务（QuoteService & Fallbacks）**：打通 `/api/quotes` 公开接口进行 ISR 增量服务端预取，支持无痕追加更多金句；内置高质感哲学与极客格言离线兜底，确保全天候离线容灾。
+
+### Commits
+
+- feat(quote): 新增首页底部极简无边框金句墙页脚
+
+---
+
 ## v2.1.5
 
 - **发布日期（Asia/Shanghai）**：2026-10-03

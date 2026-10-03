@@ -9,6 +9,7 @@ import { NoteItemVO, NoteDetailVO, NoteQueryDTO } from "@/types/note";
 import { PhotoVO } from "@/types/album";
 import { FriendLinkVO, FriendLinkApplyDTO } from "@/types/friend";
 import { CommentVO, CommentCreateDTO } from "@/types/comment";
+import { QuoteItemVO, QuoteQueryDTO } from "@/types/quote";
 import { PageResult } from "@/types/api";
 import {
   FALLBACK_PROFILE,
@@ -16,6 +17,7 @@ import {
   FALLBACK_ARTICLES,
   FALLBACK_PHOTOS,
   FALLBACK_FRIENDS,
+  FALLBACK_QUOTES,
 } from "@/constants/fallbacks";
 
 export const profileService = {
@@ -178,3 +180,26 @@ export const commentService = {
     }
   },
 };
+
+export const quoteService = {
+  /**
+   * 分页获取已审核通过的公开金句
+   * @param query 查询参数（页码、条数）
+   * @returns 金句列表（具备优雅离线兜底降级）
+   */
+  async getPublicQuotes(query?: QuoteQueryDTO): Promise<QuoteItemVO[]> {
+    try {
+      const params = new URLSearchParams();
+      params.append("page", String(query?.page || 1));
+      params.append("size", String(query?.size || 12));
+      const res = await http.get<PageResult<QuoteItemVO>>(`/quotes?${params.toString()}`);
+      if (res && Array.isArray(res.records) && res.records.length > 0) {
+        return res.records;
+      }
+      return FALLBACK_QUOTES;
+    } catch {
+      return FALLBACK_QUOTES;
+    }
+  },
+};
+

@@ -119,10 +119,11 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │       │       ├── ArticleSection.tsx         #         深度架构长文列表板块
 │       │       ├── PhotoSection.tsx           #         1040px 交互式照片剪贴画板（100%还原图1目标样式 + 防拖拽误触发放大 + 动态融合相册）
 │       │       ├── FriendSection.tsx          #         底部邻居友链展示与申请板块
+│       │       ├── QuoteWallSection.tsx       #         ★ 极简金句墙收尾页脚（零线条/零边框非对称文字瀑布流 + 阅读聚焦沉浸视效 + 轻触复制）
 │       │       └── CommentSection.tsx         #         树状嵌套高可靠评论系统（乐观更新）
 │       ├── services/                          #     🌐 统一数据服务防腐层
 │       │   ├── client.ts                      #       HttpClient 封装（超时重试、真实 IP 透传、熔断捕获）
-│       │   └── index.ts                       #       领域 Service（profile, note, article, friend, photo, comment）
+│       │   └── index.ts                       #       领域 Service（profile, note, article, friend, photo, quote, comment）
 │       ├── constants/                         #     📦 静态常量与兜底容灾
 │       │   ├── fallbacks.ts                   #       全量离线兜底数据字典（后端断开时秒级降级不崩溃）
 │       │   └── site.ts                        #       站点全局元数据配置
@@ -140,6 +141,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │       │   ├── note.ts                        #       随笔手记模型
 │       │   ├── album.ts                       #       相册与拍立得照片模型
 │       │   ├── friend.ts                      #       友链模型
+│       │   ├── quote.ts                       #       金句语录模型与分页传输契约
 │       │   ├── comment.ts                     #       树状评论模型
 │       │   ├── profile.ts                     #       博主名片模型
 │       │   └── api.ts                         #       统一 API 响应契约
@@ -619,7 +621,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 | `docx/database/migration-v0.7.sql` | 数据库 | PostgreSQL v0.7 迁移脚本（安全插入后台“资源管理 -> 媒体内容管理”菜单） |
 | `docx/database/migration-v0.9.sql` | 数据库 | PostgreSQL v0.9 迁移脚本（实现 GitHub 和 2FA 安全绑定与双重认证） |
 | `docx/wechat_login_sealed_record_refactor.md` | 项目文档 | 微信扫码登录 Java 17/21 sealed + record 架构重构详细指南 |
-| `frontend-next/src/app/page.tsx` | 新前台-首页 | 五大流动板块首页（Header、Note、Article、Photo、Friend） |
+| `frontend-next/src/app/page.tsx` | 新前台-首页 | 六大流动板块首页（Header、Note、Article、Photo、Friend、QuoteWall） |
 | `frontend-next/src/app/favicon.ico` | 新前台-图标 | 继承并完全对齐旧版个人博客专属高保真 Favicon 图标 |
 | `frontend-next/src/app/loading.tsx` | 新前台-加载 | 首页及全站默认首屏 Suspense 流光骨架屏 |
 | `frontend-next/src/components/ui/TopProgressBar.tsx` | 新前台-动效 | 全局天蓝色顶栏路由加载进度条（拦截链接点击、即时微光反馈） |
@@ -627,6 +629,8 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 | `frontend-next/src/components/ui/Skeleton.tsx` | 新前台-骨架 | 极客流光骨架屏套件（ContentRowSkeleton、DetailSkeleton、HomePageSkeleton） |
 | `frontend-next/src/components/core/ContentRow.tsx` | 新前台-组件 | 核心统一行组件（哈希确定性倾角微缩图 + 弹簧阻尼 + 音效） |
 | `frontend-next/src/components/modules/PhotoSection.tsx` | 新前台-组件 | 1040px 突破全宽交互式真实相册剪贴画板（100% 真实数据驱动、自适应数量槽位、防误触全屏灯箱、物理自由拖拽） |
+| `frontend-next/src/components/modules/QuoteWallSection.tsx` | 新前台-组件 | 极简金句墙收尾页脚（零线条/零边框非对称文字瀑布流 + 阅读聚焦沉浸视效 + 轻触复制与触感反馈） |
+| `frontend-next/src/types/quote.ts` | 新前台-模型 | 前台已审核金句业务实体与分页传输契约模型 |
 | `frontend-next/src/services/client.ts` | 新前台-网络 | HttpClient 网络层（超时控制、IP 透传、离线优雅熔断兜底） |
 | `frontend-next/src/constants/fallbacks.ts` | 新前台-容灾 | 全量离线兜底数据仓库（后端离线保障前台秒级降级不白屏） |
 | `frontend-next/src/lib/sound.ts` | 新前台-音频 | 基于 Web Audio API 的程序化触觉反馈音效合成引擎 |
@@ -660,4 +664,4 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 
 ---
 
-*最后更新：2026-10-01*
+*最后更新：2026-10-03*

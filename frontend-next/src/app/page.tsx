@@ -5,23 +5,26 @@ import {
   articleService,
   albumService,
   friendService,
+  quoteService,
 } from "@/services";
 import { HeaderSection } from "@/components/modules/HeaderSection";
 import { NoteSection } from "@/components/modules/NoteSection";
 import { ArticleSection } from "@/components/modules/ArticleSection";
 import { PhotoSection } from "@/components/modules/PhotoSection";
 import { FriendSection } from "@/components/modules/FriendSection";
+import { QuoteWallSection } from "@/components/modules/QuoteWallSection";
 
 export const revalidate = 60; // 每 60 秒增量静态刷新 (ISR)
 
 export default async function HomePage() {
-  // 服务端并发获取五大板块业务数据（带自动离线兜底降级）
-  const [profile, notes, articles, photos, friends] = await Promise.all([
+  // 服务端并发获取业务数据（带自动离线兜底降级）
+  const [profile, notes, articles, photos, friends, quotes] = await Promise.all([
     profileService.getProfile(),
     noteService.getPublicNotes({ page: 1, size: 6 }),
     articleService.getPublicArticles({ page: 1, size: 8 }),
     albumService.getPublicPhotos(1, 18),
     friendService.getApprovedFriends(),
+    quoteService.getPublicQuotes({ page: 1, size: 8 }),
   ]);
 
   return (
@@ -41,8 +44,8 @@ export default async function HomePage() {
       {/* 板块五：摄影相册画板 (Photo Section，100% 真实数据交互画板) */}
       <PhotoSection photos={photos} />
 
-      {/* 页尾留白 */}
-      <footer className="mt-16 sm:mt-12" />
+      {/* 板块六：极简金句墙收尾页脚 (Quote Wall Footer，零线条零边框纯粹文字流) */}
+      <QuoteWallSection quotes={quotes} />
     </main>
   );
 }
