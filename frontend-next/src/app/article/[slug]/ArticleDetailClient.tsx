@@ -110,40 +110,40 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
           className="prose-editorial"
         />
 
-        {/* 文末极简互动条与版权署名 */}
-        <div className="mt-16 pt-8 border-t border-gray-200/60 dark:border-gray-800/60">
-          <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 font-mono">
+        {/* 文末极简互动条与版权署名（无多余线条，高对比度清晰交互） */}
+        <div className="mt-14 pt-4">
+          <div className="flex items-center justify-between text-xs font-mono">
             {/* 极简点赞微交互 */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleLike}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer ${
                 hasLiked
-                  ? "text-rose-600 dark:text-rose-400 font-medium"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                  ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-medium"
+                  : "bg-gray-100 hover:bg-gray-200/80 dark:bg-gray-800/80 dark:hover:bg-gray-700/80 text-gray-800 dark:text-gray-200"
               }`}
             >
               <Heart
                 className={`size-3.5 transition-transform ${
-                  hasLiked ? "fill-rose-500 text-rose-500 scale-110" : ""
+                  hasLiked ? "fill-rose-500 text-rose-500 scale-110" : "text-gray-700 dark:text-gray-300"
                 }`}
               />
-              <span>{likes}</span>
+              <span className="font-semibold">{likes}</span>
             </motion.button>
 
             {/* 极简分享链接 */}
             <button
               onClick={handleCopyLink}
-              className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200/80 dark:bg-gray-800/80 dark:hover:bg-gray-700/80 text-gray-800 dark:text-gray-200 transition-colors cursor-pointer font-medium"
             >
               {copied ? (
                 <>
-                  <Check className="size-3.5 text-emerald-500" />
-                  <span className="text-emerald-500">已复制链接</span>
+                  <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-emerald-600 dark:text-emerald-400">已复制链接</span>
                 </>
               ) : (
                 <>
-                  <Share2 className="size-3.5" />
+                  <Share2 className="size-3.5 text-gray-700 dark:text-gray-300" />
                   <span>分享</span>
                 </>
               )}
@@ -151,7 +151,7 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
           </div>
 
           {/* 极简版权小注 */}
-          <div className="mt-4 text-[11px] font-mono text-gray-400 dark:text-gray-500 text-center sm:text-left">
+          <div className="mt-5 text-xs text-gray-600 dark:text-gray-400 text-center sm:text-left font-sans">
             © {new Date().getFullYear()} 可梵 · CC BY-NC-SA 4.0 许可
           </div>
         </div>

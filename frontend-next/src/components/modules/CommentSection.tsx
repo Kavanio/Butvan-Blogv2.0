@@ -127,10 +127,10 @@ export function CommentSection({ articleId }: CommentSectionProps) {
     return (
       <div
         key={item.id}
-        className={`group relative flex flex-col gap-2 rounded-xl p-3.5 transition-colors ${
+        className={`group relative flex flex-col gap-2 rounded-xl transition-colors ${
           isChild
-            ? "ml-6 border-l-2 border-dashed border-gray-300 dark:border-gray-800 bg-gray-100/50 dark:bg-gray-900/40 pl-4 my-2"
-            : "border border-gray-200/80 dark:border-gray-800/80 bg-white/40 dark:bg-gray-950/40 my-3"
+            ? "ml-6 sm:ml-8 mt-2 p-3.5 rounded-xl bg-gray-100/70 dark:bg-gray-850/60"
+            : "p-3.5 rounded-xl bg-gray-100/40 hover:bg-gray-100/70 dark:bg-gray-900/40 dark:hover:bg-gray-900/70 my-2"
         }`}
       >
         <div className="flex items-center justify-between">
@@ -139,10 +139,10 @@ export function CommentSection({ articleId }: CommentSectionProps) {
               <img
                 src={item.avatarUrl}
                 alt={item.nickname}
-                className="w-7 h-7 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10"
+                className="w-7 h-7 rounded-full object-cover shadow-xs"
               />
             ) : (
-              <div className="w-7 h-7 rounded-full bg-linear-to-br from-pink-400 to-rose-500 text-white font-mono text-micro flex items-center justify-center font-bold shadow-xs">
+              <div className="w-7 h-7 rounded-full bg-linear-to-br from-pink-500 to-rose-600 text-white font-mono text-xs flex items-center justify-center font-bold shadow-xs">
                 {avatarLetter}
               </div>
             )}
@@ -152,41 +152,41 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                   href={item.visitorWebsite}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-medium text-xs text-gray-900 dark:text-gray-100 hover:text-pink-500 underline decoration-gray-300 underline-offset-2 transition-colors"
+                  className="font-semibold text-xs text-gray-900 dark:text-gray-100 hover:text-pink-600 underline decoration-gray-300 underline-offset-2 transition-colors"
                 >
                   {item.nickname}
                 </a>
               ) : (
-                <span className="font-medium text-xs text-gray-900 dark:text-gray-100">
+                <span className="font-semibold text-xs text-gray-900 dark:text-gray-100">
                   {item.nickname}
                 </span>
               )}
               {item.isAuthor && <Badge tone="pink">博主</Badge>}
               {item.isPinned && <Badge tone="emerald">置顶</Badge>}
               {item.replyTo && (
-                <span className="text-micro text-gray-500">
-                  回复 <span className="font-medium text-gray-700 dark:text-gray-300">@{item.replyTo}</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400">
+                  回复 <span className="font-medium text-pink-600 dark:text-pink-400">@{item.replyTo}</span>
                 </span>
               )}
             </div>
           </div>
-          <span className="text-micro text-gray-600 font-mono">
+          <span className="text-xs text-gray-600 dark:text-gray-400 font-mono">
             {formatDate(item.createdAt)}
           </span>
         </div>
 
-        <div className="text-xs text-gray-800 dark:text-gray-200 leading-relaxed break-words pl-9.5">
+        <div className="text-[13px] text-gray-900 dark:text-gray-100 leading-relaxed break-words pl-9.5">
           {item.content}
         </div>
 
-        <div className="flex items-center justify-end gap-3 pl-9.5 pt-1 text-micro text-gray-600">
+        <div className="flex items-center justify-end gap-3 pl-9.5 pt-1 text-xs text-gray-700 dark:text-gray-300">
           <button
             onClick={() => handleLike(item.id)}
-            className={`inline-flex items-center gap-1 transition-colors hover:text-rose-500 cursor-pointer ${
-              isLiked ? "text-rose-500 font-medium" : ""
+            className={`inline-flex items-center gap-1.5 transition-colors hover:text-rose-600 cursor-pointer ${
+              isLiked ? "text-rose-600 dark:text-rose-400 font-medium" : ""
             }`}
           >
-            <Heart className={`w-3.5 h-3.5 ${isLiked ? "fill-rose-500" : ""}`} />
+            <Heart className={`w-3.5 h-3.5 ${isLiked ? "fill-rose-500 text-rose-500" : ""}`} />
             <span>{likes > 0 ? likes : "点赞"}</span>
           </button>
 
@@ -195,7 +195,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
               playTick();
               setReplyTarget(item);
             }}
-            className="inline-flex items-center gap-1 hover:text-gray-900 dark:hover:text-gray-200 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 hover:text-gray-950 dark:hover:text-white transition-colors cursor-pointer"
           >
             <CornerDownRight className="w-3.5 h-3.5" />
             <span>回复</span>
@@ -213,40 +213,40 @@ export function CommentSection({ articleId }: CommentSectionProps) {
   };
 
   return (
-    <section className="mt-12 pt-8 border-t border-dashed border-gray-200 dark:border-gray-800">
-      <div className="flex items-center justify-between mb-6">
+    <section className="mt-12 pt-4">
+      <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-gray-500" />
-          <h3 className="text-sm font-medium tracking-tight text-gray-900 dark:text-gray-100">
+          <MessageSquare className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+          <h3 className="text-sm font-semibold tracking-tight text-gray-900 dark:text-gray-100">
             读者见解 / Discussions ({comments.length})
           </h3>
         </div>
-        <span className="text-micro text-gray-600 font-mono">Markdown 支持 • 友善交流</span>
+        <span className="text-xs text-gray-600 dark:text-gray-400 font-mono">Markdown 支持 • 友善交流</span>
       </div>
 
-      {/* 发表/回复表单 */}
-      <form onSubmit={handleSubmit} className="mb-8 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 p-4 transition-all">
+      {/* 发表/回复表单（无多余边框卡片，扁平融入页面） */}
+      <form onSubmit={handleSubmit} className="mb-8 space-y-3">
         {replyTarget && (
-          <div className="flex items-center justify-between bg-pink-50 dark:bg-pink-950/30 px-3 py-1.5 rounded-lg mb-3 text-xs text-pink-700 dark:text-pink-300">
+          <div className="flex items-center justify-between bg-pink-50 dark:bg-pink-950/40 px-3.5 py-2 rounded-xl text-xs text-pink-700 dark:text-pink-300">
             <span>回复 @{replyTarget.nickname}：</span>
             <button
               type="button"
               onClick={() => setReplyTarget(null)}
-              className="text-micro font-medium underline cursor-pointer"
+              className="text-xs font-medium underline hover:text-pink-900 dark:hover:text-pink-200 cursor-pointer"
             >
               取消回复
             </button>
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           <input
             type="text"
             required
             placeholder="昵称 *"
             value={formData.visitorName}
             onChange={(e) => setFormData({ ...formData, visitorName: e.target.value })}
-            className="w-full text-xs px-3 py-2 rounded-lg bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-gray-400 dark:focus:border-gray-600 transition-colors"
+            className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all"
           />
           <input
             type="email"
@@ -254,14 +254,14 @@ export function CommentSection({ articleId }: CommentSectionProps) {
             placeholder="邮箱 (不公开，用于头像) *"
             value={formData.visitorEmail}
             onChange={(e) => setFormData({ ...formData, visitorEmail: e.target.value })}
-            className="w-full text-xs px-3 py-2 rounded-lg bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-gray-400 dark:focus:border-gray-600 transition-colors"
+            className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all"
           />
           <input
             type="url"
             placeholder="个人主页 (选填)"
             value={formData.visitorWebsite}
             onChange={(e) => setFormData({ ...formData, visitorWebsite: e.target.value })}
-            className="w-full text-xs px-3 py-2 rounded-lg bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-gray-400 dark:focus:border-gray-600 transition-colors"
+            className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all"
           />
         </div>
 
@@ -271,24 +271,24 @@ export function CommentSection({ articleId }: CommentSectionProps) {
           placeholder="写下你的想法，支持 Markdown 语法..."
           value={formData.content}
           onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-          className="w-full text-xs px-3 py-2.5 rounded-lg bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 focus:outline-none focus:border-gray-400 dark:focus:border-gray-600 transition-colors resize-y mb-3"
+          className="w-full text-xs px-3.5 py-3 rounded-xl bg-gray-100/90 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 focus:outline-none focus:ring-1.5 focus:ring-gray-300 dark:focus:ring-gray-600 transition-all resize-y min-h-[90px]"
         />
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-1">
           <AnimatePresence mode="wait">
             {statusMessage && (
               <motion.div
                 initial={{ opacity: 0, x: -5 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0 }}
-                className={`inline-flex items-center gap-1.5 text-xs ${
-                  statusMessage.type === "success" ? "text-emerald-600" : "text-rose-500"
+                className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                  statusMessage.type === "success" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                 }`}
               >
                 {statusMessage.type === "success" ? (
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <CheckCircle2 className="w-4 h-4" />
                 ) : (
-                  <AlertCircle className="w-3.5 h-3.5" />
+                  <AlertCircle className="w-4 h-4" />
                 )}
                 <span>{statusMessage.text}</span>
               </motion.div>
@@ -298,9 +298,9 @@ export function CommentSection({ articleId }: CommentSectionProps) {
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gray-900 text-white dark:bg-white dark:text-gray-900 text-xs font-medium hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-gray-900 hover:bg-black text-white dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-xs font-medium active:scale-95 transition-all disabled:opacity-50 cursor-pointer shadow-xs"
             >
-              <Send className="w-3 h-3" />
+              <Send className="w-3.5 h-3.5" />
               <span>{submitting ? "提交中..." : "发表评论"}</span>
             </button>
           </div>
@@ -313,7 +313,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
       ) : comments.length === 0 ? (
         <div className="py-8 text-center text-xs text-gray-600 font-mono">暂无见解，欢迎抢先沙发留念 ☕️</div>
       ) : (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           {comments.map((c) => renderComment(c))}
         </div>
       )}
