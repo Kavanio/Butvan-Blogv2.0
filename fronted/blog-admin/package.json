@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node switch-env.js dev && next dev",
+    "dev:webpack": "node switch-env.js dev && next dev --webpack",
     "dev:sealos": "node switch-env.js sealos && next dev",
     "build": "next build",
     "start": "next start",

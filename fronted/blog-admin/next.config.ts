@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 
 // 后端 Spring Boot 服务地址（开发环境代理目标）
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
@@ -11,6 +12,13 @@ const allowedDevOrigins = process.env.NEXT_PUBLIC_DEV_ORIGINS
 const nextConfig: NextConfig = {
   output: "standalone",
   allowedDevOrigins,
+  /**
+   * 显式指定 Turbopack 根目录为当前前端子项目路径。
+   * 防止 Turbopack 默认向上查找 Git 根目录作为 root 导致无法解析 next 包抛出 panic 并引起客户端死循环刷新
+   */
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   /**
    * 将 /api/*、/uploads/* 代理到后端，支持同源访问。
    * Docker 容器内通过 BACKEND_URL 环境变量指定后端地址。
