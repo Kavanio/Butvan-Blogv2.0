@@ -144,7 +144,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                 className="w-7 h-7 rounded-full object-cover shadow-xs"
               />
             ) : (
-              <div className="w-7 h-7 rounded-full bg-linear-to-br from-sky-400 to-sky-600 text-white font-mono text-xs flex items-center justify-center font-bold shadow-xs">
+              <div className="w-7 h-7 rounded-full bg-linear-to-br from-[#BBDFFF] to-[#80bdfe] text-gray-900 font-mono text-xs flex items-center justify-center font-bold shadow-xs">
                 {avatarLetter}
               </div>
             )}
@@ -169,7 +169,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
               {item.isPinned && <Badge tone="emerald">置顶</Badge>}
               {item.replyTo && (
                 <span className="text-xs text-gray-600 dark:text-gray-400">
-                  回复 <span className="font-medium text-sky-500 dark:text-sky-400">@{item.replyTo}</span>
+                  回复 <span className="font-medium text-sky-600 dark:text-[#BBDFFF]">@{item.replyTo}</span>
                 </span>
               )}
             </div>
@@ -262,12 +262,12 @@ export function CommentSection({ articleId }: CommentSectionProps) {
           >
             <form onSubmit={handleSubmit} className="space-y-3">
               {replyTarget && (
-                <div className="flex items-center justify-between bg-sky-50/90 dark:bg-sky-950/40 px-3.5 py-2 rounded-xl text-xs text-sky-700 dark:text-sky-300">
+                <div className="flex items-center justify-between bg-[#BBDFFF]/30 dark:bg-[#BBDFFF]/15 border border-[#BBDFFF]/40 px-3.5 py-2 rounded-xl text-xs text-gray-900 dark:text-[#BBDFFF]">
                   <span>回复 @{replyTarget.nickname}：</span>
                   <button
                     type="button"
                     onClick={() => setReplyTarget(null)}
-                    className="text-xs font-medium underline hover:text-sky-900 dark:hover:text-sky-200 cursor-pointer"
+                    className="text-xs font-medium underline hover:opacity-75 transition-opacity cursor-pointer"
                   >
                     取消回复
                   </button>
@@ -311,18 +311,18 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                   className="w-full text-xs px-3.5 pt-3 pb-11 rounded-xl bg-gray-100/80 hover:bg-gray-100 focus:bg-gray-200/60 dark:bg-gray-850/70 dark:hover:bg-gray-850 dark:focus:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-none outline-none focus:outline-none ring-0 focus:ring-0 transition-colors resize-y min-h-[96px]"
                 />
 
-                {/* 固定在 textarea 右下角的发送按钮（输入内容后高亮天蓝色） */}
+                {/* 固定在 textarea 右下角的发送按钮（输入内容后高亮 #BBDFFF 天蓝色） */}
                 <div className="absolute right-2.5 bottom-2.5 z-10">
                   <button
                     type="submit"
                     disabled={submitting}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 shadow-xs ${
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 shadow-xs ${
                       formData.content.trim().length > 0
-                        ? "bg-sky-500 hover:bg-sky-600 text-white shadow-sky-500/20 active:scale-95 cursor-pointer"
+                        ? "bg-[#BBDFFF] hover:bg-[#a6d5fc] text-gray-950 shadow-[#BBDFFF]/30 active:scale-95 cursor-pointer"
                         : "bg-gray-200/80 text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed"
                     } ${submitting ? "opacity-60 cursor-wait" : ""}`}
                   >
-                    <Send className={`w-3.5 h-3.5 ${formData.content.trim().length > 0 ? "text-white" : "text-gray-400 dark:text-gray-500"}`} />
+                    <Send className={`w-3.5 h-3.5 ${formData.content.trim().length > 0 ? "text-gray-950" : "text-gray-400 dark:text-gray-500"}`} />
                     <span>{submitting ? "提交中..." : "发表评论"}</span>
                   </button>
                 </div>

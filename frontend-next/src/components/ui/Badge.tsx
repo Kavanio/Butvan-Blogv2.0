@@ -12,8 +12,8 @@ interface BadgeProps {
 
 export function Badge({ children, tone = "gray", className = "" }: BadgeProps) {
   const toneStyles: Record<BadgeTone, string> = {
-    blue: "bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
-    pink: "bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
+    blue: "bg-[#BBDFFF]/30 text-[#1e3a8a] dark:bg-[#BBDFFF]/20 dark:text-[#BBDFFF]",
+    pink: "bg-[#BBDFFF]/30 text-[#1e3a8a] dark:bg-[#BBDFFF]/20 dark:text-[#BBDFFF]",
     gray: "bg-gray-300 text-gray-1000",
     emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
   };

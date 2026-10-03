@@ -16,8 +16,8 @@ interface VerifiedBadgeProps {
 export function VerifiedBadge({ type = "admin", className = "" }: VerifiedBadgeProps) {
   const [isHovered, setIsHovered] = useState(false);
 
-  // 纯净简约的天蓝色 (#38bdf8 / #0ea5e9)
-  const color = type === "admin" ? "#38bdf8" : "#34d399";
+  // 纯净简约的天蓝主题色 (#BBDFFF)
+  const color = type === "admin" ? "#BBDFFF" : "#34d399";
   const text = type === "admin" ? "这位是本站的主人呀" : "这位是本文的作者呀";
 
   return (
@@ -39,10 +39,10 @@ export function VerifiedBadge({ type = "admin", className = "" }: VerifiedBadgeP
         <span className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-[4px] border-transparent border-t-white dark:border-t-zinc-900 filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.06)]" />
       </span>
 
-      {/* 简约天蓝色认证徽标 SVG */}
+      {/* 简约天蓝色认证徽标 SVG (#BBDFFF) */}
       <svg
         viewBox="0 0 24 24"
-        className="w-3 h-3 shrink-0 inline-block drop-shadow-[0_1px_2px_rgba(56,189,248,0.25)]"
+        className="w-3 h-3 shrink-0 inline-block drop-shadow-[0_1px_2px_rgba(187,223,255,0.4)]"
         aria-hidden="true"
         style={{ fill: color }}
       >
