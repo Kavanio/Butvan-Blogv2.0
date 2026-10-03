@@ -98,10 +98,11 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │       │   │   ├── NoiseOverlay.tsx           #         胶片微噪点图层
 │       │   │   ├── SpringModal.tsx            #         物理阻尼弹簧模态框
 │       │   │   └── TextLink.tsx               #         下划线交互文字链
-│       │   ├── article/                       #       📖 深度文章阅读器核心组件集
-│       │   │   ├── MarkdownRenderer.tsx       #         ★ 极客级 Markdown/富文本渲染引擎（代码块/图片预览/锚点大纲）
+│       │   ├── article/                       #       📖 深度文章与手记阅读器核心组件集
+│       │   │   ├── DetailHeader.tsx           #         ★ 极简详情页顶部导航条（圆形返回按钮 + EN·FR + 主题切换）
+│       │   │   ├── MarkdownRenderer.tsx       #         ★ 极客级 Markdown/富文本渲染引擎（代码块/图片预览/安全DOM映射）
 │       │   │   ├── MarkdownCodeBlock.tsx      #         macOS 终端三色控制点代码块（highlight.js 高亮/一键复制/超长折叠）
-│       │   │   ├── ArticleToc.tsx             #         文章大纲导航（滚动自动追踪活跃章节与平滑定位）
+│       │   │   ├── ArticleToc.tsx             #         文章大纲导航数据模型与基础组件
 │       │   │   ├── ReadingProgressBar.tsx     #         顶部极细渐变滚动阅读进度条
 │       │   │   ├── ImagePreviewModal.tsx      #         正文图片全屏 Lightbox 预览弹窗
 │       │   │   └── ArticleCopyright.tsx       #         文章原创版权声明卡片（CC BY-NC-SA 4.0）

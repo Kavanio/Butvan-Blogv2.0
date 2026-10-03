@@ -1,24 +1,31 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
+import { Heart, Share2, Check } from "lucide-react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Heart, MapPin, SunMedium } from "lucide-react";
 import { NoteDetailVO } from "@/types/note";
-import { Badge } from "@/components/ui/Badge";
 import { useSound } from "@/hooks/useSound";
 import { formatDate } from "@/utils/date";
 import { noteService } from "@/services";
+import { DetailHeader } from "@/components/article/DetailHeader";
 import { MarkdownRenderer } from "@/components/article/MarkdownRenderer";
 
 interface NoteDetailClientProps {
   note: NoteDetailVO;
 }
 
+/**
+ * 极简手记/随笔阅读器
+ * 100% 对齐 Chloe Maillot 原版数字花园设计美学：
+ * - 纯粹单栏流动排版，极简克制
+ * - Instrument Serif 衬线体大标题与微型手记 Meta
+ * - 正文自然流淌，伴随优雅点赞交互
+ */
 export function NoteDetailClient({ note }: NoteDetailClientProps) {
   const [likes, setLikes] = useState(note.likeCount || 0);
   const [hasLiked, setHasLiked] = useState(false);
-  const { playSparkle, playTick } = useSound();
+  const [copied, setCopied] = useState(false);
+  const { playSparkle, playDroplet } = useSound();
 
   const handleLike = async () => {
     if (hasLiked) return;
@@ -27,78 +34,115 @@ export function NoteDetailClient({ note }: NoteDetailClientProps) {
     setLikes((prev) => prev + 1);
     try {
       await noteService.like(note.id);
-    } catch {
-      // 降级容错
+    } catch {}
+  };
+
+  const handleCopyLink = () => {
+    playDroplet();
+    if (typeof window !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
+  const metaTag = note.mood || note.weather || note.location || "Thought";
+
   return (
     <div className="min-h-screen bg-[var(--color-gray-bg)] text-[var(--color-gray-1200)] selection:bg-[#fde3ef] selection:text-[#9b3860]">
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-[var(--color-gray-bg)]/80 border-b border-gray-200/60 dark:border-gray-800/60">
-        <div className="max-w-[40.5rem] mx-auto px-6 h-14 flex items-center justify-between">
-          <Link
-            href="/"
-            onClick={playTick}
-            className="group inline-flex items-center gap-2 text-xs font-mono text-gray-800 dark:text-gray-400 hover:text-gray-1200 dark:hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
-            <span>cd .. / 返回首页</span>
-          </Link>
-          <span className="text-micro font-mono text-gray-600">Thought Snippet</span>
-        </div>
-      </header>
+      <main className="max-w-[40.5rem] mx-auto px-6 pt-8 sm:pt-12 pb-24">
+        {/* 顶部极简导航栏 (← 圆形按钮 + EN · FR + 主题切换) */}
+        <DetailHeader backHref="/" />
 
-      <main className="max-w-[40.5rem] mx-auto px-6 pt-12 pb-24">
-        <div className="flex flex-col gap-3 mb-8">
-          <div className="flex items-center gap-2 flex-wrap">
-            {note.mood && <Badge tone="pink">{note.mood}</Badge>}
-            {note.weather && (
-              <span className="inline-flex items-center gap-1 text-micro text-gray-600">
-                <SunMedium className="w-3 h-3 text-amber-500" />
-                {note.weather}
-              </span>
-            )}
-            {note.location && (
-              <span className="inline-flex items-center gap-1 text-micro text-gray-600">
-                <MapPin className="w-3 h-3 text-gray-400" />
-                {note.location}
-              </span>
-            )}
-          </div>
-
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50 leading-snug">
-            {note.title}
-          </h1>
-
-          <div className="text-micro font-mono text-gray-600 border-b border-gray-200 dark:border-gray-800 pb-3">
-            {formatDate(note.publishedAt)}
-          </div>
+        {/* 标题前置微型 Meta 摘要：Sep 21, 2026 · Mood / Weather */}
+        <div className="text-xs sm:text-[13px] text-gray-800 dark:text-gray-400 font-mono tracking-tight mb-3">
+          <span>{formatDate(note.publishedAt)}</span>
+          <span className="mx-1.5 opacity-60">·</span>
+          <span>{metaTag}</span>
+          {note.location && (
+            <>
+              <span className="mx-1.5 opacity-60">·</span>
+              <span>{note.location}</span>
+            </>
+          )}
         </div>
 
-        {/* 使用统一 MarkdownRenderer 渲染 */}
+        {/* 衬线体优雅大标题 (Instrument Serif) */}
+        <h1 className="font-serif text-2xl sm:text-[2.2rem] text-gray-1200 leading-[1.2] font-normal tracking-tight mb-5">
+          {note.title}
+        </h1>
+
+        {/* 摘要导言（若存在） */}
+        {note.summary && (
+          <>
+            <p className="text-[15px] sm:text-base leading-relaxed text-gray-1100 mb-8 font-sans">
+              {note.summary}
+            </p>
+            <div className="w-full h-px bg-gray-200/80 dark:bg-gray-800/80 mb-10" />
+          </>
+        )}
+
+        {/* 封面图（若存在） */}
+        {note.coverImageUrl && (
+          <div className="my-8 overflow-hidden rounded-xl border border-gray-200/60 dark:border-gray-800/60">
+            <img
+              src={note.coverImageUrl}
+              alt={note.title}
+              className="w-full object-cover max-h-80"
+            />
+          </div>
+        )}
+
+        {/* 沉浸式 Markdown 正文 */}
         <MarkdownRenderer
           content={note.content}
           contentHtml={note.contentHtml}
           className="prose-editorial"
         />
 
-        <div className="mt-14 pt-6 border-t border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-between">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={handleLike}
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-medium transition-all cursor-pointer ${
-              hasLiked
-                ? "bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-950/40 dark:border-rose-900/60 dark:text-rose-400"
-                : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:border-rose-300 dark:hover:border-rose-800 text-gray-700 dark:text-gray-300"
-            }`}
-          >
-            <Heart
-              className={`w-3.5 h-3.5 transition-transform ${
-                hasLiked ? "fill-rose-500 text-rose-500 scale-110" : ""
+        {/* 文末极简互动区 */}
+        <div className="mt-16 pt-8 border-t border-gray-200/60 dark:border-gray-800/60">
+          <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 font-mono">
+            {/* 极简手记共鸣 */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleLike}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
+                hasLiked
+                  ? "text-rose-600 dark:text-rose-400 font-medium"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
               }`}
-            />
-            <span>{hasLiked ? "已共鸣" : "随手记录点赞"} ({likes})</span>
-          </motion.button>
+            >
+              <Heart
+                className={`size-3.5 transition-transform ${
+                  hasLiked ? "fill-rose-500 text-rose-500 scale-110" : ""
+                }`}
+              />
+              <span>{likes}</span>
+            </motion.button>
+
+            {/* 极简分享链接 */}
+            <button
+              onClick={handleCopyLink}
+              className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 transition-colors cursor-pointer"
+            >
+              {copied ? (
+                <>
+                  <Check className="size-3.5 text-emerald-500" />
+                  <span className="text-emerald-500">已复制链接</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="size-3.5" />
+                  <span>分享</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="mt-4 text-[11px] font-mono text-gray-400 dark:text-gray-500 text-center sm:text-left">
+            © {new Date().getFullYear()} 可梵 · 随手手记
+          </div>
         </div>
       </main>
     </div>
