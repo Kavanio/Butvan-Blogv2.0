@@ -1,6 +1,6 @@
 package com.butvan.blog.pojo.weixin;
 
-public sealed interface WechatEvent permits WechatEvent.Scan, WechatEvent.Subscribe, WechatEvent.TextMessage, WechatEvent.Unsubscribe {
+public sealed interface  WechatEvent permits WechatEvent.Scan, WechatEvent.Subscribe, WechatEvent.TextMessage, WechatEvent.Unsubscribe {
 
 
     /**

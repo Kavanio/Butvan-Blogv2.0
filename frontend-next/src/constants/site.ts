@@ -4,7 +4,7 @@
 
 export const SITE_CONFIG = {
   name: "可梵",
-  title: "可梵 (Butvan) · JAVA / Agent / VibeCoding 开发者",
+  title: "可梵 (Kavan) · JAVA / Agent / VibeCoding 开发者",
   url: "https://butvan.top",
   bio: "大三后端开发｜敲代码｜热爱生活",
   description: "JAVA / Agent / VibeCoding 开发者，记录代码、思考与生活。",
@@ -13,7 +13,7 @@ export const SITE_CONFIG = {
   timezone: "Asia/Shanghai",
   timezoneLabel: "Beijing",
   socialLinks: {
-    github: "https://github.com/agent-butvan",
+    github: "https://github.com/Kavanio",
     email: "1973578950@qq.com",
   },
   spotify: {

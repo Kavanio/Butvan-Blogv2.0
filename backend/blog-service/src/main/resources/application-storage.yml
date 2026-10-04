@@ -6,7 +6,7 @@ storage:
   # 存储类型: local（本地磁盘）| minio（MinIO 对象存储）
   type: minio
   minio:
-    endpoint: http://47.102.205.85:19000
+    endpoint: ${STORAGE_MINIO_ENDPOINT:https://minio.server.butvan.top}
     access-key: minio
     secret-key: wj08265395
     bucket: blog2
