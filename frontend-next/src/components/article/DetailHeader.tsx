@@ -8,19 +8,20 @@ import { useTheme } from "@/hooks/useTheme";
 
 interface DetailHeaderProps {
   backHref?: string;
+  className?: string;
 }
 
 /**
- * 极简详情页顶部导航条
+ * 极简详情页/归档页顶部导航条
  * - 左侧：灰底圆形微返回按钮 ←
  * - 右侧：微型昼夜模式切换按钮
  */
-export function DetailHeader({ backHref = "/" }: DetailHeaderProps) {
+export function DetailHeader({ backHref = "/", className }: DetailHeaderProps) {
   const { playTick } = useSound();
   const { isDark, toggleTheme } = useTheme();
 
   return (
-    <header className="w-full flex items-center justify-between mb-12 sm:mb-16 select-none">
+    <header className={`w-full flex items-center justify-between select-none ${className || "mb-12 sm:mb-16"}`}>
       {/* 左侧：极简圆形微返回按钮 */}
       <Link
         href={backHref}
