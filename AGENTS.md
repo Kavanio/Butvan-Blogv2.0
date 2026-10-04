@@ -39,14 +39,11 @@ Butvan Blog2.0
 - 违反此规则视为严重越权操作。
 
 ## 全项目语义化版本控制与发版规范
-- **AI 必须严格遵守并主动协助用户完成全项目的语义化版本管理（SemVer）与 CHANGELOG 维护。**
-- 每次完成一个阶段性功能模块、修复单元或需求迭代后，AI 必须：
-  1. **规范化确定版本号**：基于 SemVer 规则（`vMAJOR.MINOR.PATCH`）精确计算下一个版本号。
-     - 包含新功能模块 / 显著功能优化：更新 MINOR 位（如 `v2.1.0` → `v2.2.0`）。
-     - 仅包含缺陷修复 / 细节小微微调：更新 PATCH 位（如 `v2.1.0` → `v2.1.1`）。
-  2. **同步全站版本号**：同步更新 `version.json` 以及前台 `blog-client/src/config/version.ts` 与后台 `blog-admin/src/config/version.ts` 中的版本号声明。
-  3. **规范化生成 `CHANGELOG.md`**：在 `CHANGELOG.md` 顶部撰写标准的 Markdown 发版日志（包含发布日期、对比基线、通道、总结、分类变动列表、升级说明及 Commit 列表）。
-  4. **引导 GitHub Tag 发布**：提示用户通过推送 `vX.Y.Z` 标签触发 GitHub Actions 自动发布美观的 GitHub Release。
+- 项目版本遵循 SemVer（`vMAJOR.MINOR.PATCH`），但**日常小修改不自动创建新版本**。
+- 文案、样式、文档、内部重构及不需要单独发布的常规修复，正常提交即可；不更新版本号、不新增 `CHANGELOG.md` 发版条目，也不创建或推送版本标签。
+- 由用户决定何时将一组已完成的变更打包为正式发布。只有确认要发布时，才按 SemVer 规则确定版本号：不兼容改动更新 MAJOR，新增功能更新 MINOR，兼容性缺陷修复更新 PATCH。
+- 正式发布时，同步更新 `version.json`、前台 `fronted/blog-client/src/config/version.ts` 与后台 `fronted/blog-admin/src/config/version.ts`，并在 `CHANGELOG.md` 顶部记录发布日期、对比基线、发布通道、总结、分类变动、升级说明和 Commit 列表。
+- GitHub Release 工作流由推送 `vX.Y.Z` 标签触发；只有用户明确安排正式发布时才创建或推送标签。
 
 ## 工作流程
 每次执行编码任务时：
