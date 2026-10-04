@@ -2,6 +2,25 @@
 
 本文档记录 **Butvan Blog 2.0** 的全部版本更新明细与发版履历，遵循 [Semantic Versioning 2.0.0](https://semver.org/lang/zh-CN/) 版本规范。
 
+## v2.4.3
+
+- **发布日期（Asia/Shanghai）**：2026-10-04
+- **对比基线**：v2.4.2...v2.4.3
+- **发布通道**：Stable
+
+确认并提交新前端 `public` 目录剩余 13 个静态资源的删除。
+
+### 维护与清理
+
+- 移除 Notes 兜底封面、友链兜底头像、技术栈预设图标与 Spotify 品牌图标。
+- 这些资源在源码中仍有路径引用；没有配置对应远程资源时，Notes 无封面条目、友链兜底头像、技术徽标和 Spotify 图标会显示缺图。
+
+### Commits
+
+- chore(frontend): confirm remaining public asset deletions
+
+---
+
 ## v2.4.2
 
 - **发布日期（Asia/Shanghai）**：2026-10-04

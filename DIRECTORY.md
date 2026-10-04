@@ -73,8 +73,6 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   ├── docs/                                  #     📚 工程文档
 │   │   ├── ARCHITECTURE.md                    #       大厂前端四层架构与容灾降级规范
 │   │   └── COMPONENTS.md                      #       核心组件维护手册（Props 接口、交互 Token 与视觉分层）
-│   ├── public/                                #     当前使用的静态资产（手记兜底图、技术栈徽标、品牌标识等）
-│   │   └── images/                            #       craft/ 手记封面，tech/ 技术栈徽标，logos/ 站点标识
 │   └── src/
 │       ├── app/                               #     Next.js App Router 路由层
 │       │   ├── page.tsx                       #       🏠 博客首页（Header/Note/Article/Photo/Friend 五大流动板块）
