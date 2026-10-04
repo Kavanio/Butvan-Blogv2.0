@@ -2,6 +2,31 @@
 
 本文档记录 **Butvan Blog 2.0** 的全部版本更新明细与发版履历，遵循 [Semantic Versioning 2.0.0](https://semver.org/lang/zh-CN/) 版本规范。
 
+## v2.4.4
+
+- **发布日期（Asia/Shanghai）**：2026-10-04
+- **对比基线**：v2.4.3...v2.4.4
+- **发布通道**：Stable
+
+修复生产部署误读 Compose 配置的问题，明确使用连接服务器 PostgreSQL 18 的部署文件。
+
+### 部署修复
+
+- 新增 `docker-compose.postgres18.yml`，并由部署任务在启动服务前上传到 `/opt/blog`。
+- 部署命令显式选择该配置，避免启动 PostgreSQL 16 或与服务器现有 PostgreSQL 18 争用 5432 端口。
+- 更新线上容器部署文档及目录说明。
+
+### 升级说明
+
+- 推送到 `release` 分支触发部署后，流水线会上传并使用 `docker-compose.postgres18.yml`。
+- 不会自动创建或迁移 PostgreSQL；部署前需确认服务器 `.env` 中的数据库参数正确。
+
+### Commits
+
+- fix(deploy): 明确使用 PostgreSQL 18 外置数据库配置
+
+---
+
 ## v2.4.3
 
 - **发布日期（Asia/Shanghai）**：2026-10-04

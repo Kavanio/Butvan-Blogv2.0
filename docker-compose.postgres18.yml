@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 由服务器独立维护，本编排仅连接已有数据库。
+  # 2. 缓存 Redis
+  redis:
+    image: redis:7-alpine
+    container_name: blog-redis
+    restart: always
+    mem_limit: 64m
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      # 挂载 Redis 数据目录
+      - ./data/redis:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - blog-network
+
+  # 3. Spring Boot 后端
+  blog-service:
+    image: crpi-46o5657v3drrpfcl.cn-hangzhou.personal.cr.aliyuncs.com/butvan/blog-service:latest
+    container_name: blog-service
+    restart: always
+    mem_limit: 512m
+    # Linux 容器通过宿主机网关访问服务器已有的 PostgreSQL。
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST:-host.docker.internal}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-butvan_blog}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-butvan}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      WEIXIN_APPID: ${WEIXIN_APPID}
+      WEIXIN_APPSECRET: ${WEIXIN_APPSECRET}
+      MAIL_HOST: ${MAIL_HOST:-smtp.qq.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      STORAGE_MINIO_CUSTOM_DOMAIN: ${STORAGE_MINIO_CUSTOM_DOMAIN}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      WEIXIN_CLIENT_BASE_URL: ${WEIXIN_CLIENT_BASE_URL}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - blog-network
+
+  # 4. 后台管理前端
+  blog-admin:
+    image: crpi-46o5657v3drrpfcl.cn-hangzhou.personal.cr.aliyuncs.com/butvan/blog-admin:latest
+    container_name: blog-admin
+    restart: always
+    mem_limit: 256m
+    ports:
+      - "3001:3000" # 宿主机 3001 映射容器内 3000 端口
+    environment:
+      NEXT_PUBLIC_API_URL: http://blog-service:8080
+      BACKEND_URL: http://blog-service:8080
+    networks:
+      - blog-network
+
+  # 5. 博客前台前端
+  blog-client:
+    image: crpi-46o5657v3drrpfcl.cn-hangzhou.personal.cr.aliyuncs.com/butvan/blog-client:latest
+    container_name: blog-client
+    restart: always
+    mem_limit: 256m
+    ports:
+      - "3000:3000" # 宿主机 3000 映射容器内 3000 端口
+    environment:
+      NEXT_PUBLIC_API_URL: http://blog-service:8080
+      BACKEND_URL: http://blog-service:8080
+      INTERNAL_BACKEND_URL: http://blog-service:8080/api
+    networks:
+      - blog-network
+
+networks:
+  blog-network:
+    driver: bridge

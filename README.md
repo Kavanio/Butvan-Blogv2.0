@@ -153,18 +153,18 @@ pnpm dev
 系统使用 Docker Compose 部署后端、前台、后台及 Redis，PostgreSQL 由服务器独立维护。
 
 1. 准备已有 PostgreSQL 数据库、业务账号和数据，确保数据库允许 Docker 网段访问。
-2. 将 `docker-compose.yml` 同步到 `/opt/blog`，复制 `.env.example` 为 `.env` 并填入真实配置。数据库配置使用 `POSTGRES_HOST`、`POSTGRES_PORT`、`POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`。默认通过 `host.docker.internal` 访问宿主机 5432 端口，容器内的 `localhost` 指向容器自身。
+2. 当前服务器使用独立维护的 PostgreSQL 18。将 `docker-compose.postgres18.yml` 同步到 `/opt/blog`，复制 `.env.example` 为 `.env` 并填入真实配置。数据库配置使用 `POSTGRES_HOST`、`POSTGRES_PORT`、`POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`。默认通过 `host.docker.internal` 访问宿主机 5432 端口，容器内的 `localhost` 指向容器自身。不要在该服务器使用会额外启动 PostgreSQL 16 的独立数据库 Compose 配置。
 3. 在服务器登录阿里云镜像仓库后运行：
 
    ```bash
    cd /opt/blog
-   docker compose config --quiet
-   docker compose pull
-   docker compose up -d
-   docker compose ps
+   docker compose -f docker-compose.postgres18.yml config --quiet
+   docker compose -f docker-compose.postgres18.yml pull
+   docker compose -f docker-compose.postgres18.yml up -d
+   docker compose -f docker-compose.postgres18.yml ps
    ```
 
-流水线不会自动创建或迁移 PostgreSQL。`/opt/blog` 没有 `.git` 时，也不会自动同步 Compose 文件，需先手动更新。移除数据库服务后，不要使用 `--remove-orphans` 清理可能仍承载数据的旧数据库容器。
+流水线在部署时会先将仓库中的 `docker-compose.postgres18.yml` 上传至 `/opt/blog`，然后显式使用该文件更新博客容器。流水线不会自动创建或迁移 PostgreSQL；数据库仍由服务器上的独立 Compose 项目管理。旧的 `/opt/blog/data/postgres` 数据目录在确认数据迁移和备份完成前应保留。
 
 ### 自动部署 SSH 密钥
 

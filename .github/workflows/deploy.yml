@@ -56,6 +56,20 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout deployment configuration
+        uses: actions/checkout@v4
+
+      # 将 PostgreSQL 18 外置部署配置同步到服务器，避免依赖服务器残留文件。
+      - name: Upload PostgreSQL 18 Compose configuration
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          source: docker-compose.postgres18.yml
+          target: /opt/blog
+
       # 通过 SSH 登录到目标服务器，进入部署目录执行 Docker 升级命令
       - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -67,19 +81,16 @@ jobs:
           script: |
             set -e
 
-            # 进入你服务器上的项目部署目录
+            # 使用外置 PostgreSQL 配置，避免启动第二个 PostgreSQL 实例。
             cd /opt/blog
-            
-            # 若服务器部署目录关联了 Git 仓库，自动拉取最新的 Caddyfile 及 docker-compose.yml
-            if [ -d ".git" ]; then
-              git pull origin release
-            fi
-            
+
+            docker compose -f docker-compose.postgres18.yml config --quiet
+
             # 拉取最新构建好的镜像
-            docker compose pull
-            
-            # 启动并重启发生变更的容器 (包含自动启动 Caddy 网关并自动申请 SSL 证书)
-            docker compose up -d --remove-orphans
-            
+            docker compose -f docker-compose.postgres18.yml pull
+
+            # 启动博客服务；外置 PostgreSQL 由独立 Compose 项目管理。
+            docker compose -f docker-compose.postgres18.yml up -d
+
             # 自动清理服务器上残留的无标签虚无镜像，节省磁盘空间
             docker image prune -f
