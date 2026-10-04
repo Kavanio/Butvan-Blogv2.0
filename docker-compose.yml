@@ -12,8 +12,6 @@ services:
     volumes:
       # 挂载 Redis 数据目录
       - ./data/redis:/data
-    ports:
-      - "6379:6379"
     networks:
       - blog-network
 
@@ -46,7 +44,7 @@ services:
       GITHUB_TOKEN: ${GITHUB_TOKEN}
       WEIXIN_CLIENT_BASE_URL: ${WEIXIN_CLIENT_BASE_URL}
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./uploads:/app/uploads
     networks:
@@ -59,7 +57,7 @@ services:
     restart: always
     mem_limit: 256m
     ports:
-      - "3001:3000" # 宿主机 3001 映射容器内 3000 端口
+      - "127.0.0.1:3001:3000" # Nginx 通过宿主机回环地址代理到后台
     environment:
       NEXT_PUBLIC_API_URL: http://blog-service:8080
       BACKEND_URL: http://blog-service:8080
@@ -73,7 +71,7 @@ services:
     restart: always
     mem_limit: 256m
     ports:
-      - "3000:3000" # 宿主机 3000 映射容器内 3000 端口
+      - "127.0.0.1:3000:3000" # Nginx 通过宿主机回环地址代理到前台
     environment:
       NEXT_PUBLIC_API_URL: http://blog-service:8080
       BACKEND_URL: http://blog-service:8080

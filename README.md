@@ -166,6 +166,8 @@ pnpm dev
 
 流水线在部署时会先将仓库中的 `docker-compose.postgres18.yml` 上传至 `/opt/blog`，然后显式使用该文件更新博客容器。流水线不会自动创建或迁移 PostgreSQL；数据库仍由服务器上的独立 Compose 项目管理。旧的 `/opt/blog/data/postgres` 数据目录在确认数据迁移和备份完成前应保留。
 
+生产 Compose 将前台、后台和后端端口绑定到 `127.0.0.1`，只允许本机 Nginx 代理访问；Redis 不映射到宿主机端口。
+
 ### 自动部署 SSH 密钥
 
 在本地终端生成专用密钥（若文件已存在，请换一个文件名，不要覆盖）：

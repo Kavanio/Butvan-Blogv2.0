@@ -2,6 +2,26 @@
 
 本文档记录 **Butvan Blog 2.0** 的全部版本更新明细与发版履历，遵循 [Semantic Versioning 2.0.0](https://semver.org/lang/zh-CN/) 版本规范。
 
+## v2.4.5
+
+- **发布日期（Asia/Shanghai）**：2026-10-04
+- **对比基线**：v2.4.4...v2.4.5
+- **发布通道**：Stable
+
+收紧生产容器端口暴露范围，仅允许宿主机 Nginx 访问博客服务，并取消 Redis 的宿主机端口映射。
+
+### 部署安全
+
+- 前台、后台和后端端口改为绑定 `127.0.0.1`，公网请求统一经过 Nginx。
+- Redis 仅通过 Docker 内部网络提供给后端使用，不再发布宿主机端口。
+- 同步更新通用 Compose 配置与 PostgreSQL 18 生产配置。
+
+### Commits
+
+- fix(deploy): 限制容器端口仅本机访问
+
+---
+
 ## v2.4.4
 
 - **发布日期（Asia/Shanghai）**：2026-10-04
