@@ -229,5 +229,3 @@ export const quoteService = {
   },
 };
 
-export * from "./github";
-

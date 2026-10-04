@@ -2,6 +2,25 @@
 
 本文档记录 **Butvan Blog 2.0** 的全部版本更新明细与发版履历，遵循 [Semantic Versioning 2.0.0](https://semver.org/lang/zh-CN/) 版本规范。
 
+## v2.4.1
+
+- **发布日期（Asia/Shanghai）**：2026-10-04
+- **对比基线**：v2.4.0...v2.4.1
+- **发布通道**：Stable
+
+隔离 Next.js 开发与生产构建产物，避免刷新页面时因路由构建清单被覆盖而报 ENOENT；同时清理导致生产构建失败的失效 GitHub 服务导出。
+
+### 缺陷修复与体验优化
+
+- **隔离 Next.js 输出目录**：开发服务器写入 `.next-dev/`，生产构建继续使用 `.next/`，互不清理或覆盖对方的构建清单。
+- **修复前台构建失败**：移除指向不存在 `./github` 模块的服务导出。
+
+### Commits
+
+- fix(frontend): isolate Next.js dev and production build directories
+
+---
+
 ## v2.4.0
 
 - **发布日期（Asia/Shanghai）**：2026-10-04
