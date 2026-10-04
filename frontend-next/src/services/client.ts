@@ -13,6 +13,9 @@ function getApiBase(): string {
     if (process.env.BACKEND_API_URL) {
       return process.env.BACKEND_API_URL.replace(/\/$/, "");
     }
+    if (process.env.BACKEND_URL) {
+      return `${process.env.BACKEND_URL.replace(/\/$/, "")}/api`;
+    }
     // 默认直连本地 Spring Boot 8080 API
     return "http://127.0.0.1:8080/api";
   }

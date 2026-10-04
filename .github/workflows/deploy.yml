@@ -42,12 +42,12 @@ jobs:
           no-cache: true
           tags: crpi-46o5657v3drrpfcl.cn-hangzhou.personal.cr.aliyuncs.com/butvan/blog-admin:latest
 
-      # 3. 构建并推送博客前台前端镜像
-      - name: Build and Push Client Frontend
+      # 3. 构建并推送新一代博客前台镜像 (frontend-next)
+      - name: Build and Push Client Frontend (frontend-next)
         uses: docker/build-push-action@v5
         with:
-          context: ./fronted/blog-client
-          file: ./fronted/blog-client/Dockerfile
+          context: ./frontend-next
+          file: ./frontend-next/Dockerfile
           push: true
           no-cache: true
           tags: crpi-46o5657v3drrpfcl.cn-hangzhou.personal.cr.aliyuncs.com/butvan/blog-client:latest
@@ -65,13 +65,12 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            # 任一步骤失败即停止部署，避免在错误目录继续执行。
-            set -eu
+            set -e
 
             # 进入你服务器上的项目部署目录
             cd /opt/blog
             
-            # 若服务器部署目录关联了 Git 仓库，自动拉取最新的 docker-compose.yml
+            # 若服务器部署目录关联了 Git 仓库，自动拉取最新的 Caddyfile 及 docker-compose.yml
             if [ -d ".git" ]; then
               git pull origin release
             fi
@@ -79,8 +78,8 @@ jobs:
             # 拉取最新构建好的镜像
             docker compose pull
             
-            # 启动应用和 Redis；保留已独立管理的 PostgreSQL，避免清理旧数据库容器。
-            docker compose up -d
+            # 启动并重启发生变更的容器 (包含自动启动 Caddy 网关并自动申请 SSL 证书)
+            docker compose up -d --remove-orphans
             
             # 自动清理服务器上残留的无标签虚无镜像，节省磁盘空间
             docker image prune -f

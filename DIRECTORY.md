@@ -64,8 +64,10 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │       └── migration-v1.6-role-author-to-user.sql #   数据库迁移脚本 (v1.6 版本，角色 AUTHOR→USER 统一迁移)
 │
 ├── frontend-next/                             # 🎨 ✨【新一代极客博客前台】Next.js 15 + React 19 + Tailwind + Framer Motion
+│   ├── Dockerfile                             #     生产容器 Docker 多阶段构建脚本（standalone 轻量运行）
+│   ├── .dockerignore                          #     Docker 镜像构建排除规则（排除 node_modules 及本地开发缓存）
 │   ├── package.json                           #     前端工程依赖管理（锁定 pnpm）
-│   ├── next.config.mjs                        #     Next.js 配置（BFF 反向代理 /api/* 与 /uploads/*）
+│   ├── next.config.mjs                        #     Next.js 配置（独立 standalone 产物与 BFF 反向代理）
 │   ├── tailwind.config.ts                     #     Tailwind CSS 3.4 样式与微噪点扩展配置
 │   ├── tsconfig.json                          #     TypeScript 编译配置与路径别名映射 (@/*)
 │   ├── docs/                                  #     📚 工程文档
@@ -633,6 +635,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 | `frontend-next/src/services/client.ts` | 新前台-网络 | HttpClient 网络层（超时控制、IP 透传、离线优雅熔断兜底） |
 | `frontend-next/src/constants/fallbacks.ts` | 新前台-容灾 | 全量离线兜底数据仓库（后端离线保障前台秒级降级不白屏） |
 | `frontend-next/src/lib/sound.ts` | 新前台-音频 | 基于 Web Audio API 的程序化触觉反馈音效合成引擎 |
+| `frontend-next/Dockerfile` | 部署-镜像 | 新前台生产多阶段 Docker 构建配置（Node 20 Alpine + standalone 独立运行） |
 | `fronted/blog-admin/src/lib/article-api.ts` | 后台-工具 | 统一封装文章、分类、标签相关 API 请求方法 |
 | `fronted/blog-client/src/app/page.tsx` | 前台-首页 | 房间场景：从 API 获取激活场景，PNG 图层叠层绝对百分比渲染、hover 物理悬空、发光避光阴影及缩放过渡 |
 | `fronted/blog-client/src/components/home/RoomScene.tsx` | 前台-组件 | 多图层渲染容器，背景图+PNG物品百分比定位叠加 |
