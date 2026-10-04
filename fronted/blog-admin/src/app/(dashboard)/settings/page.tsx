@@ -26,6 +26,7 @@ export interface TechBadgeItem {
   src: string;
   title: string;
   rotate?: number;
+  link?: string;
 }
 
 /**
@@ -315,7 +316,7 @@ export default function SettingsPage() {
   const handleAddBadge = () => {
     const angles = [-6, -4, 6, -5, -6, 4, -3];
     const nextRotate = angles[techStack.length % angles.length];
-    setTechStack((prev) => [...prev, { src: "", title: "", rotate: nextRotate }]);
+    setTechStack((prev) => [...prev, { src: "", title: "", rotate: nextRotate, link: "" }]);
   };
 
   const handleUpdateBadge = (index: number, patch: Partial<TechBadgeItem>) => {
@@ -617,7 +618,7 @@ export default function SettingsPage() {
                     3. 首页技术栈微徽标 (扑克牌展开徽标)
                   </h3>
                   <p className="text-xs text-zinc-555 dark:text-zinc-400">
-                    紧跟在第一行文案后面的微型徽标组。鼠标悬停时扇形展开并提示标题。可上传本地图片或填写外部 URL。未配置时前台不显示任何死数据。
+                    紧跟在第一行文案后面的微型徽标组。鼠标悬停时扇形展开并提示标题。支持上传本地图标、自定义跳转链接与微调旋转角度。若未配置跳转链接，点击则不会发生跳转。未配置时前台不显示任何死数据。
                   </p>
                 </div>
                 <button
@@ -650,7 +651,7 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-1.5 text-xs text-zinc-500">
                       <Sparkles size={12} className="text-amber-500" />
                       <span>实时扑克牌展开预览：</span>
-                      <span className="text-[10px] text-zinc-400">（鼠标悬停查看扇形展开与标题气泡）</span>
+                      <span className="text-[10px] text-zinc-400">（鼠标悬停查看扇形展开与气泡，带 ↗ 表示配置了外链）</span>
                     </div>
 
                     <div className="relative z-10 inline-flex items-center translate-y-[1px]">
@@ -660,6 +661,7 @@ export default function SettingsPage() {
                             ? item.rotate
                             : [-6, -4, 6, -5, -6, 4, -3][idx % 7];
                         const iconUrl = resolveUrl(item.src);
+                        const hasLink = Boolean(item.link && item.link.trim());
                         return (
                           <span
                             key={idx}
@@ -669,8 +671,9 @@ export default function SettingsPage() {
                             }}
                             className="group/chip relative inline-block transition-transform duration-200 hover:scale-125 hover:z-30 cursor-pointer"
                           >
-                            <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-900 px-1.5 py-0.5 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover/chip:opacity-100 z-50">
-                              {item.title || "未命名"}
+                            <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-900 px-1.5 py-0.5 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover/chip:opacity-100 z-50 flex items-center gap-1">
+                              <span>{item.title || "未命名"}</span>
+                              {hasLink && <span className="text-[9px] opacity-75">↗</span>}
                             </span>
                             <span className="block size-5 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-0.5 shadow-xs overflow-hidden">
                               {iconUrl ? (
@@ -726,18 +729,18 @@ export default function SettingsPage() {
                         </div>
 
                         {/* 标题输入框 */}
-                        <div className="flex-[1.2] min-w-0">
+                        <div className="flex-[1] min-w-0">
                           <input
                             type="text"
                             value={badge.title}
                             onChange={(e) => handleUpdateBadge(index, { title: e.target.value })}
-                            placeholder="展示标题 (如 Docker & Linux)"
+                            placeholder="展示标题 (如 Docker)"
                             className="h-7.5 w-full rounded-md border border-zinc-200 bg-white px-2.5 text-xs outline-none transition focus:border-primary dark:border-zinc-800 dark:bg-zinc-950 font-medium text-zinc-900 dark:text-zinc-100"
                           />
                         </div>
 
                         {/* 图标地址与上传按钮 */}
-                        <div className="flex-[2] min-w-0 flex items-center gap-1">
+                        <div className="flex-[1.5] min-w-0 flex items-center gap-1">
                           <input
                             type="text"
                             value={badge.src}
@@ -757,8 +760,20 @@ export default function SettingsPage() {
                           </button>
                         </div>
 
+                        {/* 跳转链接 (可选) */}
+                        <div className="flex-[1.5] min-w-0">
+                          <input
+                            type="text"
+                            value={badge.link ?? ""}
+                            onChange={(e) => handleUpdateBadge(index, { link: e.target.value })}
+                            placeholder="跳转链接 (可选，留空不跳转)"
+                            className="h-7.5 w-full rounded-md border border-zinc-200 bg-white px-2.5 text-xs outline-none transition focus:border-primary dark:border-zinc-800 dark:bg-zinc-950 font-mono text-[11px] text-zinc-900 dark:text-zinc-100 placeholder:font-sans"
+                            title="点击后跳转的外部链接（留空则前台点击不会跳转）"
+                          />
+                        </div>
+
                         {/* 旋转角度微调 */}
-                        <div className="w-18 shrink-0 flex items-center gap-1">
+                        <div className="w-16 shrink-0 flex items-center gap-1">
                           <input
                             type="number"
                             min={-45}
@@ -1200,8 +1215,9 @@ export default function SettingsPage() {
                               }}
                               className="group/chip relative inline-block transition-transform duration-200 hover:scale-125 hover:z-30 cursor-pointer"
                             >
-                              <span className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-900 px-1 py-0.5 text-[9px] font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover/chip:opacity-100 z-50">
-                                {item.title || "未命名"}
+                              <span className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-900 px-1 py-0.5 text-[9px] font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover/chip:opacity-100 z-50 flex items-center gap-1">
+                                <span>{item.title || "未命名"}</span>
+                                {item.link?.trim() && <span className="text-[8px] opacity-75">↗</span>}
                               </span>
                               <span className="block size-4.5 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-0.5 shadow-xs overflow-hidden">
                                 {iconUrl ? (

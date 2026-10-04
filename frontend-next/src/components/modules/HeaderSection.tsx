@@ -80,26 +80,38 @@ export function HeaderSection({ profile }: HeaderSectionProps) {
           {introLine1}
           {/* 纯真实数据驱动：无数据时完全不渲染，杜绝任何死数据 */}
           {techStackList.length > 0 && (
-            <span
-              aria-hidden="true"
-              className="group/stack relative z-40 ml-1.5 mr-0.5 inline-flex translate-y-[5px] items-center"
-            >
+            <span className="group/stack relative z-40 ml-1.5 mr-0.5 inline-flex translate-y-[5px] items-center">
               {techStackList.map((logo, index) => {
                 const rotateDeg =
                   typeof logo.rotate === "number" && !Number.isNaN(logo.rotate)
                     ? logo.rotate
                     : ROTATE_PRESETS[index % ROTATE_PRESETS.length];
 
+                const hasLink = Boolean(logo.link && logo.link.trim());
+                const Component = hasLink ? "a" : "span";
+                const linkProps = hasLink
+                  ? {
+                      href: logo.link!.trim(),
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      title: logo.title,
+                    }
+                  : {};
+
                 return (
-                  <span
+                  <Component
                     key={`${logo.title}-${index}`}
+                    {...linkProps}
                     style={{ "--spread": `${(index - 1) * 7}px` } as React.CSSProperties}
-                    className="group/chip chip-item relative -ml-2.5 inline-block shrink-0 first:ml-0 hover:z-30 cursor-pointer"
+                    className={`group/chip chip-item relative -ml-2.5 inline-block shrink-0 first:ml-0 hover:z-30 select-none ${
+                      hasLink ? "cursor-pointer" : "cursor-default"
+                    }`}
                     onMouseEnter={playSparkle}
                   >
                     {/* 悬停技术栈提示气泡 */}
-                    <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-1200 px-1.5 py-0.5 text-[11px] font-medium leading-4 text-[var(--color-gray-bg)] opacity-0 shadow-md transition-opacity duration-200 group-hover/chip:opacity-100 z-40">
-                      {logo.title}
+                    <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-1200 px-1.5 py-0.5 text-[11px] font-medium leading-4 text-[var(--color-gray-bg)] opacity-0 shadow-md transition-opacity duration-200 group-hover/chip:opacity-100 z-40 flex items-center gap-1">
+                      <span>{logo.title}</span>
+                      {hasLink && <span className="text-[10px] opacity-75">↗</span>}
                     </span>
                     {/* 芯片外框与旋转悬浮放大 */}
                     <span
@@ -117,7 +129,7 @@ export function HeaderSection({ profile }: HeaderSectionProps) {
                         />
                       </span>
                     </span>
-                  </span>
+                  </Component>
                 );
               })}
             </span>

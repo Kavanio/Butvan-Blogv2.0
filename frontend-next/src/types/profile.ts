@@ -8,6 +8,8 @@ export interface TechBadge {
   title: string;
   /** 扑克牌层叠微倾斜角度（deg），如 -6, 4 等 */
   rotate?: number;
+  /** 点击后跳转的目标链接（可选，未配置则点击不跳转） */
+  link?: string;
 }
 
 /**
