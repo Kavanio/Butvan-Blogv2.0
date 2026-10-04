@@ -71,9 +71,6 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   ├── next.config.mjs                        #     Next.js 配置（独立 standalone 产物与 BFF 反向代理）
 │   ├── tailwind.config.ts                     #     Tailwind CSS 3.4 样式与微噪点扩展配置
 │   ├── tsconfig.json                          #     TypeScript 编译配置与路径别名映射 (@/*)
-│   ├── docs/                                  #     📚 工程文档
-│   │   ├── ARCHITECTURE.md                    #       大厂前端四层架构与容灾降级规范
-│   │   └── COMPONENTS.md                      #       核心组件维护手册（Props 接口、交互 Token 与视觉分层）
 │   └── src/
 │       ├── app/                               #     Next.js App Router 路由层
 │       │   ├── page.tsx                       #       🏠 博客首页（Header/Note/Article/Photo/Friend 五大流动板块）
