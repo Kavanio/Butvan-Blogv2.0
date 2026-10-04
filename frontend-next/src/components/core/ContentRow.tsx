@@ -12,7 +12,7 @@ export interface ContentRowProps {
   date?: string;
   summary?: string;
   badge?: string;
-  badgeTone?: "pink" | "gray";
+  badgeTone?: "blue" | "pink" | "gray";
   isPinned?: boolean;
   showThumb?: boolean;
   thumb?: string;
@@ -33,7 +33,7 @@ export function ContentRow({
   href,
   date,
   badge,
-  badgeTone = "pink",
+  badgeTone = "blue",
   isPinned = false,
   showThumb = true,
   thumb,

@@ -49,7 +49,7 @@ export default function ArticleArchivePage() {
                 title={item.title}
                 date={formatDate(item.publishedAt)}
                 badge={item.categoryName}
-                badgeTone="pink"
+                badgeTone="blue"
                 isPinned={item.isPinned}
                 href={`/article/${item.slug || item.id}`}
                 showThumb={false}

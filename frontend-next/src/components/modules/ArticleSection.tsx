@@ -30,7 +30,7 @@ export function ArticleSection({ articles }: ArticleSectionProps) {
             href={`/article/${article.slug || article.id}`}
             date={formatDate(article.publishedAt)}
             badge={article.categoryName}
-            badgeTone="gray"
+            badgeTone="blue"
             isPinned={article.isPinned}
             // 遵循设计：文章列表中不展示右侧缩略图，保持纯文字与日期干净对齐
             showThumb={false}

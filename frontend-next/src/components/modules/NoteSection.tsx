@@ -47,7 +47,7 @@ export function NoteSection({ notes }: NoteSectionProps) {
               href={`/notes/${note.slug}`}
               date={formatDate(note.publishedAt)}
               badge={note.mood}
-              badgeTone="pink"
+              badgeTone="blue"
               thumb={thumbUrl}
               showThumb={true}
               tiltDefault={true}

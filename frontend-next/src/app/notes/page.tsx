@@ -58,7 +58,7 @@ export default function NoteArchivePage() {
                 title={item.title}
                 date={formatDate(item.publishedAt)}
                 badge={item.mood}
-                badgeTone="pink"
+                badgeTone="blue"
                 href={`/notes/${item.slug || item.id}`}
                 thumb={
                   item.coverImageUrl ||
