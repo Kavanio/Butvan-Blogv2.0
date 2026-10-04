@@ -15,6 +15,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# 项目暂无静态资源时，Docker 构建上下文不会保留空目录；确保运行阶段可复制该目录。
+RUN mkdir -p public
+
 # 删除本地开发环境变量文件，避免 Next.js 构建时将开发地址固化到客户端 JS
 RUN rm -f .env.local .env.dev .env.sealos
 
