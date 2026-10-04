@@ -1,10 +1,8 @@
-version: '3.8'
-
 services:
   # PostgreSQL 由服务器独立维护，本编排仅连接已有数据库。
   # 2. 缓存 Redis
   redis:
-    image: redis:7-alpine
+    image: crpi-46o5657v3drrpfcl.cn-hangzhou.personal.cr.aliyuncs.com/butvan/redis:7-alpine
     container_name: blog-redis
     restart: always
     mem_limit: 64m
@@ -42,7 +40,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       STORAGE_MINIO_CUSTOM_DOMAIN: ${STORAGE_MINIO_CUSTOM_DOMAIN}
       GITHUB_TOKEN: ${GITHUB_TOKEN}
-      WEIXIN_CLIENT_BASE_URL: ${WEIXIN_CLIENT_BASE_URL}
+      WEIXIN_CLIENT_BASE_URL: ${WEIXIN_CLIENT_BASE_URL:-https://www.butvan.top}
     ports:
       - "127.0.0.1:8080:8080"
     volumes:

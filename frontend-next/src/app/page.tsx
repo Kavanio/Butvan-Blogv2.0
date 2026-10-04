@@ -14,7 +14,8 @@ import { PhotoSection } from "@/components/modules/PhotoSection";
 import { FriendSection } from "@/components/modules/FriendSection";
 import { QuoteWallSection } from "@/components/modules/QuoteWallSection";
 
-export const revalidate = 60; // 每 60 秒增量静态刷新 (ISR)
+// 首页数据依赖运行时 Compose 网络中的后端，避免构建阶段生成空数据的静态页面。
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   // 服务端并发获取业务数据（带自动离线兜底降级）

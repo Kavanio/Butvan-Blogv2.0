@@ -52,6 +52,32 @@ jobs:
           no-cache: true
           tags: crpi-46o5657v3drrpfcl.cn-hangzhou.personal.cr.aliyuncs.com/butvan/blog-client:latest
 
+      # 将 Redis 镜像从 Docker Hub 镜像到 ACR，服务器部署时只访问阿里云仓库。
+      - name: Mirror Redis Runtime Image to Aliyun ACR
+        run: |
+          set -euo pipefail
+
+          source_image="redis:7-alpine"
+          target_image="crpi-46o5657v3drrpfcl.cn-hangzhou.personal.cr.aliyuncs.com/butvan/redis:7-alpine"
+
+          for attempt in 1 2 3; do
+            if docker pull --platform linux/amd64 "$source_image"; then
+              break
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "Failed to pull $source_image after $attempt attempts."
+              exit 1
+            fi
+
+            delay=$((attempt * 10))
+            echo "Docker Hub pull failed; retrying in ${delay}s (attempt $((attempt + 1))/3)."
+            sleep "$delay"
+          done
+
+          docker tag "$source_image" "$target_image"
+          docker push "$target_image"
+
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -86,8 +112,19 @@ jobs:
 
             docker compose -f docker-compose.postgres18.yml config --quiet
 
-            # 拉取最新构建好的镜像
-            docker compose -f docker-compose.postgres18.yml pull
+            # 拉取最新镜像；短暂网络波动时最多重试三次。
+            pull_attempt=1
+            until docker compose -f docker-compose.postgres18.yml pull; do
+              if [ "$pull_attempt" -ge 3 ]; then
+                echo "Image pull failed after $pull_attempt attempts."
+                exit 1
+              fi
+
+              delay=$((pull_attempt * 15))
+              echo "Image pull failed; retrying in ${delay}s (attempt $((pull_attempt + 1))/3)."
+              sleep "$delay"
+              pull_attempt=$((pull_attempt + 1))
+            done
 
             # 启动博客服务；外置 PostgreSQL 由独立 Compose 项目管理。
             docker compose -f docker-compose.postgres18.yml up -d
