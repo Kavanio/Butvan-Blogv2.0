@@ -1,19 +1,42 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { User, Upload, Save, GitFork, Mail, Rss, AlertCircle, Loader2 } from "lucide-react";
+import {
+  User,
+  Upload,
+  Save,
+  GitFork,
+  Mail,
+  Rss,
+  AlertCircle,
+  Loader2,
+  Layers,
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Sparkles,
+} from "lucide-react";
 import apiClient from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { cn } from "@heroui/react";
 
+/** 首页技术栈微徽标项 */
+export interface TechBadgeItem {
+  src: string;
+  title: string;
+  rotate?: number;
+}
+
 /**
  * 个人资料配置页面 (高密度双栏一体化大厂风格)
- * - 左侧：一体化精细配置表单，全局 Dirty-State 统一保存（支持基本资料、关于我、社交网络及页脚站点信息）
+ * - 左侧：一体化精细配置表单，全局 Dirty-State 统一保存（支持基本资料、关于我、技术栈徽标、社交网络及页脚站点信息）
  * - 右侧：头像上传与实景博主名片预览二合一挂件，消弭页面过剩留白
  * - 紧密排版，信息饱满，无零散分离卡片
  */
 export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const badgeFileInputRef = useRef<HTMLInputElement>(null);
 
   // --- 初始加载状态比对对象，感知全局更改 ---
   const [initialData, setInitialData] = useState<{
@@ -22,6 +45,7 @@ export default function SettingsPage() {
     bio: string;
     introLine1: string;
     introLine2: string;
+    techStack: TechBadgeItem[];
     github: string;
     email: string;
     rss: string;
@@ -37,6 +61,8 @@ export default function SettingsPage() {
   const [bio, setBio] = useState("");
   const [introLine1, setIntroLine1] = useState("");
   const [introLine2, setIntroLine2] = useState("");
+  const [techStack, setTechStack] = useState<TechBadgeItem[]>([]);
+  const [uploadingBadgeIndex, setUploadingBadgeIndex] = useState<number | null>(null);
   const [github, setGithub] = useState("");
   const [email, setEmail] = useState("");
   const [rss, setRss] = useState("");
@@ -81,12 +107,17 @@ export default function SettingsPage() {
         if (res.data.code === 200 || res.data.code === 0) {
           const data = res.data.data;
           const links = data.socialLinks || {};
+          const loadedTechStack: TechBadgeItem[] = Array.isArray(links.techStack)
+            ? links.techStack
+            : [];
+
           const profile = {
             nickname: data.nickname || "",
             avatarUrl: data.avatarUrl || "",
             bio: data.bio || "",
             introLine1: links.introLine1 || "",
             introLine2: links.introLine2 || "",
+            techStack: loadedTechStack,
             github: links.github || "",
             email: links.email || "",
             rss: links.rss || "",
@@ -101,6 +132,7 @@ export default function SettingsPage() {
           setBio(profile.bio);
           setIntroLine1(profile.introLine1);
           setIntroLine2(profile.introLine2);
+          setTechStack(loadedTechStack);
           setGithub(profile.github);
           setEmail(profile.email);
           setRss(profile.rss);
@@ -279,6 +311,86 @@ export default function SettingsPage() {
     }
   };
 
+  // --- 技术栈徽标操作方法 ---
+  const handleAddBadge = () => {
+    const angles = [-6, -4, 6, -5, -6, 4, -3];
+    const nextRotate = angles[techStack.length % angles.length];
+    setTechStack((prev) => [...prev, { src: "", title: "", rotate: nextRotate }]);
+  };
+
+  const handleUpdateBadge = (index: number, patch: Partial<TechBadgeItem>) => {
+    setTechStack((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], ...patch };
+      return next;
+    });
+  };
+
+  const handleMoveBadgeUp = (index: number) => {
+    if (index <= 0) return;
+    setTechStack((prev) => {
+      const next = [...prev];
+      const temp = next[index - 1];
+      next[index - 1] = next[index];
+      next[index] = temp;
+      return next;
+    });
+  };
+
+  const handleMoveBadgeDown = (index: number) => {
+    setTechStack((prev) => {
+      if (index >= prev.length - 1) return prev;
+      const next = [...prev];
+      const temp = next[index + 1];
+      next[index + 1] = next[index];
+      next[index] = temp;
+      return next;
+    });
+  };
+
+  const handleDeleteBadge = (index: number) => {
+    setTechStack((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleTriggerUploadBadge = (index: number) => {
+    setUploadingBadgeIndex(index);
+    badgeFileInputRef.current?.click();
+  };
+
+  const handleBadgeFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const targetIndex = uploadingBadgeIndex;
+    if (!file || targetIndex === null) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.warning("请选择图片格式的图标文件（支持 SVG、PNG、WebP 等）");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("sourceType", "TECH_STACK");
+      formData.append("sourceDetail", `技术栈徽标-${techStack[targetIndex]?.title || "Icon"}`);
+      const res = await apiClient.post("/admin/media/upload", formData, {
+        timeout: 60000,
+      });
+      if (res.data.code === 200 || res.data.code === 0) {
+        const fileUrl = res.data.data.fileUrl;
+        handleUpdateBadge(targetIndex, { src: fileUrl });
+        toast.success("图标已成功上传并回填");
+      } else {
+        toast.error(res.data.msg || "图标上传失败");
+      }
+    } catch (err) {
+      console.error("上传徽标失败", err);
+      toast.error("上传图标接口异常，请确认媒体服务是否可用");
+    } finally {
+      setUploadingBadgeIndex(null);
+      e.target.value = "";
+    }
+  };
+
   // --- 全局表单保存提交 ---
   const handleGlobalSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -302,6 +414,7 @@ export default function SettingsPage() {
         socialLinks: {
           introLine1,
           introLine2,
+          techStack,
           github,
           email,
           rss,
@@ -337,6 +450,7 @@ export default function SettingsPage() {
           bio,
           introLine1,
           introLine2,
+          techStack,
           github,
           email,
           rss,
@@ -367,6 +481,7 @@ export default function SettingsPage() {
     bio !== (initialData?.bio ?? "") ||
     introLine1 !== (initialData?.introLine1 ?? "") ||
     introLine2 !== (initialData?.introLine2 ?? "") ||
+    JSON.stringify(techStack) !== JSON.stringify(initialData?.techStack ?? []) ||
     github !== (initialData?.github ?? "") ||
     email !== (initialData?.email ?? "") ||
     rss !== (initialData?.rss ?? "") ||
@@ -484,11 +599,226 @@ export default function SettingsPage() {
             {/* 分割线 */}
             <div className="border-t border-zinc-100 dark:border-zinc-900 pt-4" />
 
-            {/* 分区 3：社交链接与订阅源 */}
+            {/* 隐藏的技术徽标文件上传 input */}
+            <input
+              type="file"
+              ref={badgeFileInputRef}
+              onChange={handleBadgeFileChange}
+              accept="image/*"
+              className="hidden"
+            />
+
+            {/* 分区 3：首页技术栈徽标配置 */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-0.5">
+                  <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50 flex items-center gap-1.5">
+                    <Layers size={13} className="text-primary" />
+                    3. 首页技术栈微徽标 (扑克牌展开徽标)
+                  </h3>
+                  <p className="text-xs text-zinc-555 dark:text-zinc-400">
+                    紧跟在第一行文案后面的微型徽标组。鼠标悬停时扇形展开并提示标题。可上传本地图片或填写外部 URL。未配置时前台不显示任何死数据。
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddBadge}
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+                >
+                  <Plus size={13} />
+                  <span>添加徽标</span>
+                </button>
+              </div>
+
+              {/* 空状态 */}
+              {techStack.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-6 px-4 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/20 text-center">
+                  <p className="text-xs text-zinc-400 mb-2">当前未配置任何技术栈徽标（前台将保持纯净，绝不展示任何死数据）</p>
+                  <button
+                    type="button"
+                    onClick={handleAddBadge}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-white hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                  >
+                    <Plus size={13} />
+                    <span>立即添加第一个技术徽标</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 pt-1">
+                  {/* 实时展开小预览 */}
+                  <div className="flex items-center justify-between rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/40 px-3 py-1.5">
+                    <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+                      <Sparkles size={12} className="text-amber-500" />
+                      <span>实时扑克牌展开预览：</span>
+                      <span className="text-[10px] text-zinc-400">（鼠标悬停查看扇形展开与标题气泡）</span>
+                    </div>
+
+                    <div className="relative z-10 inline-flex items-center translate-y-[1px]">
+                      {techStack.map((item, idx) => {
+                        const rotateDeg =
+                          typeof item.rotate === "number" && !Number.isNaN(item.rotate)
+                            ? item.rotate
+                            : [-6, -4, 6, -5, -6, 4, -3][idx % 7];
+                        const iconUrl = resolveUrl(item.src);
+                        return (
+                          <span
+                            key={idx}
+                            style={{
+                              marginLeft: idx === 0 ? "0" : "-8px",
+                              transform: `rotate(${rotateDeg}deg)`,
+                            }}
+                            className="group/chip relative inline-block transition-transform duration-200 hover:scale-125 hover:z-30 cursor-pointer"
+                          >
+                            <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-900 px-1.5 py-0.5 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover/chip:opacity-100 z-50">
+                              {item.title || "未命名"}
+                            </span>
+                            <span className="block size-5 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-0.5 shadow-xs overflow-hidden">
+                              {iconUrl ? (
+                                <img
+                                  src={iconUrl}
+                                  alt={item.title}
+                                  className="h-full w-full object-contain"
+                                />
+                              ) : (
+                                <div className="h-full w-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[8px] text-zinc-400">
+                                  ?
+                                </div>
+                              )}
+                            </span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 徽标条目列表 */}
+                  {techStack.map((badge, index) => {
+                    const badgeIcon = resolveUrl(badge.src);
+                    const isUploading = uploadingBadgeIndex === index;
+
+                    return (
+                      <div
+                        key={index}
+                        className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 p-2 transition-shadow hover:shadow-xs"
+                      >
+                        {/* 序号与图标预览/上传 */}
+                        <div className="flex items-center gap-2">
+                          <span className="w-4 text-center font-mono text-[10px] font-semibold text-zinc-400">
+                            #{index + 1}
+                          </span>
+                          <div
+                            onClick={() => handleTriggerUploadBadge(index)}
+                            title="点击上传或更换图标"
+                            className="group relative flex size-8 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-950 transition-colors hover:border-primary"
+                          >
+                            {isUploading ? (
+                              <Loader2 size={12} className="animate-spin text-primary" />
+                            ) : badgeIcon ? (
+                              <img
+                                src={badgeIcon}
+                                alt={badge.title}
+                                className="h-5 w-5 object-contain"
+                              />
+                            ) : (
+                              <Upload size={12} className="text-zinc-400 group-hover:text-primary" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 标题输入框 */}
+                        <div className="flex-[1.2] min-w-0">
+                          <input
+                            type="text"
+                            value={badge.title}
+                            onChange={(e) => handleUpdateBadge(index, { title: e.target.value })}
+                            placeholder="展示标题 (如 Docker & Linux)"
+                            className="h-7.5 w-full rounded-md border border-zinc-200 bg-white px-2.5 text-xs outline-none transition focus:border-primary dark:border-zinc-800 dark:bg-zinc-950 font-medium text-zinc-900 dark:text-zinc-100"
+                          />
+                        </div>
+
+                        {/* 图标地址与上传按钮 */}
+                        <div className="flex-[2] min-w-0 flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={badge.src}
+                            onChange={(e) => handleUpdateBadge(index, { src: e.target.value })}
+                            placeholder="图标 URL 或上传本地图片"
+                            className="h-7.5 w-full rounded-md border border-zinc-200 bg-white px-2.5 text-xs outline-none transition focus:border-primary dark:border-zinc-800 dark:bg-zinc-950 font-mono text-[11px] text-zinc-900 dark:text-zinc-100"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleTriggerUploadBadge(index)}
+                            disabled={isUploading}
+                            className="h-7.5 shrink-0 px-2 flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-md transition-colors cursor-pointer disabled:opacity-50"
+                            title="上传本地图片"
+                          >
+                            {isUploading ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
+                            <span>上传</span>
+                          </button>
+                        </div>
+
+                        {/* 旋转角度微调 */}
+                        <div className="w-18 shrink-0 flex items-center gap-1">
+                          <input
+                            type="number"
+                            min={-45}
+                            max={45}
+                            value={badge.rotate ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value === "" ? undefined : Number(e.target.value);
+                              handleUpdateBadge(index, { rotate: val });
+                            }}
+                            placeholder="角度"
+                            className="h-7.5 w-full rounded-md border border-zinc-200 bg-white px-1.5 text-center text-xs outline-none transition focus:border-primary dark:border-zinc-800 dark:bg-zinc-950 font-mono text-[11px] text-zinc-900 dark:text-zinc-100"
+                            title="层叠旋转角度（单位：度）"
+                          />
+                          <span className="text-[11px] text-zinc-400 select-none">°</span>
+                        </div>
+
+                        {/* 操作栏：上移、下移、删除 */}
+                        <div className="flex items-center gap-0.5 justify-end sm:justify-start">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveBadgeUp(index)}
+                            disabled={index === 0}
+                            className="flex h-7 w-7 items-center justify-center rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+                            title="上移"
+                          >
+                            <ArrowUp size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveBadgeDown(index)}
+                            disabled={index === techStack.length - 1}
+                            className="flex h-7 w-7 items-center justify-center rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+                            title="下移"
+                          >
+                            <ArrowDown size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteBadge(index)}
+                            className="flex h-7 w-7 items-center justify-center rounded text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer"
+                            title="删除此徽标"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* 分割线 */}
+            <div className="border-t border-zinc-100 dark:border-zinc-900 pt-4" />
+
+            {/* 分区 4：社交链接与订阅源 */}
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-0.5">
                 <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">
-                  3. 社交与订阅网络
+                  4. 社交与订阅网络
                 </h3>
                 <p className="text-xs text-zinc-555 dark:text-zinc-400">
                   绑定您的社交及外部渠道，绑定的链接将实时在右侧名片和前台进行点亮。
@@ -850,9 +1180,47 @@ export default function SettingsPage() {
                     关于我 · 故事预览
                   </span>
                   
-                  {/* 第一行文案 */}
-                  <div className="text-xs font-medium text-zinc-800 dark:text-zinc-200 leading-relaxed truncate">
-                    {introLine1 || "🔥 暂无核心自我标签"}
+                  {/* 第一行文案与技术栈徽标 */}
+                  <div className="text-xs font-medium text-zinc-800 dark:text-zinc-200 leading-relaxed flex items-center flex-wrap gap-1">
+                    <span>{introLine1 || "🔥 暂无核心自我标签"}</span>
+                    {techStack.length > 0 && (
+                      <span className="inline-flex items-center translate-y-[1px] ml-1">
+                        {techStack.map((item, idx) => {
+                          const rotateDeg =
+                            typeof item.rotate === "number" && !Number.isNaN(item.rotate)
+                              ? item.rotate
+                              : [-6, -4, 6, -5, -6, 4, -3][idx % 7];
+                          const iconUrl = resolveUrl(item.src);
+                          return (
+                            <span
+                              key={idx}
+                              style={{
+                                marginLeft: idx === 0 ? "0" : "-6px",
+                                transform: `rotate(${rotateDeg}deg)`,
+                              }}
+                              className="group/chip relative inline-block transition-transform duration-200 hover:scale-125 hover:z-30 cursor-pointer"
+                            >
+                              <span className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-900 px-1 py-0.5 text-[9px] font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover/chip:opacity-100 z-50">
+                                {item.title || "未命名"}
+                              </span>
+                              <span className="block size-4.5 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-0.5 shadow-xs overflow-hidden">
+                                {iconUrl ? (
+                                  <img
+                                    src={iconUrl}
+                                    alt={item.title}
+                                    className="h-full w-full object-contain"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[7px] text-zinc-400">
+                                    ?
+                                  </div>
+                                )}
+                              </span>
+                            </span>
+                          );
+                        })}
+                      </span>
+                    )}
                   </div>
 
                   {/* 第二行文案 */}

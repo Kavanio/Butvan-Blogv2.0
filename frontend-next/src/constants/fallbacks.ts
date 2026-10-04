@@ -13,13 +13,6 @@ export const FALLBACK_PROFILE: ProfileVO = {
     email: "1973578950@qq.com",
     introLine1: "大三后端开发｜敲代码｜热爱生活",
     introLine2: "欢迎来到我的 Blog 交流学习，分享技术文章也分享生活帖子",
-    techStack: [
-      { src: "/images/tech/spring.svg", title: "Java & Spring Boot 3", rotate: -6 },
-      { src: "/images/tech/postgres.svg", title: "PostgreSQL & JPA", rotate: -4 },
-      { src: "/images/tech/nextjs.svg", title: "Next.js & React 19", rotate: 6 },
-      { src: "/images/tech/docker.svg", title: "Docker & Linux", rotate: -5 },
-      { src: "/images/tech/agent.svg", title: "AI Agent & LLM", rotate: -6 },
-    ],
   },
 };
 

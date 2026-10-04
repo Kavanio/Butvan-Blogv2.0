@@ -13,14 +13,6 @@ interface HeaderSectionProps {
   profile?: ProfileVO;
 }
 
-const DEFAULT_TECH_LOGOS = [
-  { src: "/images/tech/spring.svg", title: "Java & Spring Boot 3", rotate: -6 },
-  { src: "/images/tech/postgres.svg", title: "PostgreSQL & JPA", rotate: -4 },
-  { src: "/images/tech/nextjs.svg", title: "Next.js & React 19", rotate: 6 },
-  { src: "/images/tech/docker.svg", title: "Docker & Linux", rotate: -5 },
-  { src: "/images/tech/agent.svg", title: "AI Agent & LLM", rotate: -6 },
-];
-
 const ROTATE_PRESETS = [-6, -4, 6, -5, -6, 4, -3];
 
 export function HeaderSection({ profile }: HeaderSectionProps) {
@@ -40,12 +32,12 @@ export function HeaderSection({ profile }: HeaderSectionProps) {
   const email = (socialLinks.email as string) || SITE_CONFIG.socialLinks.email;
   const x = (socialLinks.x as string) || (socialLinks.twitter as string) || "";
 
-  // 动态读取后台配置的技术栈徽标列表，若无配置或为空则优雅回退至预设徽标
+  // 纯真实数据驱动：仅当博主在后台配置了技术栈徽标且非空时展示，杜绝任何写死假数据
   const configuredBadges = socialLinks.techStack;
   const techStackList =
     Array.isArray(configuredBadges) && configuredBadges.length > 0
       ? configuredBadges
-      : DEFAULT_TECH_LOGOS;
+      : [];
 
   return (
     <header className="relative z-30">
@@ -82,52 +74,54 @@ export function HeaderSection({ profile }: HeaderSectionProps) {
         </span>
       </div>
 
-      {/* 个人介绍段落（包含扑克牌展开式技术栈徽标） */}
+      {/* 个人介绍段落（纯真实数据驱动：仅当后台配置徽标时展示展开式技术栈徽标） */}
       <div className="animate-in stagger-2 space-y-4 text-base text-gray-1100 leading-relaxed">
         <p>
           {introLine1}
-          {/* 扑克牌式层叠与扇形展开技术栈徽标 */}
-          <span
-            aria-hidden="true"
-            className="group/stack relative z-40 ml-1.5 mr-0.5 inline-flex translate-y-[5px] items-center"
-          >
-            {techStackList.map((logo, index) => {
-              const rotateDeg =
-                typeof logo.rotate === "number" && !Number.isNaN(logo.rotate)
-                  ? logo.rotate
-                  : ROTATE_PRESETS[index % ROTATE_PRESETS.length];
+          {/* 纯真实数据驱动：无数据时完全不渲染，杜绝任何死数据 */}
+          {techStackList.length > 0 && (
+            <span
+              aria-hidden="true"
+              className="group/stack relative z-40 ml-1.5 mr-0.5 inline-flex translate-y-[5px] items-center"
+            >
+              {techStackList.map((logo, index) => {
+                const rotateDeg =
+                  typeof logo.rotate === "number" && !Number.isNaN(logo.rotate)
+                    ? logo.rotate
+                    : ROTATE_PRESETS[index % ROTATE_PRESETS.length];
 
-              return (
-                <span
-                  key={`${logo.title}-${index}`}
-                  style={{ "--spread": `${(index - 1) * 7}px` } as React.CSSProperties}
-                  className="group/chip chip-item relative -ml-2.5 inline-block shrink-0 first:ml-0 hover:z-30 cursor-pointer"
-                  onMouseEnter={playSparkle}
-                >
-                  {/* 悬停技术栈提示气泡 */}
-                  <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-1200 px-1.5 py-0.5 text-[11px] font-medium leading-4 text-[var(--color-gray-bg)] opacity-0 shadow-md transition-opacity duration-200 group-hover/chip:opacity-100 z-40">
-                    {logo.title}
-                  </span>
-                  {/* 芯片外框与旋转悬浮放大 */}
+                return (
                   <span
-                    style={{ "--rot": `${rotateDeg}deg` } as React.CSSProperties}
-                    className="chip-card block rounded-[7px] border border-gray-400 bg-white dark:bg-[#1c1c1c] p-[2px] shadow-sm"
+                    key={`${logo.title}-${index}`}
+                    style={{ "--spread": `${(index - 1) * 7}px` } as React.CSSProperties}
+                    className="group/chip chip-item relative -ml-2.5 inline-block shrink-0 first:ml-0 hover:z-30 cursor-pointer"
+                    onMouseEnter={playSparkle}
                   >
-                    <span className="flex size-[22px] items-center justify-center overflow-hidden rounded-[4px] bg-gray-100 dark:bg-gray-800 p-0.5">
-                      <img
-                        src={logo.src}
-                        alt={logo.title}
-                        width={18}
-                        height={18}
-                        className="h-full w-full object-contain"
-                        draggable={false}
-                      />
+                    {/* 悬停技术栈提示气泡 */}
+                    <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-1200 px-1.5 py-0.5 text-[11px] font-medium leading-4 text-[var(--color-gray-bg)] opacity-0 shadow-md transition-opacity duration-200 group-hover/chip:opacity-100 z-40">
+                      {logo.title}
+                    </span>
+                    {/* 芯片外框与旋转悬浮放大 */}
+                    <span
+                      style={{ "--rot": `${rotateDeg}deg` } as React.CSSProperties}
+                      className="chip-card block rounded-[7px] border border-gray-400 bg-white dark:bg-[#1c1c1c] p-[2px] shadow-sm"
+                    >
+                      <span className="flex size-[22px] items-center justify-center overflow-hidden rounded-[4px] bg-gray-100 dark:bg-gray-800 p-0.5">
+                        <img
+                          src={logo.src}
+                          alt={logo.title}
+                          width={18}
+                          height={18}
+                          className="h-full w-full object-contain"
+                          draggable={false}
+                        />
+                      </span>
                     </span>
                   </span>
-                </span>
-              );
-            })}
-          </span>
+                );
+              })}
+            </span>
+          )}
           <br />
           {introLine2}
         </p>
