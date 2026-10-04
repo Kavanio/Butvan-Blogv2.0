@@ -116,7 +116,7 @@ export function MarkdownRenderer({
             headingList.push({ id, text: plainText, level: depth });
           }
 
-          return `<h${depth} id="${id}" class="group relative flex items-center">${text}<a href="#${id}" class="heading-anchor opacity-0 group-hover:opacity-100 ml-2 text-pink-500 font-mono text-xs transition-opacity" aria-label="锚点链接">#</a></h${depth}>`;
+          return `<h${depth} id="${id}" class="group relative flex items-center">${text}<a href="#${id}" class="heading-anchor opacity-0 group-hover:opacity-100 ml-2 text-sky-500 dark:text-[#BBDFFF] font-mono text-xs transition-opacity" aria-label="锚点链接">#</a></h${depth}>`;
         },
         link({ href, title, text }) {
           const isExternal =

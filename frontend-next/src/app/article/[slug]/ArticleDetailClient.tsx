@@ -81,7 +81,7 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
   const metaCategory = article.categoryName || (article.tagNames && article.tagNames[0]) || "Writing";
 
   return (
-    <div className="min-h-screen bg-[var(--color-gray-bg)] text-[var(--color-gray-1200)] selection:bg-[#fde3ef] selection:text-[#9b3860]">
+    <div className="min-h-screen bg-[var(--color-gray-bg)] text-[var(--color-gray-1200)]">
       <main className="max-w-[40.5rem] mx-auto px-6 pt-8 sm:pt-12 pb-24">
         {/* 顶部极简导航栏 (← 圆形按钮 + 主题切换，返回文章归档列表) */}
         <DetailHeader backHref="/article" />

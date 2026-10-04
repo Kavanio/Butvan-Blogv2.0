@@ -46,7 +46,7 @@ export default function PhotoCardPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-gray-1200">
           PhotoCard
         </h1>
-        <span className="rounded-full bg-[#fde3ef] px-2.5 py-0.5 text-micro uppercase tracking-wider text-[#9b3860] dark:bg-[#462134] dark:text-[#f2aed0]">
+        <span className="rounded-full bg-[#BBDFFF]/35 px-2.5 py-0.5 text-micro uppercase tracking-wider text-[#1e3a8a] dark:bg-[#BBDFFF]/20 dark:text-[#BBDFFF]">
           New
         </span>
       </div>

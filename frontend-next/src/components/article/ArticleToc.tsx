@@ -75,7 +75,7 @@ export function ArticleToc({ headings }: ArticleTocProps) {
           className="flex items-center justify-between w-full text-xs font-mono text-gray-700 dark:text-gray-300 font-medium cursor-pointer"
         >
           <span className="flex items-center gap-1.5">
-            <ListFilter className="w-3.5 h-3.5 text-pink-500" />
+            <ListFilter className="w-3.5 h-3.5 text-sky-500 dark:text-[#BBDFFF]" />
             <span>本文目录 ({headings.length})</span>
           </span>
           <ChevronRight
@@ -96,7 +96,7 @@ export function ArticleToc({ headings }: ArticleTocProps) {
                   onClick={() => scrollToHeading(item.id)}
                   className={`text-left w-full py-1 text-[13px] leading-snug transition-colors cursor-pointer truncate ${
                     activeId === item.id
-                      ? "text-pink-600 dark:text-pink-400 font-medium"
+                      ? "text-sky-700 dark:text-[#BBDFFF] font-medium"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                   }`}
                 >
@@ -114,7 +114,7 @@ export function ArticleToc({ headings }: ArticleTocProps) {
         className="hidden xl:block sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto pr-2"
       >
         <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-gray-800 dark:text-gray-300 mb-3 uppercase tracking-wider">
-          <ListFilter className="w-3.5 h-3.5 text-pink-500" />
+          <ListFilter className="w-3.5 h-3.5 text-sky-500 dark:text-[#BBDFFF]" />
           <span>目录大纲</span>
         </div>
 
@@ -133,7 +133,7 @@ export function ArticleToc({ headings }: ArticleTocProps) {
                     onClick={() => scrollToHeading(item.id)}
                     className={`block w-full text-left py-0.5 transition-all cursor-pointer truncate ${
                       isActive
-                        ? "text-pink-600 dark:text-pink-400 font-medium -ml-[13px] pl-3 border-l-2 border-pink-500"
+                        ? "text-sky-700 dark:text-[#BBDFFF] font-medium -ml-[13px] pl-3 border-l-2 border-[#BBDFFF]"
                         : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                     }`}
                     title={item.text}

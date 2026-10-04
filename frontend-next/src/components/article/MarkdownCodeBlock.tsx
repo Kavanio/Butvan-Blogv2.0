@@ -140,7 +140,7 @@ export function MarkdownCodeBlock({ code, lang = "" }: MarkdownCodeBlockProps) {
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 px-3 py-0.5 text-[11px] font-mono text-gray-500 hover:text-pink-600 dark:text-gray-400 dark:hover:text-pink-400 transition-colors cursor-pointer"
+            className="flex items-center gap-1 px-3 py-0.5 text-[11px] font-mono text-gray-500 hover:text-sky-600 dark:text-gray-400 dark:hover:text-[#BBDFFF] transition-colors cursor-pointer"
           >
             {expanded ? (
               <>

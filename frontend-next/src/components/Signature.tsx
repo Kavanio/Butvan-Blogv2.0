@@ -6,7 +6,7 @@ export function Signature({ className = "" }: { className?: string }) {
   return (
     <svg
       viewBox="56 60 804 441"
-      className={`h-14 w-auto text-[#9b3860] dark:text-[#fde3ef] ${className}`}
+      className={`h-14 w-auto text-gray-900 dark:text-gray-100 ${className}`}
       role="img"
       aria-label="可梵 (Butvan)"
     >

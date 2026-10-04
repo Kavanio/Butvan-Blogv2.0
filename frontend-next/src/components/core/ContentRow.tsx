@@ -49,7 +49,7 @@ export function ContentRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           {isPinned && (
-            <Pin className="size-3 text-pink-500 shrink-0 fill-current" />
+            <Pin className="size-3 text-sky-500 dark:text-[#BBDFFF] shrink-0 fill-current" />
           )}
 
           <span className="truncate text-base text-gray-1100 leading-relaxed transition-colors duration-200 group-hover:text-gray-1200">
@@ -58,10 +58,10 @@ export function ContentRow({
 
           {badge && (
             <span
-              className={`shrink-0 rounded-full px-2 py-0.5 text-micro uppercase tracking-wider ${
-                badgeTone === "pink"
-                  ? "bg-[#fde3ef] text-[#9b3860] dark:bg-[#462134] dark:text-[#f2aed0]"
-                  : "bg-gray-200 text-gray-1100 dark:bg-gray-800 dark:text-gray-300"
+              className={`shrink-0 rounded-full px-2 py-0.5 text-micro uppercase tracking-wider font-medium ${
+                badgeTone === "gray"
+                  ? "bg-gray-200 text-gray-1100 dark:bg-gray-800 dark:text-gray-300"
+                  : "bg-[#BBDFFF]/35 text-[#1e3a8a] dark:bg-[#BBDFFF]/20 dark:text-[#BBDFFF]"
               }`}
             >
               {badge}

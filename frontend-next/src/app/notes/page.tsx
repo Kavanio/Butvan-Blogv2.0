@@ -35,7 +35,7 @@ export default function NoteArchivePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[var(--color-gray-bg)] text-[var(--color-gray-1200)] selection:bg-[#fde3ef] selection:text-[#9b3860]">
+    <div className="min-h-screen bg-[var(--color-gray-bg)] text-[var(--color-gray-1200)]">
       {/* 主容器 */}
       <main className="max-w-[40.5rem] mx-auto px-6 pt-8 sm:pt-12 pb-20">
         {/* 极简内联微返回与主题切换 */}

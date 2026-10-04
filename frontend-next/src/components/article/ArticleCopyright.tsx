@@ -67,7 +67,7 @@ export function ArticleCopyright({
             </span>
             <button
               onClick={handleCopy}
-              className="inline-flex items-center gap-0.5 text-pink-600 dark:text-pink-400 hover:underline cursor-pointer shrink-0"
+              className="inline-flex items-center gap-0.5 text-sky-600 dark:text-[#BBDFFF] hover:underline cursor-pointer shrink-0"
               title="复制文章地址"
             >
               {copied ? (
@@ -93,7 +93,7 @@ export function ArticleCopyright({
               href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-pink-600 dark:text-pink-400 underline underline-offset-2 hover:opacity-80 inline-flex items-center gap-0.5"
+              className="text-sky-600 dark:text-[#BBDFFF] underline underline-offset-2 hover:opacity-80 inline-flex items-center gap-0.5"
             >
               CC BY-NC-SA 4.0
               <ExternalLink className="w-2.5 h-2.5" />
