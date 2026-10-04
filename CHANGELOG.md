@@ -2,6 +2,28 @@
 
 本文档记录 **Butvan Blog 2.0** 的全部版本更新明细与发版履历，遵循 [Semantic Versioning 2.0.0](https://semver.org/lang/zh-CN/) 版本规范。
 
+## v2.3.3
+
+- **发布日期（Asia/Shanghai）**：2026-10-04
+- **对比基线**：v2.3.2...v2.3.3
+- **发布通道**：Stable
+
+优化前台首页社交联系链接排版：移除未配置的 RSS 链接，并将邮箱地址改为 Email 友好超链接展示，避免在页面上直接暴露明文邮箱。
+
+### 缺陷修复与体验优化
+
+- **移除未配置的 RSS**：
+  - 彻底移除首页介绍底部写死的 `/feed.xml`（`· RSS`）展示，在博主未配置 RSS 前保持页面纯净。
+- **避免暴露明文邮箱地址**：
+  - 将原先明文展示的具体邮箱字符串（如 `1973578950@qq.com`）优化为规范的 `Email` 超链接（保留 `mailto:` 快捷调起能力）。
+  - 修复此前由于 flex gap 导致的标点符号与单词间距异常，文本流自然契合（如 `Find me on GitHub, or write to me via Email`）。
+
+### Commits
+
+- fix(header): 移除未配置的 RSS 并将邮箱改为 Email 链接展示
+
+---
+
 ## v2.3.2
 
 - **发布日期（Asia/Shanghai）**：2026-10-04

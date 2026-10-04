@@ -138,35 +138,35 @@ export function HeaderSection({ profile }: HeaderSectionProps) {
           {introLine2}
         </p>
 
-        {/* 社交与联系链接（动态过滤非空项，杜绝死链接） */}
-        <p className="flex flex-wrap items-center gap-x-1.5 text-sm text-gray-1000">
-          <span>Find me on</span>
-          {github && (
-            <TextLink href={github} external>
-              GitHub
-            </TextLink>
-          )}
-          {x && (
-            <>
-              <span>and</span>
-              <TextLink href={x} external>
-                X
-              </TextLink>
-            </>
-          )}
-          {email && (
-            <>
-              <span>, or write to me at</span>
-              <TextLink href={email.startsWith("mailto:") ? email : `mailto:${email}`} external>
-                {email.replace(/^mailto:/, "")}
-              </TextLink>
-            </>
-          )}
-          <span className="text-gray-500">·</span>
-          <TextLink href="/feed.xml" external>
-            RSS
-          </TextLink>
-        </p>
+        {/* 社交与联系链接（动态过滤非空项，移除未配置的 RSS，邮箱不直接暴露明文） */}
+        {(github || x || email) && (
+          <p className="text-sm text-gray-1000 leading-relaxed">
+            {github && (
+              <>
+                Find me on{" "}
+                <TextLink href={github} external>
+                  GitHub
+                </TextLink>
+              </>
+            )}
+            {x && (
+              <>
+                {github ? " and " : "Find me on "}
+                <TextLink href={x} external>
+                  X
+                </TextLink>
+              </>
+            )}
+            {email && (
+              <>
+                {github || x ? ", or write to me via " : "Write to me via "}
+                <TextLink href={email.startsWith("mailto:") ? email : `mailto:${email}`} external>
+                  Email
+                </TextLink>
+              </>
+            )}
+          </p>
+        )}
       </div>
     </header>
   );
