@@ -254,6 +254,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   │
 │   └── blog-admin/                                #   管理后台端（内容管理）
 │       ├── public/                                #     静态资源
+│       │   ├── images/tech/                       #       技术栈矢量徽标（Spring, Postgres, Next.js, Docker, Agent 等预设与本地预览）
 │       │   ├── topography.svg                     #       地形图交互背景资源
 │       │   ├── texture.png                        #       微粒材质贴图
 │       │   └── noise.png                          #       噪点贴图

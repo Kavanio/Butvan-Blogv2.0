@@ -17,6 +17,13 @@ import {
   User,
   QrCode,
   Upload,
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  RotateCcw,
+  Sparkles,
+  Layers,
 } from "lucide-react";
 import { cn, Button } from "@heroui/react";
 import QRCode from "qrcode";
@@ -33,9 +40,18 @@ import {
   bindGithub,
   unbindGithub,
   type CurrentUser,
+  type TechBadgeItem,
 } from "@/lib/account-api";
 
 type ProfileTab = "profile" | "security" | "bindings";
+
+export const DEFAULT_TECH_STACK: TechBadgeItem[] = [
+  { src: "/images/tech/spring.svg", title: "Java & Spring Boot 3", rotate: -6 },
+  { src: "/images/tech/postgres.svg", title: "PostgreSQL & JPA", rotate: -4 },
+  { src: "/images/tech/nextjs.svg", title: "Next.js & React 19", rotate: 6 },
+  { src: "/images/tech/docker.svg", title: "Docker & Linux", rotate: -5 },
+  { src: "/images/tech/agent.svg", title: "AI Agent & LLM", rotate: -6 },
+];
 
 interface ProfileFormState {
   nickname: string;
@@ -43,6 +59,7 @@ interface ProfileFormState {
   avatarUrl: string;
   bio: string;
   rewardCodeUrl: string;
+  techStack: TechBadgeItem[];
 }
 
 interface PasswordFormState {
@@ -57,6 +74,7 @@ const DEFAULT_PROFILE_FORM: ProfileFormState = {
   avatarUrl: "",
   bio: "",
   rewardCodeUrl: "",
+  techStack: DEFAULT_TECH_STACK,
 };
 
 const DEFAULT_PASSWORD_FORM: PasswordFormState = {
@@ -107,12 +125,19 @@ function getRegistrationDays(value?: string): number {
  * 由当前账号资料生成表单初始状态
  */
 function toProfileForm(user: CurrentUser): ProfileFormState {
+  const rawTech = Array.isArray(user.socialLinks?.techStack)
+    ? (user.socialLinks?.techStack as TechBadgeItem[])
+    : Array.isArray(user.techStack)
+    ? user.techStack
+    : null;
+
   return {
     nickname: user.nickname || "",
     email: user.email || "",
     avatarUrl: user.avatarUrl || "",
     bio: user.bio || "",
     rewardCodeUrl: user.rewardCodeUrl || (user.socialLinks?.rewardCodeUrl as string) || "",
+    techStack: rawTech && rawTech.length > 0 ? rawTech : DEFAULT_TECH_STACK,
   };
 }
 
@@ -122,6 +147,7 @@ function toProfileForm(user: CurrentUser): ProfileFormState {
 export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rewardFileInputRef = useRef<HTMLInputElement>(null);
+  const badgeFileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [initialForm, setInitialForm] = useState<ProfileFormState>(DEFAULT_PROFILE_FORM);
@@ -132,6 +158,7 @@ export default function ProfilePage() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingRewardCode, setUploadingRewardCode] = useState(false);
+  const [uploadingBadgeIndex, setUploadingBadgeIndex] = useState<number | null>(null);
 
   // 模拟 GitHub 绑定弹窗状态
   const [showGithubModal, setShowGithubModal] = useState(false);
@@ -179,7 +206,8 @@ export default function ProfilePage() {
       profileForm.email !== initialForm.email ||
       profileForm.avatarUrl !== initialForm.avatarUrl ||
       profileForm.bio !== initialForm.bio ||
-      profileForm.rewardCodeUrl !== initialForm.rewardCodeUrl
+      profileForm.rewardCodeUrl !== initialForm.rewardCodeUrl ||
+      JSON.stringify(profileForm.techStack) !== JSON.stringify(initialForm.techStack)
     );
   }, [initialForm, profileForm]);
 
@@ -194,6 +222,128 @@ export default function ProfilePage() {
       ...prev,
       [field]: value,
     }));
+  };
+
+  /**
+   * 更新某个技术栈徽标的属性
+   */
+  const handleUpdateBadge = (index: number, patch: Partial<TechBadgeItem>) => {
+    setProfileForm((prev) => {
+      const nextStack = [...prev.techStack];
+      nextStack[index] = { ...nextStack[index], ...patch };
+      return { ...prev, techStack: nextStack };
+    });
+  };
+
+  /**
+   * 上移徽标
+   */
+  const handleMoveBadgeUp = (index: number) => {
+    if (index <= 0) return;
+    setProfileForm((prev) => {
+      const nextStack = [...prev.techStack];
+      const temp = nextStack[index - 1];
+      nextStack[index - 1] = nextStack[index];
+      nextStack[index] = temp;
+      return { ...prev, techStack: nextStack };
+    });
+  };
+
+  /**
+   * 下移徽标
+   */
+  const handleMoveBadgeDown = (index: number) => {
+    setProfileForm((prev) => {
+      if (index >= prev.techStack.length - 1) return prev;
+      const nextStack = [...prev.techStack];
+      const temp = nextStack[index + 1];
+      nextStack[index + 1] = nextStack[index];
+      nextStack[index] = temp;
+      return { ...prev, techStack: nextStack };
+    });
+  };
+
+  /**
+   * 删除某个徽标
+   */
+  const handleDeleteBadge = (index: number) => {
+    setProfileForm((prev) => ({
+      ...prev,
+      techStack: prev.techStack.filter((_, i) => i !== index),
+    }));
+  };
+
+  /**
+   * 新增空白徽标
+   */
+  const handleAddBadge = () => {
+    const defaultAngles = [-6, -4, 6, -5, -6, 4, -3];
+    const nextRotate = defaultAngles[profileForm.techStack.length % defaultAngles.length];
+    setProfileForm((prev) => ({
+      ...prev,
+      techStack: [
+        ...prev.techStack,
+        { src: "", title: "", rotate: nextRotate },
+      ],
+    }));
+  };
+
+  /**
+   * 恢复预设徽标
+   */
+  const handleResetDefaultTechStack = () => {
+    if (confirm("确认恢复为系统预设的技术栈徽标列表吗？未保存的自定义修改将被覆盖。")) {
+      setProfileForm((prev) => ({
+        ...prev,
+        techStack: DEFAULT_TECH_STACK,
+      }));
+      toast.success("已恢复预设技术栈徽标，请点击“保存资料”以生效");
+    }
+  };
+
+  /**
+   * 触发为指定索引的徽标上传图标
+   */
+  const handleTriggerUploadBadgeIcon = (index: number) => {
+    setUploadingBadgeIndex(index);
+    badgeFileInputRef.current?.click();
+  };
+
+  /**
+   * 处理徽标图片文件上传
+   */
+  const handleBadgeIconFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    const targetIndex = uploadingBadgeIndex;
+    if (!file || targetIndex === null) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.warning("请选择图片格式的图标文件（支持 SVG、PNG、WebP 等）");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("sourceType", "TECH_STACK");
+      formData.append("sourceDetail", `技术栈徽标-${profileForm.techStack[targetIndex]?.title || "Icon"}`);
+      const res = await apiClient.post("/admin/media/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const fileUrl = res.data?.data?.fileUrl;
+      if (!fileUrl) {
+        toast.error(res.data?.msg || "图标上传失败");
+        return;
+      }
+      handleUpdateBadge(targetIndex, { src: fileUrl });
+      toast.success("图标已成功上传并回填");
+    } catch (error) {
+      console.error("上传徽标图标失败", error);
+      toast.error("图标上传失败，请确认媒体服务是否可用");
+    } finally {
+      setUploadingBadgeIndex(null);
+      event.target.value = "";
+    }
   };
 
   /**
@@ -293,6 +443,10 @@ export default function ProfilePage() {
         avatarUrl: profileForm.avatarUrl.trim() || undefined,
         bio: profileForm.bio.trim() || undefined,
         rewardCodeUrl: profileForm.rewardCodeUrl.trim() || undefined,
+        socialLinks: {
+          ...(currentUser?.socialLinks || {}),
+          techStack: profileForm.techStack,
+        },
       });
       const nextForm = toProfileForm(updatedUser);
       setCurrentUser(updatedUser);
@@ -624,6 +778,242 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </Field>
+
+              {/* 隐藏的徽标文件上传 input */}
+              <input
+                ref={badgeFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleBadgeIconFileChange}
+                className="hidden"
+              />
+
+              {/* 首页技术栈微徽标配置 */}
+              <Field label="首页技术栈徽标（扑克牌展开式徽标）">
+                <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 p-4">
+                  {/* 顶栏说明与操作栏 */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-zinc-200 dark:border-zinc-800">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                        <Layers size={14} className="text-primary" />
+                        动态徽标列表 ({profileForm.techStack.length} 个)
+                      </span>
+                      <span className="text-[11px] text-zinc-500">
+                        对应前台名片区的层叠徽标组。鼠标悬停时扇形展开并提示标题，可调整图标、标题及角度。
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="tertiary"
+                        onClick={handleAddBadge}
+                        className="h-7 gap-1 rounded-md px-2.5 text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20"
+                      >
+                        <Plus size={13} />
+                        添加徽标
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleResetDefaultTechStack}
+                        className="h-7 gap-1 rounded-md px-2 text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                        aria-label="恢复系统预设技术栈徽标"
+                      >
+                        <RotateCcw size={12} />
+                        恢复预设
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* 实时扑克牌层叠展开预览 */}
+                  {profileForm.techStack.length > 0 && (
+                    <div className="flex items-center justify-between rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/70 px-3.5 py-2">
+                      <div className="flex items-center gap-2 text-xs text-zinc-500">
+                        <Sparkles size={13} className="text-amber-500" />
+                        <span>前台效果实时预览：</span>
+                        <span className="text-[11px] text-zinc-400">（鼠标悬停展开看气泡）</span>
+                      </div>
+
+                      <div className="relative z-10 inline-flex items-center translate-y-[2px]">
+                        {profileForm.techStack.map((item, idx) => {
+                          const rotateDeg =
+                            typeof item.rotate === "number" && !Number.isNaN(item.rotate)
+                              ? item.rotate
+                              : [-6, -4, 6, -5, -6, 4, -3][idx % 7];
+                          const iconUrl = resolveAvatarUrl(item.src);
+                          return (
+                            <span
+                              key={idx}
+                              style={{
+                                marginLeft: idx === 0 ? "0" : "-10px",
+                                transform: `rotate(${rotateDeg}deg)`,
+                              }}
+                              className="group/adminchip relative inline-block transition-transform duration-200 hover:scale-125 hover:z-30 cursor-pointer"
+                            >
+                              {/* 悬停气泡 */}
+                              <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-900 px-1.5 py-0.5 text-[10px] font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover/adminchip:opacity-100 z-50">
+                                {item.title || "未命名"}
+                              </span>
+                              <span className="block size-6 rounded-[5px] border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-0.5 shadow-xs overflow-hidden">
+                                {iconUrl ? (
+                                  <img
+                                    src={iconUrl}
+                                    alt={item.title}
+                                    className="h-full w-full object-contain"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[9px] text-zinc-400">
+                                    ?
+                                  </div>
+                                )}
+                              </span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 徽标条目列表 */}
+                  {profileForm.techStack.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-6 text-center text-xs text-zinc-400 gap-2">
+                      <p>当前未配置任何技术栈徽标，前台将回退至系统预设徽标。</p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleResetDefaultTechStack}
+                        className="h-7 text-xs bg-primary text-white"
+                      >
+                        一键加载默认徽标
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {profileForm.techStack.map((badge, index) => {
+                        const badgeIcon = resolveAvatarUrl(badge.src);
+                        const isUploading = uploadingBadgeIndex === index;
+
+                        return (
+                          <div
+                            key={index}
+                            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-2.5 transition-shadow hover:shadow-xs"
+                          >
+                            {/* 图标预览与点击上传 */}
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 text-center font-mono text-[11px] font-semibold text-zinc-400">
+                                #{index + 1}
+                              </span>
+                              <div
+                                onClick={() => handleTriggerUploadBadgeIcon(index)}
+                                title="点击上传或更换图标"
+                                className="group relative flex size-9 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 transition-colors hover:border-primary"
+                              >
+                                {isUploading ? (
+                                  <Loader2 size={14} className="animate-spin text-primary" />
+                                ) : badgeIcon ? (
+                                  <img
+                                    src={badgeIcon}
+                                    alt={badge.title}
+                                    className="h-6 w-6 object-contain"
+                                  />
+                                ) : (
+                                  <Upload size={14} className="text-zinc-400 group-hover:text-primary" />
+                                )}
+                              </div>
+                            </div>
+
+                            {/* 标题输入框 */}
+                            <div className="flex-[1.2] min-w-0">
+                              <input
+                                type="text"
+                                value={badge.title}
+                                onChange={(e) => handleUpdateBadge(index, { title: e.target.value })}
+                                placeholder="展示标题 (如 Docker & Linux)"
+                                className="h-8 w-full rounded-md border border-zinc-200 bg-white px-2.5 text-xs outline-none transition focus:border-primary dark:border-zinc-800 dark:bg-zinc-900 font-medium"
+                              />
+                            </div>
+
+                            {/* 图标地址输入框及快捷上传按钮 */}
+                            <div className="flex-[2] min-w-0 flex items-center gap-1">
+                              <input
+                                type="text"
+                                value={badge.src}
+                                onChange={(e) => handleUpdateBadge(index, { src: e.target.value })}
+                                placeholder="图标 URL 或 /images/tech/..."
+                                className="h-8 w-full rounded-md border border-zinc-200 bg-white px-2.5 text-xs outline-none transition focus:border-primary dark:border-zinc-800 dark:bg-zinc-900 font-mono text-[11px]"
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="tertiary"
+                                onClick={() => handleTriggerUploadBadgeIcon(index)}
+                                isDisabled={isUploading}
+                                className="h-8 shrink-0 px-2 text-[11px] text-primary bg-primary/10 hover:bg-primary/20"
+                                aria-label="上传本地图片"
+                              >
+                                {isUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                                上传
+                              </Button>
+                            </div>
+
+                            {/* 旋转角度微调 */}
+                            <div className="w-20 shrink-0 flex items-center gap-1">
+                              <input
+                                type="number"
+                                min={-45}
+                                max={45}
+                                value={badge.rotate ?? ""}
+                                onChange={(e) => {
+                                  const val = e.target.value === "" ? undefined : Number(e.target.value);
+                                  handleUpdateBadge(index, { rotate: val });
+                                }}
+                                placeholder="角度"
+                                className="h-8 w-full rounded-md border border-zinc-200 bg-white px-1.5 text-center text-xs outline-none transition focus:border-primary dark:border-zinc-800 dark:bg-zinc-900 font-mono text-[11px]"
+                                title="层叠旋转角度（单位：度）"
+                              />
+                              <span className="text-[11px] text-zinc-400 select-none">°</span>
+                            </div>
+
+                            {/* 操作栏：上移、下移、删除 */}
+                            <div className="flex items-center gap-0.5 justify-end sm:justify-start">
+                              <button
+                                type="button"
+                                onClick={() => handleMoveBadgeUp(index)}
+                                disabled={index === 0}
+                                className="flex h-7 w-7 items-center justify-center rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+                                title="上移"
+                              >
+                                <ArrowUp size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleMoveBadgeDown(index)}
+                                disabled={index === profileForm.techStack.length - 1}
+                                className="flex h-7 w-7 items-center justify-center rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+                                title="下移"
+                              >
+                                <ArrowDown size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteBadge(index)}
+                                className="flex h-7 w-7 items-center justify-center rounded text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer"
+                                title="删除此徽标"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </Field>
+
               <div className="flex items-center justify-between border-t border-zinc-200 pt-4 dark:border-zinc-800">
                 <span className={cn("text-xs", isProfileDirty ? "text-amber-600 dark:text-amber-300" : "text-zinc-400")}>
                   {isProfileDirty ? "资料有未保存修改" : "当前资料已同步"}

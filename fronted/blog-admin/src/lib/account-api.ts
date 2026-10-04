@@ -2,11 +2,19 @@ import apiClient from "@/lib/api";
 import type { AuthUser } from "@/lib/auth";
 import type { ApiResponse } from "@/types/common";
 
+/** 首页技术栈微徽标项 */
+export interface TechBadgeItem {
+  src: string;
+  title: string;
+  rotate?: number;
+}
+
 /** 当前账号个人中心资料 */
 export interface CurrentUser extends AuthUser {
   email?: string;
   bio?: string;
   rewardCodeUrl?: string;
+  techStack?: TechBadgeItem[];
   socialLinks?: Record<string, any>;
   status: "ACTIVE" | "DISABLED";
   lastLoginAt?: string;
