@@ -2,6 +2,26 @@
 
 本文档记录 **Butvan Blog 2.0** 的全部版本更新明细与发版履历，遵循 [Semantic Versioning 2.0.0](https://semver.org/lang/zh-CN/) 版本规范。
 
+## v2.4.2
+
+- **发布日期（Asia/Shanghai）**：2026-10-04
+- **对比基线**：v2.4.1...v2.4.2
+- **发布通道**：Stable
+
+清理三个前端项目 `public` 目录中未被源码或当前业务数据引用的静态资源，合计释放约 8 MB。
+
+### 维护与清理
+
+- 移除未引用的 Next.js/Vercel 脚手架示例图、旧字体、未使用的项目/实验室/贴纸/邮票图片及旧设计参考图。
+- 移除 `frontend-next/public/favicon.ico` 重复文件；内容与 `src/app/favicon.ico` 完全相同，保留 App Router 图标文件供 `/favicon.ico` 使用。
+- 保留页面、登录页、手记兜底、技术徽标、默认场景和当前 API 数据仍使用的资源。
+
+### Commits
+
+- chore(frontend): remove unused public assets
+
+---
+
 ## v2.4.1
 
 - **发布日期（Asia/Shanghai）**：2026-10-04

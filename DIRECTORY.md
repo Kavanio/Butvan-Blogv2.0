@@ -71,8 +71,8 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   ├── docs/                                  #     📚 工程文档
 │   │   ├── ARCHITECTURE.md                    #       大厂前端四层架构与容灾降级规范
 │   │   └── COMPONENTS.md                      #       核心组件维护手册（Props 接口、交互 Token 与视觉分层）
-│   ├── public/                                #     静态资产（高保真素材、拍立得照片、矢量邮票、贴纸）
-│   │   └── images/tech/                       #       博主专属技术栈矢量徽标（Spring, Postgres, Next.js, Docker, Agent）
+│   ├── public/                                #     当前使用的静态资产（手记兜底图、技术栈徽标、品牌标识等）
+│   │   └── images/                            #       craft/ 手记封面，tech/ 技术栈徽标，logos/ 站点标识
 │   └── src/
 │       ├── app/                               #     Next.js App Router 路由层
 │       │   ├── page.tsx                       #       🏠 博客首页（Header/Note/Article/Photo/Friend 五大流动板块）
@@ -154,8 +154,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   │
 │   ├── blog-client/                               #   用户展示端（前台博客）
 │   │   ├── public/                                #     静态资源
-│   │   │   ├── images/                            #       图片资源
-│   │   │   └── fonts/                             #       自定义字体文件
+│   │   │   └── fWdgJuAOF.jpeg                     #       默认房间场景背景（由场景数据引用）
 │   │   ├── src/
 │   │   │   ├── app/                               #     Next.js App Router 路由层
 │   │   │   │   ├── page.tsx                       #         🏠 首页 — 房间场景：PNG图层切片物理悬浮交互、镜头缩放聚焦
@@ -254,10 +253,9 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   │
 │   └── blog-admin/                                #   管理后台端（内容管理）
 │       ├── public/                                #     静态资源
-│       │   ├── images/tech/                       #       技术栈矢量徽标（Spring, Postgres, Next.js, Docker, Agent 等预设与本地预览）
-│       │   ├── topography.svg                     #       地形图交互背景资源
-│       │   ├── texture.png                        #       微粒材质贴图
-│       │   └── noise.png                          #       噪点贴图
+│       │   ├── fWdgJuAOF.jpeg                     #       默认房间场景背景
+│       │   ├── images/tech/                       #       技术栈徽标（Spring, Postgres, Next.js, Docker, Agent）
+│       │   └── topography.svg                     #       登录页地形图背景资源
 │       ├── src/
 │       │   ├── app/                               #     Next.js App Router 路由层
 │       │   │   ├── (auth)/                        #       🔐 认证模块（无布局壳）
