@@ -7,7 +7,7 @@ import { ProfileVO } from "@/types/profile";
 import { ArticleItemVO, ArticleDetailVO, ArticleQueryDTO } from "@/types/article";
 import { NoteItemVO, NoteDetailVO, NoteQueryDTO } from "@/types/note";
 import { PhotoVO } from "@/types/album";
-import { FriendLinkVO, FriendLinkApplyDTO } from "@/types/friend";
+import { FriendLinkVO, FriendLinkApplyDTO, WebMetaVO } from "@/types/friend";
 import { CommentVO, CommentCreateDTO } from "@/types/comment";
 import { QuoteItemVO, QuoteQueryDTO } from "@/types/quote";
 import { PageResult } from "@/types/api";
@@ -156,6 +156,14 @@ export const friendService = {
   async apply(dto: FriendLinkApplyDTO): Promise<void> {
     await http.post<void>(`/friends/apply`, dto);
   },
+
+  /**
+   * 从 URL 自动抓取网站元数据（标题、描述、favicon 图标）
+   * @param url 目标网站完整地址
+   */
+  async fetchWebMeta(url: string): Promise<WebMetaVO> {
+    return await http.post<WebMetaVO>(`/friends/fetch-meta`, { url });
+  },
 };
 
 export const commentService = {
@@ -220,4 +228,6 @@ export const quoteService = {
     }
   },
 };
+
+export * from "./github";
 

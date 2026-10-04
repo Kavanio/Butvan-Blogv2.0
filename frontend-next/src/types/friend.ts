@@ -18,6 +18,16 @@ export interface FriendLinkApplyDTO {
   description: string;
   email: string;
   category?: string;
+  remark?: string;
+}
+
+export interface WebMetaVO {
+  title: string;
+  description: string;
+  faviconUrl: string;
+  domain: string;
+  success: boolean;
+  errorMsg?: string;
 }
 
 export interface CommentVO {
