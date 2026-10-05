@@ -8,6 +8,7 @@ import {
   Image as ImageIcon,
   Code as CodeIcon,
   Globe,
+  Images,
   Trash2,
 } from "lucide-react";
 import SlashMenu, { SLASH_COMMANDS, type SlashCommand } from "./SlashMenu";
@@ -246,12 +247,140 @@ function parseInline(text: string, parentEl: HTMLElement) {
 }
 
 /**
+ * 生成交互式图片轮播卡片 DOM 节点
+ */
+function createCarouselDOM(
+  images: { alt: string; url: string }[],
+  onAppendImages?: () => void
+): HTMLElement {
+  const card = document.createElement("div");
+  card.className =
+    "my-6 not-prose rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-900/50 overflow-hidden shadow-xs select-none";
+
+  // 顶部栏
+  const header = document.createElement("div");
+  header.className =
+    "flex items-center justify-between px-4 py-2 border-b border-zinc-200/60 dark:border-zinc-800/60 text-xs";
+
+  const title = document.createElement("div");
+  title.className =
+    "flex items-center gap-1.5 font-medium text-zinc-700 dark:text-zinc-300 font-sans";
+  title.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+    <span>图片轮播 (${images.length} 张)</span>
+  `;
+  header.appendChild(title);
+
+  if (onAppendImages) {
+    const appendBtn = document.createElement("button");
+    appendBtn.type = "button";
+    appendBtn.className =
+      "px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 hover:bg-primary hover:text-white transition-all cursor-pointer flex items-center gap-1";
+    appendBtn.innerHTML = `<span>+ 补传图片</span>`;
+    appendBtn.addEventListener("click", onAppendImages);
+    header.appendChild(appendBtn);
+  }
+  card.appendChild(header);
+
+  if (images.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "p-8 text-center text-xs text-zinc-400 font-sans";
+    empty.textContent = "轮播图暂无图片，请在 <carousel> 中插入图片或点击右上角补传";
+    card.appendChild(empty);
+    return card;
+  }
+
+  // 主体展示区
+  let currentIndex = 0;
+  const body = document.createElement("div");
+  body.className =
+    "relative flex items-center justify-center p-3 sm:p-4 min-h-[260px] sm:min-h-[340px] bg-zinc-100/40 dark:bg-black/30 overflow-hidden";
+
+  const imgEl = document.createElement("img");
+  imgEl.src = images[0].url;
+  imgEl.alt = images[0].alt;
+  imgEl.className =
+    "max-w-full max-h-[300px] object-contain rounded-xl shadow-xs transition-opacity duration-200 block mx-auto";
+  body.appendChild(imgEl);
+
+  // 左右切换箭头按钮
+  if (images.length > 1) {
+    const prevBtn = document.createElement("button");
+    prevBtn.type = "button";
+    prevBtn.className =
+      "absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/85 dark:bg-zinc-800/85 hover:bg-white dark:hover:bg-zinc-700 shadow-md flex items-center justify-center text-zinc-700 dark:text-zinc-200 cursor-pointer transition-all";
+    prevBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
+
+    const nextBtn = document.createElement("button");
+    nextBtn.type = "button";
+    nextBtn.className =
+      "absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/85 dark:bg-zinc-800/85 hover:bg-white dark:hover:bg-zinc-700 shadow-md flex items-center justify-center text-zinc-700 dark:text-zinc-200 cursor-pointer transition-all";
+    nextBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+
+    // 底部指示器
+    const footer = document.createElement("div");
+    footer.className =
+      "flex items-center justify-between px-4 py-2 border-t border-zinc-200/60 dark:border-zinc-800/60 text-xs text-zinc-500 font-mono";
+
+    const dotsWrap = document.createElement("div");
+    dotsWrap.className = "flex items-center gap-1.5";
+
+    const counter = document.createElement("span");
+    counter.className = "text-[11px] font-medium";
+
+    const updateView = (index: number) => {
+      currentIndex = (index + images.length) % images.length;
+      imgEl.src = images[currentIndex].url;
+      imgEl.alt = images[currentIndex].alt;
+
+      Array.from(dotsWrap.children).forEach((dot, dIdx) => {
+        if (dIdx === currentIndex) {
+          dot.className = "w-4 h-1.5 rounded-full bg-primary transition-all";
+        } else {
+          dot.className =
+            "w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 transition-all cursor-pointer";
+        }
+      });
+      counter.textContent = `${currentIndex + 1} / ${images.length}`;
+    };
+
+    images.forEach((_, idx) => {
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.addEventListener("click", () => updateView(idx));
+      dotsWrap.appendChild(dot);
+    });
+
+    prevBtn.addEventListener("click", () => updateView(currentIndex - 1));
+    nextBtn.addEventListener("click", () => updateView(currentIndex + 1));
+
+    body.appendChild(prevBtn);
+    body.appendChild(nextBtn);
+
+    footer.appendChild(dotsWrap);
+    footer.appendChild(counter);
+    card.appendChild(body);
+    card.appendChild(footer);
+    updateView(0);
+  } else {
+    card.appendChild(body);
+  }
+
+  return card;
+}
+
+/**
  * 块级渲染引擎：完全对齐 new md editor.html 规范
  */
-function renderMarkdownToDOM(source: string, container: HTMLElement) {
+function renderMarkdownToDOM(
+  source: string,
+  container: HTMLElement,
+  onAppendCarousel?: (carouselIndex: number) => void
+) {
   container.innerHTML = "";
   const lines = source.split("\n");
   let i = 0;
+  let carouselCount = 0;
 
   while (i < lines.length) {
     const rawLine = lines[i];
@@ -269,6 +398,36 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
       wrapper.innerHTML = trimmed;
       container.appendChild(wrapper);
       i++;
+      continue;
+    }
+
+    // 0.5 图片轮播组件 <carousel> 或 :::carousel
+    if (trimmed.startsWith("<carousel>") || trimmed.startsWith(":::carousel")) {
+      const isCustomTag = trimmed.startsWith("<carousel>");
+      const endTag = isCustomTag ? "</carousel>" : ":::";
+      const carouselLines: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].trim().startsWith(endTag)) {
+        carouselLines.push(lines[i]);
+        i++;
+      }
+      if (i < lines.length) i++;
+
+      const innerText = carouselLines.join("\n");
+      const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
+      const images: { alt: string; url: string }[] = [];
+      let m: RegExpExecArray | null;
+      while ((m = imgRegex.exec(innerText)) !== null) {
+        images.push({ alt: m[1] || "", url: m[2] });
+      }
+
+      const cIdx = carouselCount++;
+      const carouselEl = createCarouselDOM(images, () => {
+        if (onAppendCarousel) {
+          onAppendCarousel(cIdx);
+        }
+      });
+      container.appendChild(carouselEl);
       continue;
     }
 
@@ -534,6 +693,9 @@ export default function MarkdownEditor({
   const previewContentRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const htmlFileInputRef = useRef<HTMLInputElement>(null);
+  const carouselFileInputRef = useRef<HTMLInputElement>(null);
+  const carouselInsertPosRef = useRef<number | null>(null);
+  const appendCarouselIndexRef = useRef<number | null>(null);
 
   const textValue = value ?? "";
   const charCount = textValue.length;
@@ -569,14 +731,21 @@ export default function MarkdownEditor({
     }
   }, []);
 
+  // 预览区点击 "+ 补传图片" 的回调
+  const handleAppendCarousel = useCallback((carouselIndex: number) => {
+    appendCarouselIndexRef.current = carouselIndex;
+    carouselInsertPosRef.current = null;
+    carouselFileInputRef.current?.click();
+  }, []);
+
   // 触发实时渲染
   const updatePreview = useCallback(
     (text: string) => {
       if (previewContentRef.current) {
-        renderMarkdownToDOM(text, previewContentRef.current);
+        renderMarkdownToDOM(text, previewContentRef.current, handleAppendCarousel);
       }
     },
-    []
+    [handleAppendCarousel]
   );
 
   // 文本变动时实时渲染预览
@@ -747,6 +916,117 @@ export default function MarkdownEditor({
     }
   };
 
+  // 批量上传轮播图片处理（支持初次插入与向指定轮播块补传）
+  const handleUploadCarouselFiles = async (files: FileList | File[]) => {
+    if (!files || files.length === 0) return;
+    try {
+      setUploading(true);
+      const uploadedImages: { name: string; url: string }[] = [];
+
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("sourceType", "ARTICLE_CAROUSEL");
+        formData.append("sourceDetail", "文章正文轮播图");
+        const res = await apiClient.post("/admin/media/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        if (res.data.code === 200 || res.data.code === 0) {
+          let url = res.data.data.fileUrl;
+          if (url.startsWith("/")) {
+            url = resolveAssetUrl(url);
+          }
+          uploadedImages.push({
+            name: file.name.replace(/\.[^/.]+$/, ""),
+            url,
+          });
+        }
+      }
+
+      if (uploadedImages.length === 0) {
+        alert("未能成功上传图片，请重试");
+        return;
+      }
+
+      const textarea = editorRef.current;
+      const currentVal = textarea ? textarea.value : textValue;
+
+      // 判断是向既有轮播块补传，还是新插入轮播块
+      if (appendCarouselIndexRef.current !== null) {
+        const appendIdx = appendCarouselIndexRef.current;
+        appendCarouselIndexRef.current = null;
+
+        // 匹配轮播图块 <carousel>...</carousel> 或 :::carousel...:::
+        const carouselRegex = /<carousel>([\s\S]*?)<\/carousel>|:::carousel([\s\S]*?):::/g;
+        let match: RegExpExecArray | null;
+        let currentIdx = 0;
+        let targetPos: number | null = null;
+
+        while ((match = carouselRegex.exec(currentVal)) !== null) {
+          if (currentIdx === appendIdx) {
+            if (match[1] !== undefined) {
+              targetPos = match.index + match[0].lastIndexOf("</carousel>");
+            } else {
+              targetPos = match.index + match[0].lastIndexOf(":::");
+            }
+            break;
+          }
+          currentIdx++;
+        }
+
+        const newImgsMd =
+          uploadedImages.map((img) => `![${img.name}](${img.url})`).join("\n") + "\n";
+
+        if (targetPos !== null) {
+          const nextVal =
+            currentVal.slice(0, targetPos) + newImgsMd + currentVal.slice(targetPos);
+          onChange(nextVal);
+          setTimeout(() => {
+            if (textarea) {
+              textarea.focus();
+              const cursor = targetPos! + newImgsMd.length;
+              textarea.selectionStart = cursor;
+              textarea.selectionEnd = cursor;
+              keepCaretInView();
+            }
+          }, 0);
+          return;
+        }
+      }
+
+      // 新插入轮播块
+      const insertPos =
+        carouselInsertPosRef.current ?? (textarea ? textarea.selectionStart : currentVal.length);
+      carouselInsertPosRef.current = null;
+
+      const imgsMd = uploadedImages
+        .map((img) => `![${img.name}](${img.url})`)
+        .join("\n");
+      const snippet = `\n<carousel>\n${imgsMd}\n</carousel>\n\n`;
+      const nextVal =
+        currentVal.slice(0, insertPos) + snippet + currentVal.slice(insertPos);
+      onChange(nextVal);
+
+      setTimeout(() => {
+        if (textarea) {
+          textarea.focus();
+          const targetCursor = insertPos + snippet.length;
+          textarea.selectionStart = targetCursor;
+          textarea.selectionEnd = targetCursor;
+          keepCaretInView();
+        }
+      }, 0);
+    } catch (err: any) {
+      console.error("轮播图上传失败:", err);
+      alert(err.message || "轮播图上传失败");
+    } finally {
+      setUploading(false);
+      if (carouselFileInputRef.current) {
+        carouselFileInputRef.current.value = "";
+      }
+    }
+  };
+
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const items = e.clipboardData?.items;
     if (!items) return;
@@ -837,6 +1117,21 @@ export default function MarkdownEditor({
           textarea.selectionStart = replaceStart;
           textarea.selectionEnd = replaceStart;
           fileInputRef.current?.click();
+        }, 0);
+        return;
+      }
+
+      if (cmd.id === "carousel") {
+        const nextVal = fullText.slice(0, replaceStart) + textAfter;
+        onChange(nextVal);
+        setMenuOpen(false);
+        carouselInsertPosRef.current = replaceStart;
+        appendCarouselIndexRef.current = null;
+        setTimeout(() => {
+          textarea.focus();
+          textarea.selectionStart = replaceStart;
+          textarea.selectionEnd = replaceStart;
+          carouselFileInputRef.current?.click();
         }, 0);
         return;
       }
@@ -1042,6 +1337,23 @@ export default function MarkdownEditor({
               <span>{uploading ? "处理中..." : "嵌入网页"}</span>
             </button>
 
+            <button
+              type="button"
+              onClick={() => {
+                if (editorRef.current) {
+                  carouselInsertPosRef.current = editorRef.current.selectionStart;
+                  appendCarouselIndexRef.current = null;
+                  carouselFileInputRef.current?.click();
+                }
+              }}
+              disabled={uploading}
+              className="p-1 px-2 rounded text-xs font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              title="插入多图轮播 (<carousel>)"
+            >
+              <Images size={12} />
+              <span>{uploading ? "处理中..." : "轮播图"}</span>
+            </button>
+
             <input
               ref={fileInputRef}
               type="file"
@@ -1050,6 +1362,19 @@ export default function MarkdownEditor({
               onChange={(e) => {
                 if (e.target.files && e.target.files[0]) {
                   handleUploadFile(e.target.files[0]);
+                }
+              }}
+            />
+
+            <input
+              ref={carouselFileInputRef}
+              type="file"
+              multiple
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  handleUploadCarouselFiles(e.target.files);
                 }
               }}
             />

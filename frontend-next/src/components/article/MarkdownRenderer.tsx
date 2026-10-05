@@ -110,8 +110,43 @@ const circleExtension = {
   },
 };
 
+import { ArticleCarousel } from "./ArticleCarousel";
+
 /**
- * 专为 Butvan Blog 打造的极客级 Markdown / 手绘笔触渲染引擎
+ * Marked 扩展：支持 <carousel> 与 :::carousel 多图轮播语法
+ */
+const carouselExtension = {
+  name: "carousel",
+  level: "block" as const,
+  start(src: string) {
+    const m = src.match(/(?:<carousel>|:::carousel)/);
+    return m ? m.index : -1;
+  },
+  tokenizer(src: string) {
+    const match = /^(?:<carousel>([\s\S]*?)<\/carousel>|:::carousel\s*([\s\S]*?):::)/.exec(src);
+    if (match) {
+      const rawBody = match[1] ?? match[2] ?? "";
+      const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
+      const images: { alt: string; url: string }[] = [];
+      let imgMatch: RegExpExecArray | null;
+      while ((imgMatch = imgRegex.exec(rawBody)) !== null) {
+        images.push({ alt: imgMatch[1] || "", url: imgMatch[2] });
+      }
+      return {
+        type: "carousel",
+        raw: match[0],
+        images,
+      };
+    }
+  },
+  renderer(token: any) {
+    const jsonStr = encodeURIComponent(JSON.stringify(token.images || []));
+    return `<div class="article-carousel-block" data-carousel="${jsonStr}"></div>`;
+  },
+};
+
+/**
+ * 文章渲染器组件
  * 
  * 核心特性：
  * 1. 深度支持三大手绘笔触（==高亮==、((圈选))、~~双线划线~~）与视口运笔动画
@@ -160,7 +195,7 @@ export function MarkdownRenderer({
     });
 
     inst.use({
-      extensions: [highlightExtension, circleExtension],
+      extensions: [highlightExtension, circleExtension, carouselExtension],
       renderer: {
         heading({ text, depth }) {
           const plainText = text.replace(/<[^>]+>/g, "").trim();
@@ -277,6 +312,22 @@ export function MarkdownRenderer({
       if (node.nodeType === Node.ELEMENT_NODE) {
         const element = node as HTMLElement;
         const tagName = element.tagName.toLowerCase();
+
+        // 拦截多图轮播块并渲染为交互式画廊组件
+        if (element.classList.contains("article-carousel-block")) {
+          const rawData = element.getAttribute("data-carousel") || "";
+          try {
+            const images = JSON.parse(decodeURIComponent(rawData));
+            return (
+              <ArticleCarousel
+                key={`carousel-block-${index}`}
+                images={images}
+              />
+            );
+          } catch (e) {
+            console.error("解析轮播图数据失败:", e);
+          }
+        }
 
         // 拦截 <pre><code> 渲染为高质量代码块
         if (tagName === "pre") {

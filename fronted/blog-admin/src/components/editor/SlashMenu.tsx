@@ -19,6 +19,7 @@ import {
   Highlighter,
   Circle,
   Strikethrough,
+  Images,
 } from "lucide-react";
 
 export interface SlashCommand {
@@ -207,6 +208,19 @@ export const SLASH_COMMANDS: SlashCommand[] = [
       return {
         replaceText: base,
         cursorOffset: base.length,
+      };
+    },
+  },
+  {
+    id: "carousel",
+    label: "图片轮播",
+    description: "多图横向轮播画廊卡片 (<carousel>)",
+    icon: Images,
+    markdown: (line) => {
+      const base = line.replace(/\/.*$/, "");
+      return {
+        replaceText: `${base}<carousel>\n</carousel>`,
+        cursorOffset: base.length + 11,
       };
     },
   },
