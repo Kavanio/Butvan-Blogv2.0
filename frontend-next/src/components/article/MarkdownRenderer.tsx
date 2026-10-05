@@ -382,9 +382,7 @@ export function MarkdownRenderer({
           props.src = rawSrc;
           props.alt = element.getAttribute("alt") || "";
           props.loading = "lazy";
-          props.className = `${
-            element.getAttribute("class") || ""
-          } cursor-zoom-in hover:opacity-95 transition-opacity rounded-xl max-w-full h-auto shadow-sm my-4`;
+          props.className = "cursor-zoom-in rounded-xl max-w-[88%] sm:max-w-[76%] max-h-[360px] sm:max-h-[420px] w-auto h-auto object-contain mx-auto block shadow-xs border border-gray-200/70 dark:border-zinc-800/80 my-6 select-none";
         }
 
         if (tagName === "a") {

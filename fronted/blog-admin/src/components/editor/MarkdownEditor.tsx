@@ -225,7 +225,7 @@ function parseInline(text: string, parentEl: HTMLElement) {
       const img = document.createElement("img");
       img.src = imgSrc;
       img.alt = imgAlt || "";
-      img.className = "my-4 rounded-xl max-w-full h-auto border border-zinc-200 dark:border-zinc-800 shadow-sm block";
+      img.className = "my-4 rounded-xl max-w-[85%] max-h-[360px] w-auto h-auto object-contain mx-auto border border-zinc-200 dark:border-zinc-800 shadow-sm block";
       parentEl.appendChild(img);
     } else if (linkText) {
       const a = document.createElement("a");
