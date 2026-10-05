@@ -849,16 +849,6 @@ mark {
 }
 
 /* ==================== 终极手绘批注与动画体系 (Ink Marks) ==================== */
-@keyframes crafterui-swipe {
-  from { clip-path: inset(-0.4em calc(100% + 0.25em) -0.4em -0.25em); }
-  to   { clip-path: inset(-0.4em -0.25em -0.4em -0.25em); }
-}
-
-@keyframes crafterui-draw {
-  from { stroke-dashoffset: 1; }
-  to   { stroke-dashoffset: 0; }
-}
-
 @keyframes icon-pop {
   0% { transform: scale(0.5); opacity: 0; }
   60% { transform: scale(1.2); }
@@ -883,26 +873,20 @@ mark {
   display: inline;
 }
 
-/* 1. 荧光高亮 (==mark==) */
+/* 1. 荧光高亮 (==mark==) 即时常驻显示，不受 clip-path 隐藏影响 */
 .swipe-mark, .ink-swipe {
   position: absolute;
   left: -0.24em;
   right: -0.24em;
   bottom: 0.1em;
   height: 0.62em;
-  border-radius: 9999px;
   background-color: #f5e1a8;
+  border-radius: 9999px;
   z-index: 1;
   pointer-events: none;
-  clip-path: inset(-0.4em calc(100% + 0.25em) -0.4em -0.25em);
 }
 :root.dark .swipe-mark, :root.dark .ink-swipe {
-  background-color: rgba(245, 225, 168, 0.3);
-}
-
-.in-view .swipe-mark, .in-view .ink-swipe, .token-box.active .swipe-mark, .token-box.active .ink-swipe {
-  animation: crafterui-swipe 0.45s ease-out forwards;
-  animation-delay: var(--anim-delay, 0s);
+  background-color: rgba(245, 225, 168, 0.35);
 }
 
 /* 2. 手绘圈选 ((circle)) */
@@ -923,15 +907,9 @@ mark {
   stroke-width: 2.2;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-}
-.in-view .circle-svg path, .in-view .ink-svg-circle path, .token-box.active .circle-svg path, .token-box.active .ink-svg-circle path {
-  animation: crafterui-draw 0.55s ease-out forwards;
-  animation-delay: var(--anim-delay, 0s);
 }
 
-/* 3. 涂改划线 (~~strike~~) */
+/* 3. 涂改划线 (~~strike~~)：中线 50% 居中穿透 */
 .strike-svg, .ink-svg-strike {
   pointer-events: none;
   position: absolute;
@@ -950,40 +928,309 @@ mark {
   stroke-width: 1.8;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
 }
 .strike-svg path.strike-2, .ink-svg-strike path.line-2 {
   stroke-width: 1.4;
   opacity: 0.85;
 }
-.in-view .strike-svg path.strike-1, .in-view .ink-svg-strike path:not(.line-2),
-.token-box.active .strike-svg path.strike-1, .token-box.active .ink-svg-strike path:not(.line-2) {
-  animation: crafterui-draw 0.32s ease-out forwards;
-  animation-delay: var(--anim-delay, 0s);
+
+/* ==================== 极简代码块规范（无文件名 + 强反馈复制气泡） ==================== */
+.code-card {
+  margin: 1.8rem 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: visible;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  position: relative;
 }
-.in-view .strike-svg path.strike-2, .in-view .ink-svg-strike path.line-2,
-.token-box.active .strike-svg path.strike-2, .token-box.active .ink-svg-strike path.line-2 {
-  animation: crafterui-draw 0.32s ease-out forwards;
-  animation-delay: calc(var(--anim-delay, 0s) + 0.1s);
+:root.dark .code-card {
+  background: #121214;
+  border-color: rgba(255, 255, 255, 0.09);
 }
 
-/* 任务列表手写复选框 */
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  background: #ffffff;
+  border-bottom: 1px solid #f3f4f6;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  user-select: none;
+}
+:root.dark .code-header {
+  background: #121214;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.code-lang-badge {
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 500;
+  padding: 0.2rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+:root.dark .code-lang-badge {
+  background: #27272a;
+  color: #f4f4f5;
+}
+
+.copy-btn-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.code-copy-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #4b5563;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+:root.dark .code-copy-btn {
+  color: #a1a1aa;
+}
+.code-copy-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+:root.dark .code-copy-btn:hover {
+  background: #27272a;
+  color: #fafafa;
+}
+
+.code-copy-btn.copied {
+  color: #16a34a !important;
+  background: #f0fdf4 !important;
+  border-color: #bbf7d0 !important;
+}
+:root.dark .code-copy-btn.copied {
+  color: #4ade80 !important;
+  background: rgba(22, 163, 74, 0.18) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+}
+
+.copy-tooltip {
+  position: absolute;
+  top: -2.3rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #18181b;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: 0.25rem 0.6rem;
+  border-radius: 5px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+}
+:root.dark .copy-tooltip {
+  background: #27272a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.copy-tooltip::after {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 6px;
+  height: 6px;
+  background: #18181b;
+}
+:root.dark .copy-tooltip::after {
+  background: #27272a;
+}
+
+.copy-tooltip.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.code-body {
+  padding: 1.15rem 1.25rem;
+  font-size: 0.95rem;
+  line-height: 1.7rem;
+  overflow-x: auto;
+  white-space: pre;
+  color: #111827;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+:root.dark .code-body {
+  color: #f4f4f5;
+}
+
+/* 语法着色体系（全小写类名，杜绝数字被二次正则污染） */
+.token-keyword { color: #dc2626; }
+.token-fn      { color: #7c3aed; }
+.token-tag     { color: #16a34a; }
+.token-prop    { color: #7c3aed; }
+.token-var     { color: #2563eb; }
+.token-string  { color: #111827; }
+.token-comment { color: #9ca3af; font-style: italic; }
+
+:root.dark .token-keyword { color: #f87171; }
+:root.dark .token-fn      { color: #c084fc; }
+:root.dark .token-tag     { color: #4ade80; }
+:root.dark .token-prop    { color: #c084fc; }
+:root.dark .token-var     { color: #60a5fa; }
+:root.dark .token-string  { color: #f4f4f5; }
+:root.dark .token-comment { color: #71717a; }
+
+/* ==================== 标题体系与段落排版 (md-*) ==================== */
+.md-h1 {
+  font-size: 2.35rem;
+  line-height: 2.9rem;
+  font-weight: 700;
+  margin-top: 1.6rem;
+  margin-bottom: 1.2rem;
+  border-bottom: 2px solid #f3f4f6;
+  padding-bottom: 0.4rem;
+}
+:root.dark .md-h1 {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.md-h2 {
+  font-size: 1.95rem;
+  line-height: 2.5rem;
+  font-weight: 700;
+  margin-top: 1.8rem;
+  margin-bottom: 0.85rem;
+}
+.md-h3 {
+  font-size: 1.68rem;
+  line-height: 2.25rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.7rem;
+}
+.md-h4 {
+  font-size: 1.45rem;
+  line-height: 2rem;
+  font-weight: 600;
+  margin-top: 1.2rem;
+  margin-bottom: 0.6rem;
+}
+.md-h5 {
+  font-size: 1.3rem;
+  line-height: 1.8rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+.md-h6 {
+  font-size: 1.18rem;
+  line-height: 1.65rem;
+  font-weight: 600;
+  color: #71717a;
+  margin-top: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
+.md-p {
+  margin-bottom: 1.3rem;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.md-quote {
+  margin: 1.4rem 0;
+  padding-left: 1.1rem;
+  border-left: 3px solid #141414;
+  color: #3f3f46;
+  font-style: italic;
+  text-align: left;
+  white-space: pre-wrap;
+}
+:root.dark .md-quote {
+  border-left-color: #fafafa;
+  color: #d4d4d8;
+}
+
+.md-li {
+  margin-bottom: 0.45rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  text-align: left;
+  white-space: pre-wrap;
+}
+
+.md-bullet { font-weight: 700; min-width: 1.2rem; }
+
 .md-task-checkbox {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 1.15rem;
   height: 1.15rem;
-  border: 1.8px solid currentColor;
+  border: 1.8px solid #141414;
   border-radius: 4px;
   margin-right: 0.5rem;
   position: relative;
-  top: 0.12em;
-  font-size: 0.95rem;
+  top: 0.15em;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1;
 }
+:root.dark .md-task-checkbox {
+  border-color: #fafafa;
+}
+
+.md-table-wrapper { width: 100%; overflow-x: auto; margin: 1.6rem 0; }
+.md-table { width: 100%; border-collapse: collapse; text-align: left; }
+.md-table th, .md-table td { border: 1.5px solid #e5e7eb; padding: 0.6rem 0.8rem; }
+:root.dark .md-table th, :root.dark .md-table td { border-color: rgba(255, 255, 255, 0.08); }
+.md-table th { background-color: #fafafa; font-weight: 700; }
+:root.dark .md-table th { background-color: #18181b; }
+
+.md-hr {
+  margin: 2.2rem 0;
+  border: none;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, #141414 0px, #141414 8px, transparent 8px, transparent 13px);
+  opacity: 0.25;
+}
+:root.dark .md-hr {
+  background: repeating-linear-gradient(90deg, #fafafa 0px, #fafafa 8px, transparent 8px, transparent 13px);
+}
+
+.md-link { color: #141414; text-decoration: underline; text-underline-offset: 4px; }
+:root.dark .md-link { color: #fafafa; }
+.md-bold { font-weight: 700; }
+.md-inline-code {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 1.05rem;
+  background: #f4f4f5;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  border: 1px solid #e4e4e7;
+}
+:root.dark .md-inline-code {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #f4f4f5;
+}
+
 
 
 

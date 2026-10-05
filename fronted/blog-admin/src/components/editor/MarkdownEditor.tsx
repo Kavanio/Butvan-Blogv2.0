@@ -6,9 +6,7 @@ import {
   Edit3,
   Eye,
   Image as ImageIcon,
-  Upload,
   Code as CodeIcon,
-  Bold as BoldIcon,
   Trash2,
 } from "lucide-react";
 import apiClient from "@/lib/api";
@@ -25,7 +23,7 @@ export interface MarkdownEditorProps {
 }
 
 /**
- * 跨环境剪贴板复制工具函数
+ * 跨环境剪贴板复制工具函数（兼容 http、https 与 file://）
  */
 function copyTextToClipboard(text: string): Promise<void> {
   if (typeof navigator !== "undefined" && navigator.clipboard && window.isSecureContext) {
@@ -53,7 +51,7 @@ function copyTextToClipboard(text: string): Promise<void> {
 }
 
 /**
- * 极简代码语法着色函数
+ * 极简代码语法着色函数（使用纯字母类名，绝对避免数字被二次正则污染）
  */
 function highlightCode(rawCode: string): string {
   const escape = (str: string) =>
@@ -61,33 +59,35 @@ function highlightCode(rawCode: string): string {
   let code = escape(rawCode);
 
   // 注释
-  code = code.replace(/(\/\/.*$)/gm, '<span class="text-zinc-400 dark:text-zinc-500 italic">$1</span>');
-  // 关键字：红色
+  code = code.replace(/(\/\/.*$)/gm, '<span class="token-comment">$1</span>');
+
+  // 关键字：红色（覆盖主流语言）
   code = code.replace(
-    /\b(import|from|function|const|return|let|pub|async|fn|await|class|interface|type|export|default)\b/g,
-    '<span class="text-rose-600 dark:text-rose-400 font-medium">$1</span>'
+    /\b(import|from|function|const|return|let|pub|async|fn|await|class|interface|type|public|private|protected|new|void|static|extends|implements|package|def|struct|enum)\b/g,
+    '<span class="token-keyword">$1</span>'
   );
-  // JSX / HTML 标签：绿色
+
+  // JSX / 标签：绿色
   code = code.replace(
-    /(&lt;\/?)([a-zA-Z0-9_\-]+)/g,
-    '$1<span class="text-emerald-600 dark:text-emerald-400">$2</span>'
+    /(&lt;\/?)(div|p|button|[A-Z][a-zA-Z0-9]*)/g,
+    '$1<span class="token-tag">$2</span>'
   );
-  // 属性与常用 Hook：紫色
+
+  // 属性与常用 Hook / 方法：紫色
   code = code.replace(
-    /\b(onClick|useState|useEffect|useMemo|useCallback|useRef|className|style|id|key)\b/g,
-    '<span class="text-purple-600 dark:text-purple-400">$1</span>'
+    /\b(onClick|useState|useEffect|useMemo|useCallback|useRef|Counter|Solution)\b/g,
+    '<span class="token-fn">$1</span>'
   );
+
   // 变量名与数值：蓝色
-  code = code.replace(
-    /\b(\d+)\b/g,
-    '<span class="text-blue-600 dark:text-blue-400">$1</span>'
-  );
+  code = code.replace(/\b(count|setCount)\b/g, '<span class="token-var">$1</span>');
+  code = code.replace(/\b(\d+)\b/g, '<span class="token-var">$1</span>');
 
   return code;
 }
 
 /**
- * 行内语法解析器（支持 ==高亮==、((圈选))、~~划线~~、**加粗**、*斜体*、`代码`、[链接]、![图片]）
+ * 行内语法解析器（严格注入内联绝对定位样式，防坍塌、居中对齐）
  */
 const SYNTAX =
   /==([\s\S]+?)==|\(\(([\s\S]+?)\)\)|~~([\s\S]+?)~~|\*\*([\s\S]+?)\*\*|\*([^\n*]+)\*|`([^`\n]+)`|!\[([^\n\]]*)\]\(([^\n)]+)\)|\[([^\n\]]+)\]\(([^\n)]+)\)/g;
@@ -131,30 +131,29 @@ function parseInline(text: string, parentEl: HTMLElement) {
       `;
       parentEl.appendChild(wrap);
     } else if (bold) {
-      const b = document.createElement("strong");
-      b.className = "font-bold";
+      const b = document.createElement("span");
+      b.className = "md-bold";
       b.textContent = bold;
       parentEl.appendChild(b);
     } else if (italic) {
-      const it = document.createElement("em");
-      it.className = "italic";
+      const it = document.createElement("span");
+      it.style.fontStyle = "italic";
       it.textContent = italic;
       parentEl.appendChild(it);
     } else if (inlineCode) {
       const c = document.createElement("code");
-      c.className =
-        "font-mono text-[0.88em] bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 px-1.5 py-0.5 rounded border border-zinc-200/80 dark:border-zinc-700/80";
+      c.className = "md-inline-code";
       c.textContent = inlineCode;
       parentEl.appendChild(c);
     } else if (imgSrc) {
       const img = document.createElement("img");
       img.src = imgSrc;
       img.alt = imgAlt || "";
-      img.className = "my-4 rounded-xl max-w-full h-auto border border-zinc-200 dark:border-zinc-800 shadow-sm";
+      img.className = "my-4 rounded-xl max-w-full h-auto border border-zinc-200 dark:border-zinc-800 shadow-sm block";
       parentEl.appendChild(img);
     } else if (linkText) {
       const a = document.createElement("a");
-      a.className = "underline underline-offset-4 text-primary hover:text-primary/80 transition-colors";
+      a.className = "md-link";
       a.href = linkUrl;
       a.target = "_blank";
       a.rel = "noopener noreferrer";
@@ -171,7 +170,7 @@ function parseInline(text: string, parentEl: HTMLElement) {
 }
 
 /**
- * 块级渲染引擎：将完整 Markdown 源码解析生成高质量 DOM 树
+ * 块级渲染引擎：完全对齐 new md editor.html 规范
  */
 function renderMarkdownToDOM(source: string, container: HTMLElement) {
   container.innerHTML = "";
@@ -227,7 +226,7 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
       copyBtn.className = "code-copy-btn";
       copyBtn.title = "复制代码";
       copyBtn.innerHTML = `
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
         </svg>
@@ -238,7 +237,7 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
       copyBtn.addEventListener("click", () => {
         copyTextToClipboard(rawCode).then(() => {
           copyBtn.innerHTML = `
-            <svg class="icon-pop-animate" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="icon-pop-animate" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
           `;
@@ -249,7 +248,7 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
             tooltip.classList.remove("show");
             copyBtn.classList.remove("copied");
             copyBtn.innerHTML = `
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
               </svg>
@@ -275,9 +274,9 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
     // 2. 表格
     if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
       const tableWrapper = document.createElement("div");
-      tableWrapper.className = "w-full overflow-x-auto my-6 border border-zinc-200 dark:border-zinc-800 rounded-xl";
+      tableWrapper.className = "md-table-wrapper";
       const table = document.createElement("table");
-      table.className = "w-full border-collapse text-left text-sm";
+      table.className = "md-table";
 
       let isHeader = true;
       while (i < lines.length && lines[i].trim().startsWith("|")) {
@@ -288,14 +287,9 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
           continue;
         }
         const tr = document.createElement("tr");
-        tr.className = isHeader
-          ? "bg-zinc-50/80 dark:bg-zinc-900/60 font-semibold border-b border-zinc-200 dark:border-zinc-800"
-          : "border-b border-zinc-100 dark:border-zinc-800/60 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors";
-
         const cells = rowText.split("|").slice(1, -1);
         cells.forEach((cell) => {
           const el = document.createElement(isHeader ? "th" : "td");
-          el.className = "p-3 border-r border-zinc-200/60 dark:border-zinc-800/60 last:border-r-0";
           parseInline(cell.trim(), el);
           tr.appendChild(el);
         });
@@ -310,9 +304,7 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
     // 3. 分割线
     if (trimmed === "---" || trimmed === "***") {
       const hr = document.createElement("hr");
-      hr.className =
-        "my-8 border-none h-[2px] opacity-25" +
-        " [background:repeating-linear-gradient(90deg,currentColor_0px,currentColor_8px,transparent_8px,transparent_13px)]";
+      hr.className = "md-hr";
       container.appendChild(hr);
       i++;
       continue;
@@ -323,15 +315,7 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
     if (headingMatch) {
       const level = headingMatch[1].length;
       const h = document.createElement(`h${level}`);
-      const sizes: Record<number, string> = {
-        1: "text-2xl sm:text-3xl font-bold mt-8 mb-4 border-b border-zinc-200/80 dark:border-zinc-800 pb-2 tracking-tight",
-        2: "text-xl sm:text-2xl font-bold mt-7 mb-3 tracking-tight",
-        3: "text-lg sm:text-xl font-semibold mt-6 mb-2.5 tracking-tight",
-        4: "text-base sm:text-lg font-semibold mt-5 mb-2 tracking-tight",
-        5: "text-sm sm:text-base font-semibold mt-4 mb-1.5",
-        6: "text-xs sm:text-sm font-semibold mt-4 mb-1 text-zinc-500",
-      };
-      h.className = sizes[level] || "font-bold my-4";
+      h.className = `md-h${level}`;
       parseInline(headingMatch[2], h);
       container.appendChild(h);
       i++;
@@ -341,8 +325,7 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
     // 5. 引用块
     if (trimmed.startsWith("> ") || trimmed === ">") {
       const q = document.createElement("blockquote");
-      q.className =
-        "my-5 pl-4 border-l-3 border-zinc-900 dark:border-zinc-200 text-zinc-700 dark:text-zinc-300 italic whitespace-pre-wrap";
+      q.className = "md-quote";
       const quoteContent = trimmed.startsWith("> ") ? trimmed.slice(2) : "";
       parseInline(quoteContent, q);
       container.appendChild(q);
@@ -355,11 +338,9 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
     if (taskMatch) {
       const isChecked = taskMatch[1].toLowerCase() === "x";
       const li = document.createElement("div");
-      li.className = "flex items-baseline gap-1 my-1.5 whitespace-pre-wrap";
+      li.className = "md-li";
       const checkbox = document.createElement("span");
-      checkbox.className = `md-task-checkbox ${
-        isChecked ? "text-emerald-600 dark:text-emerald-400 border-emerald-500" : "text-zinc-400"
-      }`;
+      checkbox.className = "md-task-checkbox";
       checkbox.textContent = isChecked ? "✓" : "";
       li.appendChild(checkbox);
 
@@ -376,9 +357,9 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
     const olMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
     if (olMatch) {
       const li = document.createElement("div");
-      li.className = "flex items-baseline gap-2 my-1 whitespace-pre-wrap";
+      li.className = "md-li";
       const num = document.createElement("span");
-      num.className = "font-bold min-w-[1.2rem] text-zinc-400 font-mono text-xs";
+      num.className = "md-bullet";
       num.textContent = `${olMatch[1]}.`;
       li.appendChild(num);
 
@@ -394,9 +375,9 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
     // 8. 无序列表
     if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
       const li = document.createElement("div");
-      li.className = "flex items-baseline gap-2 my-1 whitespace-pre-wrap";
+      li.className = "md-li";
       const bullet = document.createElement("span");
-      bullet.className = "font-bold text-zinc-400";
+      bullet.className = "md-bullet";
       bullet.textContent = "•";
       li.appendChild(bullet);
 
@@ -411,7 +392,7 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
 
     // 9. 普通段落
     const p = document.createElement("div");
-    p.className = "mb-4 text-left whitespace-pre-wrap leading-relaxed";
+    p.className = "md-p";
     parseInline(rawLine, p);
     container.appendChild(p);
     i++;
@@ -443,7 +424,6 @@ function extractImagesFromMarkdown(text: string): string[] {
 
 /**
  * INK EDITOR 极简手绘 Markdown 双栏沉浸式编辑器
- * 完全基于 new md editor.html 规范实现
  */
 export default function MarkdownEditor({
   value,
@@ -461,7 +441,6 @@ export default function MarkdownEditor({
   const previewContentRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 避免在外部 value 变更时光标抖动
   const textValue = value ?? "";
   const charCount = textValue.length;
 
@@ -501,7 +480,7 @@ export default function MarkdownEditor({
     []
   );
 
-  // 挂载与文本变动时实时渲染预览
+  // 文本变动时实时渲染预览
   useEffect(() => {
     updatePreview(textValue);
   }, [textValue, updatePreview]);
@@ -606,7 +585,6 @@ export default function MarkdownEditor({
         if (url.startsWith("/")) {
           url = resolveAssetUrl(url);
         }
-        // 插入到当前光标
         if (editorRef.current) {
           const textarea = editorRef.current;
           const start = textarea.selectionStart;
@@ -630,7 +608,6 @@ export default function MarkdownEditor({
     }
   };
 
-  // 处理拖拽文件与粘贴文件
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const items = e.clipboardData?.items;
     if (!items) return;
@@ -654,7 +631,6 @@ export default function MarkdownEditor({
     }
   };
 
-  // 键盘快捷按键拦截
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter") {
       setTimeout(keepCaretInView, 0);
@@ -678,7 +654,7 @@ export default function MarkdownEditor({
   return (
     <div
       style={{ height: typeof height === "number" ? `${height}px` : height }}
-      className="flex flex-col w-full bg-white dark:bg-[#09090b] rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 overflow-hidden shadow-sm select-none"
+      className="flex flex-col w-full h-full bg-white dark:bg-[#09090b] rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 overflow-hidden shadow-sm select-none"
     >
       {/* 顶部极简工具栏 */}
       <header className="h-11 min-h-[44px] px-3.5 border-b border-zinc-200/70 dark:border-zinc-800/80 bg-white/95 dark:bg-[#0c0c0e]/95 backdrop-blur-md flex items-center justify-between z-10">
@@ -702,7 +678,7 @@ export default function MarkdownEditor({
               className="px-2 py-1 rounded text-xs font-mono font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors flex items-center gap-1 cursor-pointer"
               title="荧光高亮 (==text==)"
             >
-              <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-1 rounded text-[11px]">
+              <span className="bg-[#fef08a] dark:bg-amber-950/60 text-[#713f12] dark:text-amber-300 px-1 rounded text-[11px]">
                 ==高亮==
               </span>
             </button>
@@ -867,7 +843,7 @@ export default function MarkdownEditor({
           >
             <div
               ref={previewContentRef}
-              className="max-w-[640px] mx-auto text-[1.18rem] sm:text-[1.35rem] leading-[2.1] text-zinc-800 dark:text-zinc-100 select-text relative"
+              className="max-w-[640px] mx-auto text-[1.4rem] sm:text-[1.55rem] leading-[2.2] sm:leading-[2.35] text-zinc-900 dark:text-zinc-100 select-text relative"
             />
           </section>
         )}
