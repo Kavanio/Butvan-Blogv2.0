@@ -1,1092 +1,1588 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useEditor, EditorContent, ReactNodeViewRenderer } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import { TextSelection } from "@tiptap/pm/state";
-import CodeBlockComponent from "./CodeBlockComponent";
-import { Markdown } from "@tiptap/markdown";
-import Link from "@tiptap/extension-link";
-import Image from "@tiptap/extension-image";
-import Placeholder from "@tiptap/extension-placeholder";
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
-import Underline from "@tiptap/extension-underline";
-import { TextStyle } from "@tiptap/extension-text-style";
-import { Color } from "@tiptap/extension-color";
-import { Highlight } from "@tiptap/extension-highlight";
-import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
-import { all, createLowlight } from "lowlight";
-import { cn } from "@heroui/react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
-  Undo,
-  Redo,
-  Bold,
-  Italic,
-  Underline as UnderlineIcon,
-  Palette,
-  Heading1,
-  Heading2,
-  Heading3,
-  Quote,
-  Code,
-  List,
-  ListOrdered,
-  CheckSquare,
-  Minus,
-  Link as LinkIcon,
+  Columns,
+  Edit3,
+  Eye,
   Image as ImageIcon,
-  ListTree,
+  Code as CodeIcon,
+  Globe,
+  Images,
+  Trash2,
 } from "lucide-react";
-
-import { Node, mergeAttributes } from "@tiptap/core";
-import ImageNodeViewComponent from "./ImageNodeViewComponent";
-import HtmlEmbedNodeView from "./HtmlEmbedNodeView";
 import SlashMenu, { SLASH_COMMANDS, type SlashCommand } from "./SlashMenu";
-import EditorToc from "./EditorToc";
 import apiClient from "@/lib/api";
 import { resolveAssetUrl } from "@/lib/image-url";
 
 /**
- * Tiptap 核心概念：自定义 iframe 页面节点扩展
- * 支持在 Markdown 中嵌入与解析 <iframe src="..."></iframe>
+ * 测量 textarea 中光标的相对像素坐标 (Mirror Div 方案)
  */
-const IframeExtension = Node.create({
-  name: "iframe",
-  group: "block",
-  atom: true,
+function getCaretCoordinates(element: HTMLTextAreaElement, position: number) {
+  if (typeof window === "undefined" || !document) {
+    return { top: 32, left: 24, height: 28 };
+  }
 
-  addAttributes() {
-    return {
-      src: {
-        default: null,
-      },
-      title: {
-        default: "嵌入 HTML 页面",
-      },
-      width: {
-        default: "100%",
-      },
-      height: {
-        default: "450px",
-      },
-      frameborder: {
-        default: "0",
-      },
-      style: {
-        default: "width: 100%; height: 450px; border: none; border-radius: 12px; overflow: hidden;",
-      },
-      allowfullscreen: {
-        default: "true",
-      },
-    };
-  },
+  const properties = [
+    "direction",
+    "boxSizing",
+    "width",
+    "height",
+    "overflowX",
+    "overflowY",
+    "borderTopWidth",
+    "borderRightWidth",
+    "borderBottomWidth",
+    "borderLeftWidth",
+    "paddingTop",
+    "paddingRight",
+    "paddingBottom",
+    "paddingLeft",
+    "fontStyle",
+    "fontVariant",
+    "fontWeight",
+    "fontStretch",
+    "fontSize",
+    "fontSizeAdjust",
+    "lineHeight",
+    "fontFamily",
+    "textAlign",
+    "textTransform",
+    "textIndent",
+    "textDecoration",
+    "letterSpacing",
+    "wordSpacing",
+    "tabSize",
+  ] as const;
 
-  parseHTML() {
-    return [
-      {
-        tag: "iframe",
-        getAttrs: (element) => {
-          if (typeof element === "string") return false;
-          const dom = element as HTMLElement;
-          const src = dom.getAttribute("src");
-          if (!src) return false;
-          return {
-            src: src,
-            title: dom.getAttribute("title") || "嵌入 HTML 页面",
-            width: dom.getAttribute("width") || "100%",
-            height: dom.getAttribute("height") || "450px",
-            style: dom.getAttribute("style") || "width: 100%; height: 450px; border: none; border-radius: 12px; overflow: hidden;",
-            allowfullscreen: dom.getAttribute("allowfullscreen") || "true",
-          };
-        },
-      },
-    ];
-  },
+  const div = document.createElement("div");
+  div.id = "caret-position-mirror-div";
+  document.body.appendChild(div);
 
-  renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, any> }) {
-    return ["iframe", mergeAttributes(HTMLAttributes)];
-  },
+  const style = div.style;
+  const computed = window.getComputedStyle(element);
 
-  // 支持 @tiptap/markdown 官方扩展框架的节点序列化钩子
-  renderMarkdown(node: any) {
-    const { src, title, width, height, style } = node?.attrs || {};
-    if (!src) return "";
-    const safeTitle = title || "嵌入 HTML 页面";
-    const safeWidth = width || "100%";
-    const safeHeight = height || "450px";
-    const safeStyle = style || "width: 100%; height: 450px; border: none; border-radius: 12px; overflow: hidden;";
-    return `\n<iframe src="${src}" title="${safeTitle}" width="${safeWidth}" height="${safeHeight}" style="${safeStyle}" allowfullscreen></iframe>\n\n`;
-  },
+  style.whiteSpace = "pre-wrap";
+  style.wordBreak = "break-word";
+  style.position = "absolute";
+  style.visibility = "hidden";
+  style.top = "0";
+  style.left = "-9999px";
 
-  addStorage() {
-    return {
-      markdown: {
-        serialize(state: any, node: any) {
-          const { src, title, width, height, style } = node.attrs;
-          if (!src) return;
-          const safeTitle = title || "嵌入 HTML 页面";
-          const safeWidth = width || "100%";
-          const safeHeight = height || "450px";
-          const safeStyle = style || "width: 100%; height: 450px; border: none; border-radius: 12px; overflow: hidden;";
-          state.write(
-            `\n<iframe src="${src}" title="${safeTitle}" width="${safeWidth}" height="${safeHeight}" style="${safeStyle}" allowfullscreen></iframe>\n\n`
-          );
-        },
-      },
-    };
-  },
+  properties.forEach((prop) => {
+    style[prop as any] = computed[prop as any];
+  });
 
-  addNodeView() {
-    return ReactNodeViewRenderer(HtmlEmbedNodeView);
-  },
-});
+  div.textContent = element.value.substring(0, position);
 
-const lowlight = createLowlight(all);
+  const span = document.createElement("span");
+  span.textContent = element.value.substring(position) || ".";
+  div.appendChild(span);
 
-// 富文本/代码颜色高亮预设
-const COLOR_PRESETS = [
-  { name: "玫瑰红", color: "#e11d48", bg: "rgba(225, 29, 72, 0.12)" },
-  { name: "翡翠绿", color: "#059669", bg: "rgba(5, 150, 105, 0.12)" },
-  { name: "宝石蓝", color: "#2563eb", bg: "rgba(37, 99, 235, 0.12)" },
-  { name: "雅致紫", color: "#7c3aed", bg: "rgba(124, 58, 237, 0.12)" },
-  { name: "琥珀黄", color: "#d97706", bg: "rgba(217, 119, 6, 0.12)" },
-  { name: "石墨灰", color: "#3f3f46", bg: "rgba(63, 63, 70, 0.12)" },
-];
+  const coordinates = {
+    top: span.offsetTop + parseInt(computed.borderTopWidth || "0", 10),
+    left: span.offsetLeft + parseInt(computed.borderLeftWidth || "0", 10),
+    height: parseInt(computed.lineHeight || "24", 10) || 24,
+  };
+
+  document.body.removeChild(div);
+  return coordinates;
+}
 
 export interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
-  /** 当编辑器内图片发生变化时回调，直接传递从文档节点提取的图片 URL 数组（避免 markdown 序列化差异） */
+  /** 当编辑器内图片发生变化时回调，直接传递从文本中提取的图片 URL 数组供封面自动提取 */
   onImageChange?: (urls: string[]) => void;
-  height?: number;
+  height?: number | string;
   placeholder?: string;
   preview?: "edit" | "live" | "preview";
 }
 
 /**
- * Tiptap 基于 ProseMirror 的所见即所得编辑器组件
- * - 支持 Markdown 无缝双向解析
- * - 输入时直接渲染样式，支持标准 Markdown 快捷键（例如输入 "# " 变一级标题，"> " 变引用）
- * - 完美整合 Slash (/) 悬浮快捷指令菜单
- * - 拦截 paste / drop 事件实现贴图、拖图自动异步上传
+ * 跨环境剪贴板复制工具函数（兼容 http、https 与 file://）
+ */
+function copyTextToClipboard(text: string): Promise<void> {
+  if (typeof navigator !== "undefined" && navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+  return new Promise((resolve, reject) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.top = "-9999px";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      if (successful) resolve();
+      else reject(new Error("execCommand failed"));
+    } catch (err) {
+      document.body.removeChild(textArea);
+      reject(err);
+    }
+  });
+}
+
+/**
+ * 极简代码语法着色函数（使用纯字母类名，绝对避免数字被二次正则污染）
+ */
+function highlightCode(rawCode: string): string {
+  const escape = (str: string) =>
+    str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  let code = escape(rawCode);
+
+  // 注释
+  code = code.replace(/(\/\/.*$)/gm, '<span class="token-comment">$1</span>');
+
+  // 关键字：红色（覆盖主流语言）
+  code = code.replace(
+    /\b(import|from|function|const|return|let|pub|async|fn|await|class|interface|type|public|private|protected|new|void|static|extends|implements|package|def|struct|enum)\b/g,
+    '<span class="token-keyword">$1</span>'
+  );
+
+  // JSX / 标签：绿色
+  code = code.replace(
+    /(&lt;\/?)(div|p|button|[A-Z][a-zA-Z0-9]*)/g,
+    '$1<span class="token-tag">$2</span>'
+  );
+
+  // 属性与常用 Hook / 方法：紫色
+  code = code.replace(
+    /\b(onClick|useState|useEffect|useMemo|useCallback|useRef|Counter|Solution)\b/g,
+    '<span class="token-fn">$1</span>'
+  );
+
+  // 变量名与数值：蓝色
+  code = code.replace(/\b(count|setCount)\b/g, '<span class="token-var">$1</span>');
+  code = code.replace(/\b(\d+)\b/g, '<span class="token-var">$1</span>');
+
+  return code;
+}
+
+/**
+ * 行内语法解析器（严格注入内联绝对定位样式，防坍塌、居中对齐）
+ */
+const SYNTAX =
+  /==([\s\S]+?)==|\(\(([\s\S]+?)\)\)|~~([\s\S]+?)~~|\*\*([\s\S]+?)\*\*|\*([^\n*]+)\*|`([^`\n]+)`|!\[([^\n\]]*)\]\(([^\n)]+)\)|\[([^\n\]]+)\]\(([^\n)]+)\)/g;
+
+function parseInline(text: string, parentEl: HTMLElement) {
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  const regex = new RegExp(SYNTAX);
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parentEl.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+    }
+
+    const [full, mark, circle, strike, bold, italic, inlineCode, imgAlt, imgSrc, linkText, linkUrl] = match;
+
+    if (mark) {
+      const wrap = document.createElement("span");
+      wrap.className = "ink-mark";
+      wrap.innerHTML = `<span class="ink-swipe"></span><span class="ink-text">${mark}</span>`;
+      parentEl.appendChild(wrap);
+    } else if (circle) {
+      const wrap = document.createElement("span");
+      wrap.className = "ink-mark";
+      wrap.innerHTML = `
+        <span class="ink-text">${circle}</span>
+        <svg class="ink-svg-circle" style="position:absolute;left:-0.28em;top:-0.1em;width:calc(100% + 0.56em);height:calc(100% + 0.2em);pointer-events:none;overflow:visible;z-index:3;display:block;" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d="M8 54 C6 26 30 8 52 7 C76 6 95 20 95 46 C95 74 72 93 48 93 C24 93 7 78 6 52 C6 34 16 20 34 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+        </svg>
+      `;
+      parentEl.appendChild(wrap);
+    } else if (strike) {
+      const wrap = document.createElement("span");
+      wrap.className = "ink-mark";
+      wrap.innerHTML = `
+        <span class="ink-text">${strike}</span>
+        <svg class="ink-svg-strike" style="position:absolute;left:-0.06em;width:calc(100% + 0.12em);height:0.4em;top:50%;transform:translateY(-40%);pointer-events:none;overflow:visible;z-index:3;display:block;" viewBox="0 0 100 10" preserveAspectRatio="none">
+          <path d="M1 4 C24 2 46 7 68 4 C82 2 92 6 99 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+          <path class="line-2" d="M2 7 C26 5 44 9 66 6 C80 4 92 8 98 6" fill="none" stroke="currentColor" stroke-width="1.4" opacity="0.85" vector-effect="non-scaling-stroke" />
+        </svg>
+      `;
+      parentEl.appendChild(wrap);
+    } else if (bold) {
+      const b = document.createElement("span");
+      b.className = "md-bold";
+      b.textContent = bold;
+      parentEl.appendChild(b);
+    } else if (italic) {
+      const it = document.createElement("span");
+      it.style.fontStyle = "italic";
+      it.textContent = italic;
+      parentEl.appendChild(it);
+    } else if (inlineCode) {
+      const c = document.createElement("code");
+      c.className = "md-inline-code";
+      c.textContent = inlineCode;
+      parentEl.appendChild(c);
+    } else if (imgSrc) {
+      const img = document.createElement("img");
+      img.src = imgSrc;
+      img.alt = imgAlt || "";
+      img.className = "my-4 rounded-xl max-w-[85%] max-h-[360px] w-auto h-auto object-contain mx-auto border border-zinc-200 dark:border-zinc-800 shadow-sm block";
+      parentEl.appendChild(img);
+    } else if (linkText) {
+      const a = document.createElement("a");
+      a.className = "md-link";
+      a.href = linkUrl;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = linkText;
+      parentEl.appendChild(a);
+    }
+
+    lastIndex = match.index + full.length;
+  }
+
+  if (lastIndex < text.length) {
+    parentEl.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
+}
+
+/**
+ * 生成交互式图片轮播卡片 DOM 节点（极简无背景纯图片轮播）
+ */
+function createCarouselDOM(
+  images: { alt: string; url: string }[],
+  onAppendImages?: () => void
+): HTMLElement {
+  const wrap = document.createElement("div");
+  wrap.className = "my-6 not-prose select-none max-w-[85%] mx-auto group/carousel";
+
+  if (images.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "p-4 text-center text-xs text-zinc-400";
+    empty.textContent = "轮播图暂无图片";
+    if (onAppendImages) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "ml-2 text-primary hover:underline cursor-pointer";
+      btn.textContent = "+ 上传图片";
+      btn.addEventListener("click", onAppendImages);
+      empty.appendChild(btn);
+    }
+    wrap.appendChild(empty);
+    return wrap;
+  }
+
+  let currentIndex = 0;
+  const stage = document.createElement("div");
+  stage.className = "relative overflow-hidden rounded-xl";
+
+  const track = document.createElement("div");
+  track.className = "flex w-full items-center";
+  track.style.transition = "transform 0.42s cubic-bezier(0.25, 1, 0.5, 1)";
+  track.style.transform = "translateX(0%)";
+
+  images.forEach((img, idx) => {
+    const slide = document.createElement("div");
+    slide.className = "w-full shrink-0 flex items-center justify-center p-0.5";
+    const imgEl = document.createElement("img");
+    imgEl.src = img.url;
+    imgEl.alt = img.alt || `图片 ${idx + 1}`;
+    imgEl.draggable = false;
+    imgEl.className =
+      "rounded-xl max-h-[360px] w-auto h-auto max-w-full object-contain mx-auto block shadow-xs border border-zinc-200 dark:border-zinc-800 select-none";
+    slide.appendChild(imgEl);
+    track.appendChild(slide);
+  });
+  stage.appendChild(track);
+
+  // 极简补传按钮：鼠标移入图片区域右上角轻巧浮现
+  if (onAppendImages) {
+    const appendBtn = document.createElement("button");
+    appendBtn.type = "button";
+    appendBtn.className =
+      "absolute right-2 top-2 px-2 py-0.5 rounded-md bg-black/45 hover:bg-black/70 text-white text-[11px] backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer shadow-xs z-10";
+    appendBtn.textContent = "+ 补传";
+    appendBtn.addEventListener("click", onAppendImages);
+    stage.appendChild(appendBtn);
+  }
+
+  // 左右箭头与页码
+  let prevBtn: HTMLButtonElement | null = null;
+  let nextBtn: HTMLButtonElement | null = null;
+  let dotsWrap: HTMLElement | null = null;
+
+  if (images.length > 1) {
+    prevBtn = document.createElement("button");
+    prevBtn.type = "button";
+    prevBtn.className =
+      "absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/35 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer z-10";
+    prevBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
+
+    nextBtn = document.createElement("button");
+    nextBtn.type = "button";
+    nextBtn.className =
+      "absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/35 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer z-10";
+    nextBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+
+    stage.appendChild(prevBtn);
+    stage.appendChild(nextBtn);
+
+    // 底部小圆点
+    const currentDotsWrap = document.createElement("div");
+    currentDotsWrap.className = "flex items-center justify-center gap-1.5 mt-2.5";
+
+    images.forEach((_, idx) => {
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.className =
+        idx === 0
+          ? "w-4 h-1.5 rounded-full bg-zinc-800 dark:bg-zinc-200 transition-all cursor-pointer"
+          : "w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 transition-all cursor-pointer";
+      dot.addEventListener("click", () => updateView(idx));
+      currentDotsWrap.appendChild(dot);
+    });
+    dotsWrap = currentDotsWrap;
+  }
+
+  wrap.appendChild(stage);
+  if (dotsWrap) {
+    wrap.appendChild(dotsWrap);
+  }
+
+  const updateView = (index: number) => {
+    currentIndex = (index + images.length) % images.length;
+    track.style.transition = "transform 0.42s cubic-bezier(0.25, 1, 0.5, 1)";
+    track.style.transform = `translateX(-${currentIndex * 100}%)`;
+    if (dotsWrap) {
+      Array.from(dotsWrap.children).forEach((dot, dIdx) => {
+        dot.className =
+          dIdx === currentIndex
+            ? "w-4 h-1.5 rounded-full bg-zinc-800 dark:bg-zinc-200 transition-all cursor-pointer"
+            : "w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 transition-all cursor-pointer";
+      });
+    }
+  };
+
+  if (prevBtn && nextBtn) {
+    prevBtn.addEventListener("click", () => updateView(currentIndex - 1));
+    nextBtn.addEventListener("click", () => updateView(currentIndex + 1));
+
+    // 自动轮播与悬停暂停
+    let autoTimer: any = null;
+    const startAuto = () => {
+      if (autoTimer) clearInterval(autoTimer);
+      autoTimer = setInterval(() => {
+        updateView(currentIndex + 1);
+      }, 3500);
+    };
+    const stopAuto = () => {
+      if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+      }
+    };
+    wrap.addEventListener("mouseenter", stopAuto);
+    wrap.addEventListener("mouseleave", startAuto);
+    startAuto();
+
+    // 鼠标左右拖动滑动
+    let isDragging = false;
+    let startX = 0;
+    let diffX = 0;
+
+    stage.style.cursor = "grab";
+    stage.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      startX = e.clientX;
+      diffX = 0;
+      stage.style.cursor = "grabbing";
+    });
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      diffX = e.clientX - startX;
+      track.style.transition = "none";
+      track.style.transform = `translateX(calc(-${currentIndex * 100}% + ${diffX}px))`;
+    };
+
+    const handleMouseUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      stage.style.cursor = "grab";
+      track.style.transition = "transform 0.42s cubic-bezier(0.25, 1, 0.5, 1)";
+      if (diffX < -45) {
+        updateView(currentIndex + 1);
+      } else if (diffX > 45) {
+        updateView(currentIndex - 1);
+      } else {
+        track.style.transform = `translateX(-${currentIndex * 100}%)`;
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  }
+
+  return wrap;
+}
+
+/**
+ * 块级渲染引擎：完全对齐 new md editor.html 规范
+ */
+function renderMarkdownToDOM(
+  source: string,
+  container: HTMLElement,
+  onAppendCarousel?: (carouselIndex: number) => void
+) {
+  container.innerHTML = "";
+  const lines = source.split("\n");
+  let i = 0;
+  let carouselCount = 0;
+
+  while (i < lines.length) {
+    const rawLine = lines[i];
+    const trimmed = rawLine.trim();
+
+    if (!trimmed) {
+      i++;
+      continue;
+    }
+
+    // 0. iframe 嵌入网页
+    if (trimmed.startsWith("<iframe") && trimmed.includes("</iframe>")) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "my-4 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm";
+      wrapper.innerHTML = trimmed;
+      container.appendChild(wrapper);
+      i++;
+      continue;
+    }
+
+    // 0.5 图片轮播组件 <carousel> 或 :::carousel
+    if (trimmed.startsWith("<carousel>") || trimmed.startsWith(":::carousel")) {
+      const isCustomTag = trimmed.startsWith("<carousel>");
+      const endTag = isCustomTag ? "</carousel>" : ":::";
+      const carouselLines: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].trim().startsWith(endTag)) {
+        carouselLines.push(lines[i]);
+        i++;
+      }
+      if (i < lines.length) i++;
+
+      const innerText = carouselLines.join("\n");
+      const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
+      const images: { alt: string; url: string }[] = [];
+      let m: RegExpExecArray | null;
+      while ((m = imgRegex.exec(innerText)) !== null) {
+        images.push({ alt: m[1] || "", url: m[2] });
+      }
+
+      const cIdx = carouselCount++;
+      const carouselEl = createCarouselDOM(images, () => {
+        if (onAppendCarousel) {
+          onAppendCarousel(cIdx);
+        }
+      });
+      container.appendChild(carouselEl);
+      continue;
+    }
+
+    // 1. 多行代码块 ```lang
+    if (trimmed.startsWith("```")) {
+      const rawLang = trimmed.slice(3).trim();
+      let langBadge = "Code";
+      if (rawLang) {
+        const first = rawLang.split(/\s+/)[0].toLowerCase();
+        if (first === "tsx" || first === "jsx") langBadge = "React";
+        else langBadge = first.charAt(0).toUpperCase() + first.slice(1);
+      }
+
+      const codeLines: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].trim().startsWith("```")) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      if (i < lines.length) i++;
+
+      const card = document.createElement("div");
+      card.className = "code-card";
+
+      const header = document.createElement("div");
+      header.className = "code-header";
+
+      const badge = document.createElement("span");
+      badge.className = "code-lang-badge";
+      badge.textContent = langBadge;
+      header.appendChild(badge);
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "copy-btn-wrapper";
+
+      const tooltip = document.createElement("div");
+      tooltip.className = "copy-tooltip";
+      tooltip.textContent = "已复制到剪贴板";
+
+      const copyBtn = document.createElement("button");
+      copyBtn.className = "code-copy-btn";
+      copyBtn.title = "复制代码";
+      copyBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+      `;
+
+      const rawCode = codeLines.join("\n");
+      let resetTimer: any = null;
+      copyBtn.addEventListener("click", () => {
+        copyTextToClipboard(rawCode).then(() => {
+          copyBtn.innerHTML = `
+            <svg class="icon-pop-animate" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          `;
+          copyBtn.classList.add("copied");
+          tooltip.classList.add("show");
+          if (resetTimer) clearTimeout(resetTimer);
+          resetTimer = setTimeout(() => {
+            tooltip.classList.remove("show");
+            copyBtn.classList.remove("copied");
+            copyBtn.innerHTML = `
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            `;
+          }, 1800);
+        });
+      });
+
+      wrapper.appendChild(tooltip);
+      wrapper.appendChild(copyBtn);
+      header.appendChild(wrapper);
+      card.appendChild(header);
+
+      const body = document.createElement("div");
+      body.className = "code-body";
+      body.innerHTML = highlightCode(rawCode);
+      card.appendChild(body);
+
+      container.appendChild(card);
+      continue;
+    }
+
+    // 2. 表格
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      const tableWrapper = document.createElement("div");
+      tableWrapper.className = "md-table-wrapper";
+      const table = document.createElement("table");
+      table.className = "md-table";
+
+      let isHeader = true;
+      while (i < lines.length && lines[i].trim().startsWith("|")) {
+        const rowText = lines[i].trim();
+        if (rowText.includes("---")) {
+          i++;
+          isHeader = false;
+          continue;
+        }
+        const tr = document.createElement("tr");
+        const cells = rowText.split("|").slice(1, -1);
+        cells.forEach((cell) => {
+          const el = document.createElement(isHeader ? "th" : "td");
+          parseInline(cell.trim(), el);
+          tr.appendChild(el);
+        });
+        table.appendChild(tr);
+        i++;
+      }
+      tableWrapper.appendChild(table);
+      container.appendChild(tableWrapper);
+      continue;
+    }
+
+    // 3. 分割线
+    if (trimmed === "---" || trimmed === "***") {
+      const hr = document.createElement("hr");
+      hr.className = "md-hr";
+      container.appendChild(hr);
+      i++;
+      continue;
+    }
+
+    // 4. 标题 H1 ~ H6
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const h = document.createElement(`h${level}`);
+      h.className = `md-h${level}`;
+      parseInline(headingMatch[2], h);
+      container.appendChild(h);
+      i++;
+      continue;
+    }
+
+    // 5. 引用块
+    if (trimmed.startsWith("> ") || trimmed === ">") {
+      const q = document.createElement("blockquote");
+      q.className = "md-quote";
+      const quoteContent = trimmed.startsWith("> ") ? trimmed.slice(2) : "";
+      parseInline(quoteContent, q);
+      container.appendChild(q);
+      i++;
+      continue;
+    }
+
+    // 6. 任务列表
+    const taskMatch = trimmed.match(/^-\s+\[([ xX])\]\s*(.*)$/);
+    if (taskMatch) {
+      const isChecked = taskMatch[1].toLowerCase() === "x";
+      const li = document.createElement("div");
+      li.className = "md-li";
+      const checkbox = document.createElement("span");
+      checkbox.className = "md-task-checkbox";
+      checkbox.textContent = isChecked ? "✓" : "";
+      li.appendChild(checkbox);
+
+      const wrap = document.createElement("span");
+      parseInline(taskMatch[2], wrap);
+      li.appendChild(wrap);
+
+      container.appendChild(li);
+      i++;
+      continue;
+    }
+
+    // 7. 有序列表
+    const olMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
+    if (olMatch) {
+      const li = document.createElement("div");
+      li.className = "md-li";
+      const num = document.createElement("span");
+      num.className = "md-bullet";
+      num.textContent = `${olMatch[1]}.`;
+      li.appendChild(num);
+
+      const wrap = document.createElement("span");
+      parseInline(olMatch[2], wrap);
+      li.appendChild(wrap);
+
+      container.appendChild(li);
+      i++;
+      continue;
+    }
+
+    // 8. 无序列表
+    if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+      const li = document.createElement("div");
+      li.className = "md-li";
+      const bullet = document.createElement("span");
+      bullet.className = "md-bullet";
+      bullet.textContent = "•";
+      li.appendChild(bullet);
+
+      const wrap = document.createElement("span");
+      parseInline(trimmed.slice(2), wrap);
+      li.appendChild(wrap);
+
+      container.appendChild(li);
+      i++;
+      continue;
+    }
+
+    // 9. 普通段落
+    const p = document.createElement("div");
+    p.className = "md-p";
+    parseInline(rawLine, p);
+    container.appendChild(p);
+    i++;
+  }
+}
+
+/**
+ * 从 Markdown 文本中提取所有图片 URL
+ */
+function extractImagesFromMarkdown(text: string): string[] {
+  const urls: string[] = [];
+  const mdImgRegex = /!\[.*?\]\((.*?)\)/g;
+  let match: RegExpExecArray | null;
+  while ((match = mdImgRegex.exec(text)) !== null) {
+    const u = match[1]?.trim();
+    if (u && !urls.includes(u)) {
+      urls.push(u);
+    }
+  }
+  const htmlImgRegex = /<img[^>]+src=["'](.*?)["']/g;
+  while ((match = htmlImgRegex.exec(text)) !== null) {
+    const u = match[1]?.trim();
+    if (u && !urls.includes(u)) {
+      urls.push(u);
+    }
+  }
+  return urls;
+}
+
+/**
+ * INK EDITOR 极简手绘 Markdown 双栏沉浸式编辑器
  */
 export default function MarkdownEditor({
   value,
   onChange,
   onImageChange,
-  height = 500,
-  placeholder = "输入 / 唤起快捷命令，输入 #+空格 快速创建标题...",
-  preview = "edit",
+  height = "100%",
+  placeholder = "在此输入 Markdown 文本，支持 ==高亮==、((圈选))、~~划线~~...",
+  preview = "live",
 }: MarkdownEditorProps) {
-  const [colorMode, setColorMode] = useState<"light" | "dark">("light");
-  const [showToc, setShowToc] = useState(true);
+  const [viewMode, setViewMode] = useState<"edit" | "live" | "preview">(preview);
+  const [uploading, setUploading] = useState(false);
 
-  // 保持最新 onImageChange 引用，避免 useEditor 闭包陷阱
-  const onImageChangeRef = useRef(onImageChange);
-  useEffect(() => {
-    onImageChangeRef.current = onImageChange;
-  }, [onImageChange]);
-
-  /**
-   * 从 ProseMirror 文档中直接提取所有图片节点的 src URL
-   * 绕过 markdown 序列化，避免 getMarkdown() 导致 URL 编码差异
-   */
-  const extractImagesFromDoc = useCallback((editorInstance: any) => {
-    if (!onImageChangeRef.current || !editorInstance) return;
-    const doc = editorInstance.state.doc;
-    const urls: string[] = [];
-    doc.descendants((node: any) => {
-      if (node.type.name === "image" && node.attrs?.src) {
-        const src = node.attrs.src.trim();
-        if (src && !urls.includes(src)) {
-          urls.push(src);
-        }
-      }
-    });
-    onImageChangeRef.current(urls);
-  }, []);
-
-  // Slash 菜单浮层状态
+  // 斜杠指令菜单状态
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
-  const [filteredCount, setFilteredCount] = useState(0);
+  const [filteredCount, setFilteredCount] = useState(SLASH_COMMANDS.length);
 
-  // 文本与代码调色盘状态
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [customColor, setCustomColor] = useState("#e11d48");
-  const [customBg, setCustomBg] = useState("rgba(225, 29, 72, 0.12)");
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const previewScrollRef = useRef<HTMLDivElement>(null);
+  const previewContentRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const htmlFileInputRef = useRef<HTMLInputElement>(null);
+  const carouselFileInputRef = useRef<HTMLInputElement>(null);
+  const carouselInsertPosRef = useRef<number | null>(null);
+  const appendCarouselIndexRef = useRef<number | null>(null);
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const textValue = value ?? "";
+  const charCount = textValue.length;
 
-  // 维持最新状态引用，防止 Keydown 回调中形成 ProseMirror 闭包陷阱
-  const menuOpenRef = useRef(false);
-  const selectedIndexRef = useRef(0);
-  const filteredCountRef = useRef(0);
-  const searchQueryRef = useRef("");
-  const editorRef = useRef<any>(null);
-
+  // 搜索词变更时重置选中索引，避免越界
   useEffect(() => {
-    menuOpenRef.current = menuOpen;
-  }, [menuOpen]);
-
-  useEffect(() => {
-    selectedIndexRef.current = selectedIndex;
-  }, [selectedIndex]);
-
-  useEffect(() => {
-    filteredCountRef.current = filteredCount;
-  }, [filteredCount]);
-
-  useEffect(() => {
-    searchQueryRef.current = searchQuery;
+    setSelectedIndex(0);
   }, [searchQuery]);
 
-  // 暗黑模式检测
+  // 图片更新同步
   useEffect(() => {
-    const checkDark = () => {
-      const isDark = document.documentElement.classList.contains("dark");
-      setColorMode(isDark ? "dark" : "light");
+    if (onImageChange) {
+      const imgs = extractImagesFromMarkdown(textValue);
+      onImageChange(imgs);
+    }
+  }, [textValue, onImageChange]);
+
+  // 光标居中保鲜逻辑
+  const keepCaretInView = useCallback(() => {
+    if (!editorRef.current) return;
+    const textarea = editorRef.current;
+    const textBeforeCursor = textarea.value.substring(0, textarea.selectionStart);
+    const currentLine = textBeforeCursor.split("\n").length;
+    const lineHeight = 28;
+    const paddingTop = 32;
+    const caretY = (currentLine - 1) * lineHeight + paddingTop;
+
+    const viewTop = textarea.scrollTop;
+    const viewBottom = viewTop + textarea.clientHeight - 80;
+
+    if (caretY > viewBottom) {
+      textarea.scrollTop = caretY - textarea.clientHeight + 100;
+    }
+  }, []);
+
+  // 预览区点击 "+ 补传图片" 的回调
+  const handleAppendCarousel = useCallback((carouselIndex: number) => {
+    appendCarouselIndexRef.current = carouselIndex;
+    carouselInsertPosRef.current = null;
+    carouselFileInputRef.current?.click();
+  }, []);
+
+  // 触发实时渲染
+  const updatePreview = useCallback(
+    (text: string) => {
+      if (previewContentRef.current) {
+        renderMarkdownToDOM(text, previewContentRef.current, handleAppendCarousel);
+      }
+    },
+    [handleAppendCarousel]
+  );
+
+  // 文本变动时实时渲染预览
+  useEffect(() => {
+    updatePreview(textValue);
+  }, [textValue, updatePreview]);
+
+  // 双向平滑滚动同步
+  useEffect(() => {
+    const editorEl = editorRef.current;
+    const previewEl = previewScrollRef.current;
+    if (!editorEl || !previewEl || viewMode !== "live") return;
+
+    let isSyncingLeft = false;
+    let isSyncingRight = false;
+
+    const handleLeftScroll = () => {
+      if (isSyncingRight) return;
+      isSyncingLeft = true;
+      const maxEditor = editorEl.scrollHeight - editorEl.clientHeight;
+      const maxPreview = previewEl.scrollHeight - previewEl.clientHeight;
+      if (maxEditor > 0) {
+        const ratio = editorEl.scrollTop / maxEditor;
+        previewEl.scrollTop = ratio * maxPreview;
+      }
+      requestAnimationFrame(() => {
+        isSyncingLeft = false;
+      });
     };
-    checkDark();
 
-    const observer = new MutationObserver(checkDark);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  // 过滤后的命令集
-  const getFilteredCommands = useCallback((customQuery?: string) => {
-    const query = (customQuery !== undefined ? customQuery : searchQueryRef.current).trim().toLowerCase();
-    return SLASH_COMMANDS.filter(
-      (cmd) =>
-        cmd.label.toLowerCase().includes(query) ||
-        cmd.id.toLowerCase().includes(query) ||
-        cmd.description.toLowerCase().includes(query)
-    );
-  }, []);
-
-  // 为被 keydown 闭包调用的方法建立 Ref
-  const getFilteredCommandsRef = useRef(getFilteredCommands);
-  useEffect(() => {
-    getFilteredCommandsRef.current = getFilteredCommands;
-  }, [getFilteredCommands]);
-
-  // 上传图片处理，对接 `/admin/media/upload` 接口
-  const handleImageUpload = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("sourceType", "ARTICLE");
-    formData.append("sourceDetail", "文章正文插图");
-    const res = await apiClient.post("/admin/media/upload", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    if (res.data.code === 200 || res.data.code === 0) {
-      let url = res.data.data.fileUrl;
-      if (url.startsWith("/")) {
-        url = resolveAssetUrl(url);
+    const handleRightScroll = () => {
+      if (isSyncingLeft) return;
+      isSyncingRight = true;
+      const maxEditor = editorEl.scrollHeight - editorEl.clientHeight;
+      const maxPreview = previewEl.scrollHeight - previewEl.clientHeight;
+      if (maxPreview > 0) {
+        const ratio = previewEl.scrollTop / maxPreview;
+        editorEl.scrollTop = ratio * maxEditor;
       }
-      return url;
-    }
-    throw new Error(res.data.msg || "图片上传失败");
+      requestAnimationFrame(() => {
+        isSyncingRight = false;
+      });
+    };
+
+    editorEl.addEventListener("scroll", handleLeftScroll, { passive: true });
+    previewEl.addEventListener("scroll", handleRightScroll, { passive: true });
+
+    return () => {
+      editorEl.removeEventListener("scroll", handleLeftScroll);
+      previewEl.removeEventListener("scroll", handleRightScroll);
+    };
+  }, [viewMode]);
+
+  // 快捷语法包裹
+  const insertSyntax = (prefix: string, suffix: string, placeholderText = "标记内容") => {
+    if (!editorRef.current) return;
+    const textarea = editorRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const val = textarea.value;
+    const selected = val.substring(start, end) || placeholderText;
+    const replacement = prefix + selected + suffix;
+
+    const nextVal = val.substring(0, start) + replacement + val.substring(end);
+    onChange(nextVal);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.selectionStart = start + prefix.length;
+      textarea.selectionEnd = start + prefix.length + selected.length;
+    }, 0);
   };
 
-  // 上传 HTML 页面文件处理，对接 `/admin/media/upload` 接口
-  const handleHtmlUpload = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("sourceType", "ARTICLE_EMBED");
-    formData.append("sourceDetail", "文章正文嵌入 HTML 页面");
-    const res = await apiClient.post("/admin/media/upload", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    if (res.data.code === 200 || res.data.code === 0) {
-      let url = res.data.data.fileUrl;
-      if (url.startsWith("/")) {
-        url = resolveAssetUrl(url);
-      }
-      return url;
-    }
-    throw new Error(res.data.msg || "HTML 页面文件上传失败");
+  // 插入代码块
+  const insertCodeBlock = () => {
+    if (!editorRef.current) return;
+    const textarea = editorRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const val = textarea.value;
+    const snippet = "\n```tsx\n// 在此编写代码\nconst greeting = 'Hello World';\n```\n";
+    const nextVal = val.substring(0, start) + snippet + val.substring(end);
+    onChange(nextVal);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.selectionStart = start + snippet.length;
+      textarea.selectionEnd = start + snippet.length;
+    }, 0);
   };
 
-  // 执行斜杠快捷命令
-  const executeCommand = useCallback((cmd: SlashCommand) => {
-    const activeEditor = editorRef.current;
-    if (!activeEditor) return;
-
-    const { selection } = activeEditor.state;
-    const { $from } = selection;
-    const textContent = $from.parent.textContent;
-    const textBeforeCursor = textContent.slice(0, $from.parentOffset);
-
-    // 匹配行尾的斜杠，以及其后面的字母 query
-    const match = textBeforeCursor.match(/(?:^|\s)\/([a-zA-Z0-9]*)$/);
-    if (match) {
-      const matchText = match[0];
-      // 计算斜杠字符在整个编辑区中的绝对起止位置，以便将其擦除
-      const slashIndex = match.index! + (matchText.startsWith(" ") ? 1 : 0);
-      const fromPos = selection.from - (textBeforeCursor.length - slashIndex);
-      const toPos = selection.from;
-
-      let chain = activeEditor.chain().focus().deleteRange({ from: fromPos, to: toPos });
-
-      // 根据指令映射对应的 Tiptap 排版方法
-      if (cmd.id === "h1") {
-        chain = chain.setHeading({ level: 1 });
-      } else if (cmd.id === "h2") {
-        chain = chain.setHeading({ level: 2 });
-      } else if (cmd.id === "h3") {
-        chain = chain.setHeading({ level: 3 });
-      } else if (cmd.id === "quote") {
-        chain = chain.toggleBlockquote();
-      } else if (cmd.id === "code") {
-        chain = chain.toggleCodeBlock();
-      } else if (cmd.id === "ul") {
-        chain = chain.toggleBulletList();
-      } else if (cmd.id === "ol") {
-        chain = chain.toggleOrderedList();
-      } else if (cmd.id === "task") {
-        chain = chain.toggleTaskList();
-      } else if (cmd.id === "hr") {
-        chain = chain.setHorizontalRule();
-      } else if (cmd.id === "table") {
-        chain = chain.insertContent("\n| 列 1 | 列 2 |\n| ---- | ---- |\n| 内容 | 内容 |\n");
-      } else if (cmd.id === "link") {
-        const url = prompt("请输入链接 URL:", "https://");
-        if (url) {
-          chain = chain.toggleLink({ href: url });
+  // 异步上传图片处理
+  const handleUploadFile = async (file: File) => {
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("sourceType", "ARTICLE");
+      formData.append("sourceDetail", "文章正文插图");
+      const res = await apiClient.post("/admin/media/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (res.data.code === 200 || res.data.code === 0) {
+        let url = res.data.data.fileUrl;
+        if (url.startsWith("/")) {
+          url = resolveAssetUrl(url);
         }
-      } else if (cmd.id === "image") {
-        const fileInput = document.createElement("input");
-        fileInput.type = "file";
-        fileInput.accept = "image/*";
-        fileInput.onchange = async () => {
-          if (fileInput.files && fileInput.files[0]) {
-            try {
-              const url = await handleImageUpload(fileInput.files[0]);
-              activeEditor.chain().focus().setImage({ src: url }).run();
-            } catch (err: any) {
-              alert(err.message || "上传失败");
-            }
+        if (editorRef.current) {
+          const textarea = editorRef.current;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const val = textarea.value;
+          const mdImg = `\n![${file.name.replace(/\.[^/.]+$/, "")}](${url})\n`;
+          const nextVal = val.substring(0, start) + mdImg + val.substring(end);
+          onChange(nextVal);
+          setTimeout(() => {
+            textarea.focus();
+            textarea.selectionStart = start + mdImg.length;
+            textarea.selectionEnd = start + mdImg.length;
+          }, 0);
+        }
+      }
+    } catch (err: any) {
+      console.error("图片上传失败:", err);
+      alert(err.message || "图片上传失败");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 异步上传 HTML 页面文件处理
+  const handleUploadHtmlFile = async (file: File) => {
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("sourceType", "ARTICLE_EMBED");
+      formData.append("sourceDetail", "文章正文嵌入 HTML 页面");
+      const res = await apiClient.post("/admin/media/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (res.data.code === 200 || res.data.code === 0) {
+        let url = res.data.data.fileUrl;
+        if (url.startsWith("/")) {
+          url = resolveAssetUrl(url);
+        }
+        if (editorRef.current) {
+          const textarea = editorRef.current;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const val = textarea.value;
+          const title = file.name.replace(/\.(html|htm)$/i, "");
+          const iframeSnippet = `\n<iframe src="${url}" title="${title}" width="100%" height="450px" style="width: 100%; height: 450px; border: none; border-radius: 12px; overflow: hidden;" allowfullscreen></iframe>\n\n`;
+          const nextVal = val.substring(0, start) + iframeSnippet + val.substring(end);
+          onChange(nextVal);
+          setTimeout(() => {
+            textarea.focus();
+            textarea.selectionStart = start + iframeSnippet.length;
+            textarea.selectionEnd = start + iframeSnippet.length;
+          }, 0);
+        }
+      }
+    } catch (err: any) {
+      console.error("HTML 页面上传失败:", err);
+      alert(err.message || "HTML 页面上传失败");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 批量上传轮播图片处理（支持初次插入与向指定轮播块补传）
+  const handleUploadCarouselFiles = async (files: FileList | File[]) => {
+    if (!files || files.length === 0) return;
+    try {
+      setUploading(true);
+      const uploadedImages: { name: string; url: string }[] = [];
+
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("sourceType", "ARTICLE_CAROUSEL");
+        formData.append("sourceDetail", "文章正文轮播图");
+        const res = await apiClient.post("/admin/media/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        if (res.data.code === 200 || res.data.code === 0) {
+          let url = res.data.data.fileUrl;
+          if (url.startsWith("/")) {
+            url = resolveAssetUrl(url);
           }
-        };
-        fileInput.click();
-      } else if (cmd.id === "html-file") {
-        const fileInput = document.createElement("input");
-        fileInput.type = "file";
-        fileInput.accept = ".html,.htm";
-        fileInput.onchange = async () => {
-          if (fileInput.files && fileInput.files[0]) {
-            const file = fileInput.files[0];
-            try {
-              const url = await handleHtmlUpload(file);
-              const title = (file.name || "嵌入页面.html").replace(/\.(html|htm)$/i, "");
-              const iframeHtml = `\n<iframe src="${url}" title="${title}" width="100%" height="450px" style="width: 100%; height: 450px; border: none; border-radius: 12px; overflow: hidden;" allowfullscreen></iframe>\n\n`;
-              activeEditor
-                .chain()
-                .focus()
-                .insertContent(iframeHtml)
-                .run();
-            } catch (err: any) {
-              alert(err.message || "上传 HTML 文件失败");
-            }
-          }
-        };
-        fileInput.click();
+          uploadedImages.push({
+            name: file.name.replace(/\.[^/.]+$/, ""),
+            url,
+          });
+        }
       }
 
-      chain.run();
+      if (uploadedImages.length === 0) {
+        alert("未能成功上传图片，请重试");
+        return;
+      }
+
+      const textarea = editorRef.current;
+      const currentVal = textarea ? textarea.value : textValue;
+
+      // 判断是向既有轮播块补传，还是新插入轮播块
+      if (appendCarouselIndexRef.current !== null) {
+        const appendIdx = appendCarouselIndexRef.current;
+        appendCarouselIndexRef.current = null;
+
+        // 匹配轮播图块 <carousel>...</carousel> 或 :::carousel...:::
+        const carouselRegex = /<carousel>([\s\S]*?)<\/carousel>|:::carousel([\s\S]*?):::/g;
+        let match: RegExpExecArray | null;
+        let currentIdx = 0;
+        let targetPos: number | null = null;
+
+        while ((match = carouselRegex.exec(currentVal)) !== null) {
+          if (currentIdx === appendIdx) {
+            if (match[1] !== undefined) {
+              targetPos = match.index + match[0].lastIndexOf("</carousel>");
+            } else {
+              targetPos = match.index + match[0].lastIndexOf(":::");
+            }
+            break;
+          }
+          currentIdx++;
+        }
+
+        const newImgsMd =
+          uploadedImages.map((img) => `![${img.name}](${img.url})`).join("\n") + "\n";
+
+        if (targetPos !== null) {
+          const nextVal =
+            currentVal.slice(0, targetPos) + newImgsMd + currentVal.slice(targetPos);
+          onChange(nextVal);
+          setTimeout(() => {
+            if (textarea) {
+              textarea.focus();
+              const cursor = targetPos! + newImgsMd.length;
+              textarea.selectionStart = cursor;
+              textarea.selectionEnd = cursor;
+              keepCaretInView();
+            }
+          }, 0);
+          return;
+        }
+      }
+
+      // 新插入轮播块
+      const insertPos =
+        carouselInsertPosRef.current ?? (textarea ? textarea.selectionStart : currentVal.length);
+      carouselInsertPosRef.current = null;
+
+      const imgsMd = uploadedImages
+        .map((img) => `![${img.name}](${img.url})`)
+        .join("\n");
+      const snippet = `\n<carousel>\n${imgsMd}\n</carousel>\n\n`;
+      const nextVal =
+        currentVal.slice(0, insertPos) + snippet + currentVal.slice(insertPos);
+      onChange(nextVal);
+
+      setTimeout(() => {
+        if (textarea) {
+          textarea.focus();
+          const targetCursor = insertPos + snippet.length;
+          textarea.selectionStart = targetCursor;
+          textarea.selectionEnd = targetCursor;
+          keepCaretInView();
+        }
+      }, 0);
+    } catch (err: any) {
+      console.error("轮播图上传失败:", err);
+      alert(err.message || "轮播图上传失败");
+    } finally {
+      setUploading(false);
+      if (carouselFileInputRef.current) {
+        carouselFileInputRef.current.value = "";
+      }
     }
-    setMenuOpen(false);
-  }, []);
+  };
 
-  const executeCommandRef = useRef(executeCommand);
-  useEffect(() => {
-    executeCommandRef.current = executeCommand;
-  }, [executeCommand]);
-
-  // 检测斜杠并更新位置
-  const handleSlashDetection = (currEditor: any) => {
-    const { selection } = currEditor.state;
-    const { $from } = selection;
-
-    // 如果光标在代码块内部，不要弹出斜杠指令菜单，避免正常编写注释或路径时受到打扰
-    const isInsideCodeBlock = $from && $from.parent && $from.parent.type.name === "codeBlock";
-    if (isInsideCodeBlock) {
-      setMenuOpen(false);
-      return;
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          e.preventDefault();
+          handleUploadFile(file);
+          return;
+        }
+      }
     }
+  };
 
-    const textContent = $from.parent.textContent;
-    const textBeforeCursor = textContent.slice(0, $from.parentOffset);
-    const match = textBeforeCursor.match(/(?:^|\s)\/([a-zA-Z0-9]*)$/);
+  const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0 && files[0].type.startsWith("image/")) {
+      e.preventDefault();
+      handleUploadFile(files[0]);
+    }
+  };
 
+  // 检测光标所在位置是否处于 / 指令状态并计算浮层位置
+  const checkSlashCommand = useCallback(() => {
+    if (!editorRef.current) return;
+    const textarea = editorRef.current;
+    const pos = textarea.selectionStart;
+    const textBefore = textarea.value.slice(0, pos);
+
+    // 匹配行首、空白或换行后的 '/'
+    const match = textBefore.match(/(?:^|\n|[ ])\/([a-zA-Z0-9_\u4e00-\u9fa5]*)$/);
     if (match) {
-      const query = match[1];
+      const query = match[1] || "";
       setSearchQuery(query);
       setMenuOpen(true);
 
-      try {
-        const coords = currEditor.view.coordsAtPos(selection.from);
-        if (containerRef.current) {
-          const containerRect = containerRef.current.getBoundingClientRect();
-          
-          // 动态智能方向定位判定：
-          // 列表每一项 44px，头部 35px，最大 max-h-60 约 240px。动态计算当前过滤后的命令列表高度
-          const activeCmds = getFilteredCommands(query);
-          const menuHeight = Math.min(240, activeCmds.length * 44 + 35);
-          
-          // 计算光标底部距离编辑最外层容器底部的可用垂直空间
-          const spaceBelow = containerRect.bottom - coords.bottom;
-          
-          let top = 0;
-          // 如果下方空间不够容纳菜单，并且上方空间较多，就自适应翻转向上弹出
-          if (spaceBelow < menuHeight && (coords.top - containerRect.top) > spaceBelow) {
-            top = coords.top - containerRect.top - menuHeight - 6;
-          } else {
-            top = coords.bottom - containerRect.top + 6;
-          }
-          
-          const left = coords.left - containerRect.left;
-          
-          setMenuPosition({
-            top,
-            left,
-          });
-        }
-      } catch (err) {
-        console.warn("获取光标像素坐标失败:", err);
+      const coords = getCaretCoordinates(textarea, pos);
+      const visualTop = coords.top - textarea.scrollTop;
+      const visualLeft = coords.left - textarea.scrollLeft;
+
+      let top = visualTop + coords.height + 6;
+      if (visualTop + coords.height + 260 > textarea.clientHeight && visualTop > 260) {
+        top = visualTop - 250;
       }
+
+      let left = visualLeft;
+      if (left + 270 > textarea.clientWidth) {
+        left = Math.max(16, textarea.clientWidth - 280);
+      } else if (left < 16) {
+        left = 16;
+      }
+
+      setMenuPosition({ top, left });
     } else {
       setMenuOpen(false);
     }
-  };
+  }, []);
 
-  // 初始化 Tiptap 编辑器
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3, 4, 5, 6],
-        },
-        codeBlock: false,
-      }),
-      CodeBlockLowlight.extend({
-        addNodeView() {
-          return ReactNodeViewRenderer(CodeBlockComponent);
-        },
-      }).configure({
-        lowlight,
-      }),
-      Markdown,
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: "text-primary hover:underline cursor-pointer",
-        },
-      }),
-      Image.extend({
-        addNodeView() {
-          return ReactNodeViewRenderer(ImageNodeViewComponent);
-        },
-      }).configure({
-        HTMLAttributes: {
-          class: "max-w-full h-auto rounded-lg border border-zinc-200 dark:border-zinc-800 my-2 inline-block shadow-sm",
-        },
-      }),
-      IframeExtension,
-      Placeholder.configure({
-        placeholder: placeholder,
-      }),
-      TaskList.configure({
-        HTMLAttributes: {
-          class: "not-prose list-none p-0 my-3",
-        },
-      }),
-      TaskItem.configure({
-        nested: true,
-        HTMLAttributes: {
-          class: "flex items-start gap-2.5 my-1.5",
-        },
-      }),
-      Underline,
-      TextStyle,
-      Color,
-      Highlight.configure({
-        multicolor: true,
-      }),
-    ],
-    content: value || "",
-    contentType: "markdown",
-    editorProps: {
-      attributes: {
-        class: "focus:outline-none custom-editor-content p-6 min-h-[500px]",
-      },
-      // 劫持键盘事件进行 Slash 菜单上下按键和回车劫持
-      handleDOMEvents: {
-        keydown: (view, event) => {
-          if (menuOpenRef.current) {
-            if (event.key === "ArrowDown") {
-              event.preventDefault();
-              setSelectedIndex((prev) => (prev + 1) % filteredCountRef.current);
-              return true;
-            }
-            if (event.key === "ArrowUp") {
-              event.preventDefault();
-              setSelectedIndex((prev) => (prev - 1 + filteredCountRef.current) % filteredCountRef.current);
-              return true;
-            }
-            if (event.key === "Enter") {
-              event.preventDefault();
-              const cmds = getFilteredCommandsRef.current();
-              const activeCommand = cmds[selectedIndexRef.current];
-              if (activeCommand) {
-                executeCommandRef.current(activeCommand);
-              }
-              return true;
-            }
-            if (event.key === "Escape") {
-              event.preventDefault();
-              setMenuOpen(false);
-              return true;
-            }
-          }
+  // 执行选中的斜杠命令
+  const executeCommand = useCallback(
+    (cmd: SlashCommand) => {
+      if (!editorRef.current) return;
+      const textarea = editorRef.current;
+      const pos = textarea.selectionStart;
+      const fullText = textarea.value;
+      const textBefore = fullText.slice(0, pos);
+      const textAfter = fullText.slice(pos);
 
-          // 如果光标在代码块中，支持高阶 Tab 缩进及括号自动闭合/越界逻辑 (提供智能 CodeMirror/IDE 编辑体验)
-          const { state } = view;
-          const { selection } = state;
-          const { $from } = selection;
-          const isInsideCodeBlock = $from && $from.parent && $from.parent.type.name === "codeBlock";
-
-          if (isInsideCodeBlock) {
-            // 1. 按下 Tab 键时，插入 2 个空格而不是失去焦点
-            if (event.key === "Tab") {
-              event.preventDefault();
-              view.dispatch(state.tr.insertText("  "));
-              return true;
-            }
-
-            // 2. 按下 Enter 键换行时自动缩进
-            if (event.key === "Enter") {
-              event.preventDefault();
-              const textContent = $from.parent.textContent;
-              const offset = $from.parentOffset;
-              
-              // 找到当前行的起点
-              const lastNewline = textContent.lastIndexOf("\n", offset - 1);
-              const lineStart = lastNewline === -1 ? 0 : lastNewline + 1;
-              
-              // 光标之前的当前行内容
-              const currentLineBeforeCursor = textContent.slice(lineStart, offset);
-              
-              // 提取缩进空白字符
-              const matchIndent = currentLineBeforeCursor.match(/^\s*/);
-              const indent = matchIndent ? matchIndent[0] : "";
-              
-              // 判定是否需要增加额外缩进 (针对冒号或大括号结尾)
-              const trimmedLine = currentLineBeforeCursor.trimEnd();
-              let extraIndent = "";
-              if (trimmedLine.endsWith(":") || trimmedLine.endsWith("{")) {
-                extraIndent = "  ";
-              }
-              
-              const insertText = "\n" + indent + extraIndent;
-              const tr = state.tr;
-              tr.insertText(insertText);
-              const targetPos = Math.min(selection.from + insertText.length, tr.doc.content.size);
-              tr.setSelection(TextSelection.create(tr.doc, targetPos));
-              view.dispatch(tr);
-              return true;
-            }
-
-            // 3. 括号与引号自动闭合
-            const brackets: Record<string, string> = {
-              "(": ")",
-              "{": "}",
-              "[": "]",
-              '"': '"',
-              "'": "'",
-              "`": "`",
-            };
-
-            if (brackets[event.key] !== undefined) {
-              event.preventDefault();
-              const closing = brackets[event.key];
-              const tr = state.tr;
-              tr.insertText(event.key + closing);
-              const targetPos = Math.min(selection.from + 1, tr.doc.content.size);
-              tr.setSelection(TextSelection.create(tr.doc, targetPos));
-              view.dispatch(tr);
-              return true;
-            }
-
-            // 3. 越过自动闭合的右侧括号/引号
-            const textContent = $from.parent.textContent;
-            const textAfterCursor = textContent.slice($from.parentOffset, $from.parentOffset + 1);
-            if (event.key === textAfterCursor && [")", "}", "]", '"', "'", "`"].includes(event.key)) {
-              event.preventDefault();
-              const tr = state.tr;
-              const targetPos = Math.min(selection.from + 1, tr.doc.content.size);
-              tr.setSelection(TextSelection.create(tr.doc, targetPos));
-              view.dispatch(tr);
-              return true;
-            }
-          }
-
-          return false;
-        },
-        // 拖入文件自动上传
-        drop: (view, event) => {
-          const files = event.dataTransfer?.files;
-          if (files && files.length > 0 && files[0].type.startsWith("image/")) {
-            event.preventDefault();
-            handleImageUpload(files[0]).then((url) => {
-              const { schema } = view.state;
-              const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
-              if (coordinates) {
-                const node = schema.nodes.image.create({ src: url });
-                const transaction = view.state.tr.insert(coordinates.pos, node);
-                view.dispatch(transaction);
-              }
-            }).catch((err) => alert(err.message || "图片拖拽上传失败"));
-            return true;
-          }
-          return false;
-        },
-        // 粘贴文件自动上传或粘贴可访问图片 URL 链接自动渲染为图片
-        paste: (view, event) => {
-          const clipboardData = event.clipboardData;
-          if (!clipboardData) return false;
-
-          // 1. 本地图片文件粘贴
-          const files = clipboardData.files;
-          if (files && files.length > 0 && files[0].type.startsWith("image/")) {
-            event.preventDefault();
-            handleImageUpload(files[0])
-              .then((url) => {
-                const { schema } = view.state;
-                const node = schema.nodes.image.create({ src: url });
-                const transaction = view.state.tr.replaceSelectionWith(node);
-                view.dispatch(transaction);
-              })
-              .catch((err) => alert(err.message || "粘贴图片上传失败"));
-            return true;
-          }
-
-          // 2. 粘贴可访问图片 URL 文本链接识别
-          const pastedText = clipboardData.getData("text/plain")?.trim();
-          if (pastedText && /^https?:\/\/[^\s]+$/i.test(pastedText) && !pastedText.includes("\n")) {
-            const isImageExtension = /\.(jpeg|jpg|gif|png|webp|svg|avif|bmp)(\?.*)?$/i.test(pastedText);
-            const isImageKeywords = /(image|img|photo|pic|avatar|media|oss|cos|qncdn)/i.test(pastedText);
-
-            if (isImageExtension || isImageKeywords) {
-              event.preventDefault();
-              const { schema } = view.state;
-              const node = schema.nodes.image.create({ src: pastedText });
-              const transaction = view.state.tr.replaceSelectionWith(node);
-              view.dispatch(transaction);
-              return true;
-            }
-          }
-
-          return false;
-        },
-      },
-    },
-    onUpdate: ({ editor: currEditor }) => {
-      // 实时反向生成 Markdown 文本回传给 Form 表单
-      const markdown = currEditor.getMarkdown();
-      onChange(markdown || "");
-      // 从 ProseMirror 文档直接提取图片 URL 回调
-      extractImagesFromDoc(currEditor);
-      handleSlashDetection(currEditor);
-    },
-    onSelectionUpdate: ({ editor: currEditor }) => {
-      handleSlashDetection(currEditor);
-    },
-  });
-
-  // 同步最新的 editor 实例到 Ref 中，彻底打破 handleDOMEvents 的闭包陷阱
-  useEffect(() => {
-    editorRef.current = editor;
-  }, [editor]);
-
-  // 监听来自外部 value 状态（在数据加载出来时设置到编辑器中）
-  useEffect(() => {
-    if (editor && value !== undefined) {
-      const currentMarkdown = editor.getMarkdown();
-      if (currentMarkdown !== value) {
-        editor.commands.setContent(value || "", {
-          contentType: "markdown",
-        });
-
-        // 100% 绝对防丢失双通道校验：若原始 value 中包含 <iframe 标签，但 markdown 模式未能解析出 iframe 节点，
-        // 则立即回退使用原生 HTML 解析器，确保刷新页面加载时 100% 渲染 iframe 交互节点！
-        if (value.includes("<iframe") || value.includes("<IFRAME")) {
-          let hasIframeNode = false;
-          editor.state.doc.descendants((node: any) => {
-            if (node.type.name === "iframe") {
-              hasIframeNode = true;
-            }
-          });
-          if (!hasIframeNode) {
-            editor.commands.setContent(value || "");
-          }
-        }
+      // 找到匹配的斜杠指令起点
+      const match = textBefore.match(/(?:^|\n|[ ])\/([a-zA-Z0-9_\u4e00-\u9fa5]*)$/);
+      if (!match) {
+        setMenuOpen(false);
+        return;
       }
-      // 初始加载或外部数据变化时，也提取图片 URL
-      extractImagesFromDoc(editor);
-    }
-  }, [value, editor, extractImagesFromDoc]);
 
-  if (!editor) return null;
+      const matchText = match[0];
+      const slashIndexInMatch = matchText.indexOf("/");
+      const replaceStart = textBefore.length - matchText.length + slashIndexInMatch;
+
+      // 针对需要上传文件的特殊指令处理
+      if (cmd.id === "image") {
+        const nextVal = fullText.slice(0, replaceStart) + textAfter;
+        onChange(nextVal);
+        setMenuOpen(false);
+        setTimeout(() => {
+          textarea.focus();
+          textarea.selectionStart = replaceStart;
+          textarea.selectionEnd = replaceStart;
+          fileInputRef.current?.click();
+        }, 0);
+        return;
+      }
+
+      if (cmd.id === "carousel") {
+        const nextVal = fullText.slice(0, replaceStart) + textAfter;
+        onChange(nextVal);
+        setMenuOpen(false);
+        carouselInsertPosRef.current = replaceStart;
+        appendCarouselIndexRef.current = null;
+        setTimeout(() => {
+          textarea.focus();
+          textarea.selectionStart = replaceStart;
+          textarea.selectionEnd = replaceStart;
+          carouselFileInputRef.current?.click();
+        }, 0);
+        return;
+      }
+
+      if (cmd.id === "html-file") {
+        const nextVal = fullText.slice(0, replaceStart) + textAfter;
+        onChange(nextVal);
+        setMenuOpen(false);
+        setTimeout(() => {
+          textarea.focus();
+          textarea.selectionStart = replaceStart;
+          textarea.selectionEnd = replaceStart;
+          htmlFileInputRef.current?.click();
+        }, 0);
+        return;
+      }
+
+      // 如果 cmd.markdown 是一个函数
+      if (typeof cmd.markdown === "function") {
+        const lineStart = textBefore.lastIndexOf("\n") + 1;
+        const currentLine = textBefore.slice(lineStart);
+        const result = cmd.markdown(currentLine);
+        const nextVal = fullText.slice(0, lineStart) + result.replaceText + textAfter;
+        onChange(nextVal);
+        setMenuOpen(false);
+        setTimeout(() => {
+          textarea.focus();
+          const targetCursor = lineStart + result.cursorOffset;
+          if (cmd.id === "highlight" || cmd.id === "circle" || cmd.id === "strike") {
+            const placeholderLen = 4;
+            textarea.selectionStart = targetCursor;
+            textarea.selectionEnd = targetCursor + placeholderLen;
+          } else {
+            textarea.selectionStart = targetCursor;
+            textarea.selectionEnd = targetCursor;
+          }
+          keepCaretInView();
+        }, 0);
+        return;
+      }
+
+      // 如果 cmd.markdown 是一个字符串
+      if (typeof cmd.markdown === "string") {
+        const nextVal = fullText.slice(0, replaceStart) + cmd.markdown + textAfter;
+        onChange(nextVal);
+        setMenuOpen(false);
+        setTimeout(() => {
+          textarea.focus();
+          const targetCursor = replaceStart + cmd.markdown.length;
+          textarea.selectionStart = targetCursor;
+          textarea.selectionEnd = targetCursor;
+          keepCaretInView();
+        }, 0);
+      }
+    },
+    [onChange, keepCaretInView]
+  );
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // 1. 如果斜杠菜单处于打开状态，拦截方向键、回车、Tab 与 Escape
+    if (menuOpen) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIndex((prev) => (filteredCount > 0 ? (prev + 1) % filteredCount : 0));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          filteredCount > 0 ? (prev - 1 + filteredCount) % filteredCount : 0
+        );
+        return;
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        const query = searchQuery.trim().toLowerCase();
+        const filtered = SLASH_COMMANDS.filter(
+          (cmd) =>
+            cmd.label.toLowerCase().includes(query) ||
+            cmd.id.toLowerCase().includes(query) ||
+            cmd.description.toLowerCase().includes(query)
+        );
+        const activeCommand = filtered[selectedIndex];
+        if (activeCommand) {
+          executeCommand(activeCommand);
+        }
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMenuOpen(false);
+        return;
+      }
+    }
+
+    if (e.key === "Enter") {
+      setTimeout(keepCaretInView, 0);
+    }
+    if (e.key === "Tab") {
+      e.preventDefault();
+      if (!editorRef.current) return;
+      const textarea = editorRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const val = textarea.value;
+      const nextVal = val.substring(0, start) + "  " + val.substring(end);
+      onChange(nextVal);
+      setTimeout(() => {
+        textarea.selectionStart = start + 2;
+        textarea.selectionEnd = start + 2;
+      }, 0);
+    }
+  };
 
   return (
     <div
-      ref={containerRef}
-      className={cn(
-        "relative w-full h-full flex flex-col rounded-xl overflow-hidden border border-zinc-200/60 dark:border-zinc-850 bg-white dark:bg-zinc-950 transition-all duration-200",
-        colorMode === "dark" ? "dark" : ""
-      )}
-      style={{ minHeight: `${height}px` }}
+      style={{ height: typeof height === "number" ? `${height}px` : height }}
+      className="flex flex-col w-full h-full bg-white dark:bg-[#09090b] rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 overflow-hidden shadow-sm select-none"
     >
-      {/* 顶部富文本排版工具栏 - 固定在卡片最顶端 */}
-      <div className="shrink-0 flex flex-wrap items-center gap-1.5 p-2 bg-zinc-50/80 dark:bg-zinc-900/80 border-b border-zinc-200/60 dark:border-zinc-800/60 select-none z-10">
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().undo().run()}
-          disabled={!editor.can().undo()}
-          className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-40"
-          title="撤销 (Ctrl+Z)"
-        >
-          <Undo size={14} />
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().redo().run()}
-          disabled={!editor.can().redo()}
-          className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 disabled:opacity-40"
-          title="重做 (Ctrl+Y)"
-        >
-          <Redo size={14} />
-        </button>
+      {/* 顶部极简工具栏 */}
+      <header className="h-11 min-h-[44px] px-3.5 border-b border-zinc-200/70 dark:border-zinc-800/80 bg-white/95 dark:bg-[#0c0c0e]/95 backdrop-blur-md flex items-center justify-between z-10">
+        <div className="flex items-center gap-2">
+          {/* 品牌与模式标识 */}
+          <div className="flex items-center gap-1.5 font-bold text-xs tracking-tight text-zinc-900 dark:text-zinc-100 mr-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
+            <span>INK EDITOR</span>
+            <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800/80 px-1.5 py-0.5 rounded">
+              即时所见即所得
+            </span>
+          </div>
 
-        <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
+          <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1 hidden sm:block" />
 
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className={cn(
-            "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer",
-            editor.isActive("bold") && "bg-primary/10 text-primary border-primary/20"
-          )}
-          title="加粗"
-        >
-          <Bold size={14} />
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={cn(
-            "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer",
-            editor.isActive("italic") && "bg-primary/10 text-primary border-primary/20"
-          )}
-          title="斜体"
-        >
-          <Italic size={14} />
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
-          className={cn(
-            "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer",
-            editor.isActive("underline") && "bg-primary/10 text-primary border-primary/20"
-          )}
-          title="下划线"
-        >
-          <UnderlineIcon size={14} />
-        </button>
+          {/* 快捷语法按钮组 */}
+          <div className="flex items-center gap-1 overflow-x-auto py-1">
+            <button
+              type="button"
+              onClick={() => insertSyntax("==", "==", "高亮内容")}
+              className="px-2 py-1 rounded text-xs font-mono font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors flex items-center gap-1 cursor-pointer"
+              title="荧光高亮 (==text==)"
+            >
+              <span className="bg-[#fef08a] dark:bg-amber-950/60 text-[#713f12] dark:text-amber-300 px-1 rounded text-[11px]">
+                ==高亮==
+              </span>
+            </button>
 
-        {/* 文本与行内代码高亮调色盘 */}
-        <div className="relative flex items-center">
+            <button
+              type="button"
+              onClick={() => insertSyntax("((", "))", "圈选内容")}
+              className="px-2 py-1 rounded text-xs font-mono font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
+              title="手绘圈选 ((text))"
+            >
+              <span>((圈选))</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => insertSyntax("~~", "~~", "划线内容")}
+              className="px-2 py-1 rounded text-xs font-mono font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
+              title="手绘涂改 (~~text~~)"
+            >
+              <span className="line-through decoration-zinc-400">~~划线~~</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => insertSyntax("**", "**", "加粗文本")}
+              className="p-1 px-1.5 rounded text-xs font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
+              title="文本加粗 (**text**)"
+            >
+              <b>B</b>
+            </button>
+
+            <button
+              type="button"
+              onClick={insertCodeBlock}
+              className="p-1 px-2 rounded text-xs font-mono font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors flex items-center gap-1 cursor-pointer"
+              title="插入多行代码块"
+            >
+              <CodeIcon size={12} />
+              <span>代码块</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="p-1 px-2 rounded text-xs font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              title="上传并插入图片"
+            >
+              <ImageIcon size={12} />
+              <span>{uploading ? "上传中..." : "插图"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => htmlFileInputRef.current?.click()}
+              disabled={uploading}
+              className="p-1 px-2 rounded text-xs font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              title="上传并嵌入 HTML 网页"
+            >
+              <Globe size={12} />
+              <span>{uploading ? "处理中..." : "嵌入网页"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (editorRef.current) {
+                  carouselInsertPosRef.current = editorRef.current.selectionStart;
+                  appendCarouselIndexRef.current = null;
+                  carouselFileInputRef.current?.click();
+                }
+              }}
+              disabled={uploading}
+              className="p-1 px-2 rounded text-xs font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              title="插入多图轮播 (<carousel>)"
+            >
+              <Images size={12} />
+              <span>{uploading ? "处理中..." : "轮播图"}</span>
+            </button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  handleUploadFile(e.target.files[0]);
+                }
+              }}
+            />
+
+            <input
+              ref={carouselFileInputRef}
+              type="file"
+              multiple
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  handleUploadCarouselFiles(e.target.files);
+                }
+              }}
+            />
+
+            <input
+              ref={htmlFileInputRef}
+              type="file"
+              accept=".html,.htm"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  handleUploadHtmlFile(e.target.files[0]);
+                }
+              }}
+            />
+          </div>
+        </div>
+
+        {/* 右侧：视图模式切换与统计 */}
+        <div className="flex items-center gap-2.5 text-xs text-zinc-500 font-mono">
+          <span className="hidden md:inline">{charCount} 字符</span>
+
+          {/* 模式切换 */}
+          <div className="flex items-center bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-lg border border-zinc-200/50 dark:border-zinc-700/50">
+            <button
+              type="button"
+              onClick={() => setViewMode("edit")}
+              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${
+                viewMode === "edit"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              }`}
+              title="仅编辑模式"
+            >
+              <Edit3 size={11} className="inline mr-1" />
+              <span>编辑</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("live")}
+              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${
+                viewMode === "live"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              }`}
+              title="双栏分屏所见即所得"
+            >
+              <Columns size={11} className="inline mr-1" />
+              <span>分屏</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("preview")}
+              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${
+                viewMode === "preview"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              }`}
+              title="仅预览模式"
+            >
+              <Eye size={11} className="inline mr-1" />
+              <span>预览</span>
+            </button>
+          </div>
+
+          {/* 清空按钮 */}
           <button
             type="button"
-            onClick={() => setShowColorPicker(!showColorPicker)}
-            className={cn(
-              "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer flex items-center gap-1",
-              (editor.isActive("textStyle") || editor.isActive("highlight") || showColorPicker) && "bg-primary/10 text-primary border-primary/20"
-            )}
-            title="字色与背景高亮调色盘"
-          >
-            <Palette size={14} />
-          </button>
-
-          {showColorPicker && (
-            <div className="absolute top-full left-0 mt-1 z-50 p-3 bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-800 w-60 animate-fade-in">
-              <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 mb-2 flex items-center justify-between">
-                <span>文本与代码着色方案</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    editor.chain().focus().unsetColor().unsetHighlight().run();
-                    setShowColorPicker(false);
-                  }}
-                  className="text-[10px] text-zinc-400 hover:text-primary underline cursor-pointer"
-                >
-                  重置/清除着色
-                </button>
-              </div>
-
-              <div className="text-[11px] text-zinc-400 mb-1.5">快捷调色组合：</div>
-              <div className="grid grid-cols-2 gap-1.5 mb-3">
-                {COLOR_PRESETS.map((preset) => (
-                  <button
-                    key={preset.name}
-                    type="button"
-                    onClick={() => {
-                      editor.chain().focus().setColor(preset.color).toggleHighlight({ color: preset.bg }).run();
-                      setShowColorPicker(false);
-                    }}
-                    className="flex items-center gap-1.5 p-1.5 rounded-lg border border-zinc-200/80 dark:border-zinc-800 hover:border-primary/50 text-[11px] cursor-pointer transition-all"
-                    style={{ backgroundColor: preset.bg, color: preset.color }}
-                  >
-                    <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ backgroundColor: preset.color }} />
-                    <span className="truncate font-mono font-medium">{preset.name}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex flex-col gap-1.5">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-zinc-500">仅文字颜色:</span>
-                  <input
-                    type="color"
-                    value={customColor}
-                    onChange={(e) => {
-                      setCustomColor(e.target.value);
-                      editor.chain().focus().setColor(e.target.value).run();
-                    }}
-                    className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
-                  />
-                </div>
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-zinc-500">仅背景高亮色:</span>
-                  <input
-                    type="color"
-                    value={customBg}
-                    onChange={(e) => {
-                      setCustomBg(e.target.value);
-                      editor.chain().focus().toggleHighlight({ color: e.target.value }).run();
-                    }}
-                    className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
-
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={cn(
-            "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer",
-            editor.isActive("heading", { level: 1 }) && "bg-primary/10 text-primary border-primary/20"
-          )}
-          title="标题 1"
-        >
-          <Heading1 size={14} />
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={cn(
-            "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer",
-            editor.isActive("heading", { level: 2 }) && "bg-primary/10 text-primary border-primary/20"
-          )}
-          title="标题 2"
-        >
-          <Heading2 size={14} />
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={cn(
-            "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer",
-            editor.isActive("heading", { level: 3 }) && "bg-primary/10 text-primary border-primary/20"
-          )}
-          title="标题 3"
-        >
-          <Heading3 size={14} />
-        </button>
-
-        <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
-
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={cn(
-            "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer",
-            editor.isActive("bulletList") && "bg-primary/10 text-primary border-primary/20"
-          )}
-          title="无序列表"
-        >
-          <List size={14} />
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={cn(
-            "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer",
-            editor.isActive("orderedList") && "bg-primary/10 text-primary border-primary/20"
-          )}
-          title="有序列表"
-        >
-          <ListOrdered size={14} />
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleTaskList().run()}
-          className={cn(
-            "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer",
-            editor.isActive("taskList") && "bg-primary/10 text-primary border-primary/20"
-          )}
-          title="任务清单"
-        >
-          <CheckSquare size={14} />
-        </button>
-
-        <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
-
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={cn(
-            "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer",
-            editor.isActive("blockquote") && "bg-primary/10 text-primary border-primary/20"
-          )}
-          title="引用块"
-        >
-          <Quote size={14} />
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          className={cn(
-            "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer",
-            editor.isActive("codeBlock") && "bg-primary/10 text-primary border-primary/20"
-          )}
-          title="代码编辑区"
-        >
-          <Code size={14} />
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 cursor-pointer"
-          title="插入分割线"
-        >
-          <Minus size={14} />
-        </button>
-
-        <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
-
-        <button
-          type="button"
-          onClick={() => {
-            const url = prompt("请输入超链接 URL:", "https://");
-            if (url) {
-              editor.chain().focus().setLink({ href: url }).run();
-            }
-          }}
-          className={cn(
-            "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer",
-            editor.isActive("link") && "bg-primary/10 text-primary border-primary/20"
-          )}
-          title="插入超链接"
-        >
-          <LinkIcon size={14} />
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            const fileInput = document.createElement("input");
-            fileInput.type = "file";
-            fileInput.accept = "image/*";
-            fileInput.onchange = async () => {
-              if (fileInput.files && fileInput.files[0]) {
-                try {
-                  const url = await handleImageUpload(fileInput.files[0]);
-                  editor.chain().focus().setImage({ src: url }).run();
-                } catch (err: any) {
-                  alert(err.message || "上传失败");
-                }
+            onClick={() => {
+              if (window.confirm("确定要清空编辑内容吗？")) {
+                onChange("");
               }
-            };
-            fileInput.click();
-          }}
-          className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 cursor-pointer"
-          title="添加图片"
-        >
-          <ImageIcon size={14} />
-        </button>
-
-        <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
-
-        {/* 目录大纲切换显隐控制按钮 */}
-        <button
-          type="button"
-          onClick={() => setShowToc((prev) => !prev)}
-          className={cn(
-            "p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer flex items-center gap-1 text-xs font-bold",
-            showToc && "bg-primary/10 text-primary border-primary/20"
-          )}
-          title={showToc ? "隐藏文章大纲目录" : "展开文章大纲目录"}
-        >
-          <ListTree size={14} />
-          <span className="hidden sm:inline text-[11px]">目录</span>
-        </button>
-      </div>
-
-      {/* 编辑器核心内容区域 + 右侧大纲面板 */}
-      <div className="flex-1 w-full flex flex-row min-h-0 overflow-hidden bg-white dark:bg-zinc-950 relative">
-        {/* 左侧/中央正文编辑区（唯一的独立滚动区域） */}
-        <div
-          className="flex-1 min-w-0 h-full overflow-y-auto custom-scrollbar p-4 relative"
-          onScroll={() => setMenuOpen(false)}
-        >
-          <EditorContent editor={editor} />
+            }}
+            className="p-1 text-zinc-400 hover:text-rose-500 transition-colors cursor-pointer"
+            title="清空文本"
+          >
+            <Trash2 size={13} />
+          </button>
         </div>
+      </header>
 
-        {/* 右侧大纲实时目录 */}
-        {showToc && (
-          <EditorToc
-            editor={editor}
-            collapsed={false}
-            onToggleCollapse={() => setShowToc(false)}
-          />
+      {/* 编辑器核心双栏主体 */}
+      <main className="flex-1 w-full min-h-0 flex flex-row overflow-hidden bg-white dark:bg-[#09090b]">
+        {/* 左侧纯 Markdown 编写区 */}
+        {(viewMode === "live" || viewMode === "edit") && (
+          <section
+            className={`h-full flex flex-col relative bg-white dark:bg-[#09090b] ${
+              viewMode === "live"
+                ? "w-1/2 border-r border-zinc-200/70 dark:border-zinc-800/80"
+                : "w-full"
+            }`}
+          >
+            <textarea
+              ref={editorRef}
+              value={textValue}
+              onChange={(e) => {
+                onChange(e.target.value);
+                setTimeout(checkSlashCommand, 0);
+              }}
+              onKeyDown={handleKeyDown}
+              onKeyUp={(e) => {
+                if (e.key !== "ArrowUp" && e.key !== "ArrowDown" && e.key !== "Enter") {
+                  checkSlashCommand();
+                }
+              }}
+              onClick={checkSlashCommand}
+              onScroll={() => {
+                if (menuOpen) {
+                  checkSlashCommand();
+                }
+              }}
+              onBlur={() => {
+                setTimeout(() => {
+                  setMenuOpen(false);
+                }, 200);
+              }}
+              onPaste={handlePaste}
+              onDrop={handleDrop}
+              placeholder={placeholder}
+              spellCheck={false}
+              className="flex-1 w-full h-full p-6 pb-48 font-mono text-[13px] sm:text-[14px] leading-relaxed resize-none border-none outline-none bg-transparent text-zinc-800 dark:text-zinc-200 custom-scrollbar select-text placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+            />
+
+            {/* 斜杠指令浮动菜单 */}
+            {menuOpen && (
+              <SlashMenu
+                searchQuery={searchQuery}
+                selectedIndex={selectedIndex}
+                position={menuPosition}
+                onFilteredCommandsChange={setFilteredCount}
+                onSelectCommand={executeCommand}
+              />
+            )}
+          </section>
         )}
-      </div>
 
-      {/* 斜杠指令浮动菜单 */}
-      {menuOpen && (
-        <SlashMenu
-          searchQuery={searchQuery}
-          selectedIndex={selectedIndex}
-          position={menuPosition}
-          onFilteredCommandsChange={setFilteredCount}
-          onSelectCommand={executeCommand}
-        />
-      )}
+        {/* 右侧所见即所得手写预览区 */}
+        {(viewMode === "live" || viewMode === "preview") && (
+          <section
+            ref={previewScrollRef}
+            className={`h-full overflow-y-auto custom-scrollbar p-6 sm:p-10 pb-48 bg-[#fafafa] dark:bg-[#0d0d10] font-handwriting ${
+              viewMode === "live" ? "w-1/2" : "w-full"
+            }`}
+          >
+            <div
+              ref={previewContentRef}
+              className="max-w-[640px] mx-auto text-[1.4rem] sm:text-[1.55rem] leading-[2.2] sm:leading-[2.35] text-zinc-900 dark:text-zinc-100 select-text relative"
+            />
+          </section>
+        )}
+      </main>
     </div>
   );
 }

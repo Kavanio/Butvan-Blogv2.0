@@ -68,6 +68,8 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   ├── Dockerfile                             #     生产容器 Docker 多阶段构建脚本（standalone 轻量运行）
 │   ├── .dockerignore                          #     Docker 镜像构建排除规则（排除 node_modules 及本地开发缓存）
 │   ├── package.json                           #     前端工程依赖管理（锁定 pnpm）
+│   ├── public/                                #     公共静态资源
+│   │   └── fonts/                             #       本地化手绘与等宽字体 (Caveat / JetBrains Mono)
 │   ├── next.config.mjs                        #     Next.js 配置（独立 standalone 产物与 BFF 反向代理）
 │   ├── tailwind.config.ts                     #     Tailwind CSS 3.4 样式与微噪点扩展配置
 │   ├── tsconfig.json                          #     TypeScript 编译配置与路径别名映射 (@/*)
@@ -100,6 +102,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │       │   ├── article/                       #       📖 深度文章与手记阅读器核心组件集
 │       │   │   ├── DetailHeader.tsx           #         ★ 极简详情页顶部导航条（圆形返回按钮 + EN·FR + 主题切换）
 │       │   │   ├── MarkdownRenderer.tsx       #         ★ 极客级 Markdown/富文本渲染引擎（代码块/图片预览/安全DOM映射）
+│       │   │   ├── ArticleCarousel.tsx        #         ★ 极客文人风格多图交互式轮播画廊（Framer Motion 手势拖拽/无缝切页/全屏灯箱）
 │       │   │   ├── MarkdownCodeBlock.tsx      #         macOS 终端三色控制点代码块（highlight.js 高亮/一键复制/超长折叠）
 │       │   │   ├── ArticleToc.tsx             #         文章大纲导航数据模型与基础组件
 │       │   │   ├── ReadingProgressBar.tsx     #         顶部极细渐变滚动阅读进度条
@@ -251,6 +254,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   │
 │   └── blog-admin/                                #   管理后台端（内容管理）
 │       ├── public/                                #     静态资源
+│       │   ├── fonts/                             #       本地化手绘与等宽字体 (Caveat / JetBrains Mono)
 │       │   ├── fWdgJuAOF.jpeg                     #       默认房间场景背景
 │       │   ├── images/tech/                       #       技术栈徽标（Spring, Postgres, Next.js, Docker, Agent）
 │       │   └── topography.svg                     #       登录页地形图背景资源
