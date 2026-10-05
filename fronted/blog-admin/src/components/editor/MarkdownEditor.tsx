@@ -247,155 +247,118 @@ function parseInline(text: string, parentEl: HTMLElement) {
 }
 
 /**
- * 生成交互式图片轮播卡片 DOM 节点（沉浸式无边框视窗 + 毛玻璃控制 + 缩略图轨道联动）
+ * 生成交互式图片轮播卡片 DOM 节点（极简无背景纯图片轮播）
  */
 function createCarouselDOM(
   images: { alt: string; url: string }[],
   onAppendImages?: () => void
 ): HTMLElement {
   const wrap = document.createElement("div");
-  wrap.className = "my-7 not-prose select-none group/carousel";
+  wrap.className = "my-6 not-prose select-none max-w-[85%] mx-auto group/carousel";
 
   if (images.length === 0) {
-    const emptyCard = document.createElement("div");
-    emptyCard.className =
-      "relative w-full h-[220px] rounded-2xl bg-zinc-950/80 border border-dashed border-zinc-700/80 flex flex-col items-center justify-center gap-2.5 text-zinc-400 p-6";
-    emptyCard.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-500"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-      <span class="text-xs font-sans">轮播图暂无图片</span>
-    `;
+    const empty = document.createElement("div");
+    empty.className = "p-4 text-center text-xs text-zinc-400";
+    empty.textContent = "轮播图暂无图片";
     if (onAppendImages) {
-      const addBtn = document.createElement("button");
-      addBtn.type = "button";
-      addBtn.className =
-        "px-3 py-1 rounded-lg text-xs font-medium bg-primary text-white hover:opacity-90 transition-all cursor-pointer";
-      addBtn.textContent = "+ 上传图片";
-      addBtn.addEventListener("click", onAppendImages);
-      emptyCard.appendChild(addBtn);
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "ml-2 text-primary hover:underline cursor-pointer";
+      btn.textContent = "+ 上传图片";
+      btn.addEventListener("click", onAppendImages);
+      empty.appendChild(btn);
     }
-    wrap.appendChild(emptyCard);
+    wrap.appendChild(empty);
     return wrap;
   }
 
-  // 1. 核心大图展示视窗
   let currentIndex = 0;
-  const viewport = document.createElement("div");
-  viewport.className =
-    "relative w-full h-[320px] sm:h-[400px] md:h-[440px] rounded-2xl bg-zinc-950 overflow-hidden shadow-lg border border-black/5 dark:border-white/10 flex items-center justify-center";
+  const stage = document.createElement("div");
+  stage.className = "relative flex items-center justify-center";
 
   const imgEl = document.createElement("img");
   imgEl.src = images[0].url;
   imgEl.alt = images[0].alt || "";
   imgEl.className =
-    "max-w-full max-h-[300px] sm:max-h-[380px] md:max-h-[420px] w-auto h-auto object-contain rounded-lg shadow-sm transition-opacity duration-200 block mx-auto";
-  viewport.appendChild(imgEl);
+    "rounded-xl max-h-[360px] w-auto h-auto max-w-full object-contain mx-auto block shadow-xs border border-zinc-200 dark:border-zinc-800";
+  stage.appendChild(imgEl);
 
-  // 右上角浮层：+ 补传图片胶囊
+  // 极简补传按钮：鼠标移入图片区域右上角轻巧浮现
   if (onAppendImages) {
     const appendBtn = document.createElement("button");
     appendBtn.type = "button";
     appendBtn.className =
-      "absolute right-3.5 top-3.5 z-20 px-2.5 py-1 rounded-xl bg-black/50 hover:bg-black/80 text-white/90 hover:text-white backdrop-blur-md border border-white/20 text-xs font-sans flex items-center gap-1 shadow-sm transition-all cursor-pointer";
-    appendBtn.innerHTML = `
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      <span>补传图片</span>
-    `;
+      "absolute right-2 top-2 px-2 py-0.5 rounded-md bg-black/45 hover:bg-black/70 text-white text-[11px] backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer shadow-xs";
+    appendBtn.textContent = "+ 补传";
     appendBtn.addEventListener("click", onAppendImages);
-    viewport.appendChild(appendBtn);
+    stage.appendChild(appendBtn);
   }
 
-  // 左右切页毛玻璃按钮
+  // 左右箭头与页码
   let prevBtn: HTMLButtonElement | null = null;
   let nextBtn: HTMLButtonElement | null = null;
+  let dotsWrap: HTMLElement | null = null;
+  let counterBadge: HTMLElement | null = null;
 
   if (images.length > 1) {
     prevBtn = document.createElement("button");
     prevBtn.type = "button";
     prevBtn.className =
-      "absolute left-3.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/40 hover:bg-black/75 text-white/90 hover:text-white backdrop-blur-md border border-white/20 shadow-md flex items-center justify-center transition-all cursor-pointer opacity-70 hover:opacity-100 hover:scale-105 active:scale-95";
-    prevBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
+      "absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/35 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer";
+    prevBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
 
     nextBtn = document.createElement("button");
     nextBtn.type = "button";
     nextBtn.className =
-      "absolute right-3.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/40 hover:bg-black/75 text-white/90 hover:text-white backdrop-blur-md border border-white/20 shadow-md flex items-center justify-center transition-all cursor-pointer opacity-70 hover:opacity-100 hover:scale-105 active:scale-95";
-    nextBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+      "absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/35 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer";
+    nextBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
 
-    viewport.appendChild(prevBtn);
-    viewport.appendChild(nextBtn);
-  }
+    counterBadge = document.createElement("div");
+    counterBadge.className =
+      "absolute right-2.5 bottom-2.5 px-2 py-0.5 rounded-md bg-black/45 text-white/90 text-[11px] font-mono backdrop-blur-xs pointer-events-none";
+    counterBadge.textContent = `1 / ${images.length}`;
 
-  // 底部渐变 HUD 层：左侧图说 + 右侧微胶囊页码
-  const hud = document.createElement("div");
-  hud.className =
-    "absolute inset-x-0 bottom-0 z-10 px-4 py-3 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex items-end justify-between gap-3 pointer-events-none";
+    stage.appendChild(prevBtn);
+    stage.appendChild(nextBtn);
+    stage.appendChild(counterBadge);
 
-  const altEl = document.createElement("div");
-  altEl.className =
-    "text-xs text-white/85 font-sans font-medium drop-shadow-xs truncate max-w-[70%]";
-  altEl.textContent = images[0].alt || `第 1 张`;
+    // 底部小圆点
+    const currentDotsWrap = document.createElement("div");
+    currentDotsWrap.className = "flex items-center justify-center gap-1.5 mt-2.5";
 
-  const counter = document.createElement("div");
-  counter.className =
-    "px-2.5 py-0.5 rounded-full bg-black/55 backdrop-blur-md border border-white/20 text-[11px] font-mono font-medium text-white/95 tracking-wider shadow-xs";
-  counter.textContent = `1 / ${images.length}`;
-
-  hud.appendChild(altEl);
-  hud.appendChild(counter);
-  viewport.appendChild(hud);
-  wrap.appendChild(viewport);
-
-  // 2. 底部缩略图胶卷条（大于 1 张时展示）
-  let thumbButtons: HTMLButtonElement[] = [];
-  if (images.length > 1) {
-    const filmstrip = document.createElement("div");
-    filmstrip.className =
-      "flex items-center gap-2 mt-2.5 px-0.5 overflow-x-auto scroll-smooth py-1";
-    filmstrip.style.scrollbarWidth = "none";
-
-    images.forEach((img, idx) => {
-      const thumbBtn = document.createElement("button");
-      thumbBtn.type = "button";
-      thumbBtn.title = img.alt || `第 ${idx + 1} 张`;
-      thumbBtn.className = `relative w-14 h-10 sm:w-16 sm:h-11 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer bg-zinc-900 ${
+    images.forEach((_, idx) => {
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.className =
         idx === 0
-          ? "border-primary shadow-xs ring-2 ring-primary/30 opacity-100 scale-102"
-          : "border-transparent opacity-45 hover:opacity-85 hover:border-zinc-500"
-      }`;
-
-      const thumbImg = document.createElement("img");
-      thumbImg.src = img.url;
-      thumbImg.alt = img.alt || "";
-      thumbImg.className = "w-full h-full object-cover";
-
-      thumbBtn.appendChild(thumbImg);
-      thumbBtn.addEventListener("click", () => updateView(idx));
-      filmstrip.appendChild(thumbBtn);
-      thumbButtons.push(thumbBtn);
+          ? "w-4 h-1.5 rounded-full bg-zinc-800 dark:bg-zinc-200 transition-all cursor-pointer"
+          : "w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 transition-all cursor-pointer";
+      dot.addEventListener("click", () => updateView(idx));
+      currentDotsWrap.appendChild(dot);
     });
-
-    wrap.appendChild(filmstrip);
+    dotsWrap = currentDotsWrap;
   }
 
-  // 视图更新函数
+  wrap.appendChild(stage);
+  if (dotsWrap) {
+    wrap.appendChild(dotsWrap);
+  }
+
   const updateView = (index: number) => {
     currentIndex = (index + images.length) % images.length;
     imgEl.src = images[currentIndex].url;
     imgEl.alt = images[currentIndex].alt || "";
-    altEl.textContent = images[currentIndex].alt || `第 ${currentIndex + 1} 张`;
-    counter.textContent = `${currentIndex + 1} / ${images.length}`;
-
-    // 更新缩略图高亮状态
-    thumbButtons.forEach((btn, bIdx) => {
-      if (bIdx === currentIndex) {
-        btn.className =
-          "relative w-14 h-10 sm:w-16 sm:h-11 rounded-lg overflow-hidden shrink-0 border-2 border-primary shadow-xs ring-2 ring-primary/30 opacity-100 scale-102 transition-all cursor-pointer bg-zinc-900";
-        btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-      } else {
-        btn.className =
-          "relative w-14 h-10 sm:w-16 sm:h-11 rounded-lg overflow-hidden shrink-0 border-2 border-transparent opacity-45 hover:opacity-85 hover:border-zinc-500 transition-all cursor-pointer bg-zinc-900";
-      }
-    });
+    if (counterBadge) {
+      counterBadge.textContent = `${currentIndex + 1} / ${images.length}`;
+    }
+    if (dotsWrap) {
+      Array.from(dotsWrap.children).forEach((dot, dIdx) => {
+        dot.className =
+          dIdx === currentIndex
+            ? "w-4 h-1.5 rounded-full bg-zinc-800 dark:bg-zinc-200 transition-all cursor-pointer"
+            : "w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 transition-all cursor-pointer";
+      });
+    }
   };
 
   if (prevBtn && nextBtn) {
