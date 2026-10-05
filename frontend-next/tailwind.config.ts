@@ -13,6 +13,7 @@ const config: Config = {
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
         serif: ["var(--font-instrument-serif)", "Georgia", "serif"],
         hand: ["var(--font-shantell-sans)", "cursive"],
+        handwriting: ["'Caveat'", "'Kaiti SC'", "'STKaiti'", "'KaiTi'", "'楷体'", "cursive", "sans-serif"],
         mono: ["var(--font-geist-mono)", "monospace"],
       },
       colors: {

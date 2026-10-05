@@ -420,6 +420,77 @@ body {
   font-family: 'Caveat', 'Kaiti SC', 'STKaiti', 'KaiTi', '楷体', cursive, sans-serif;
 }
 
+/* 当处于 font-handwriting 作用域时，让正文与标题完美继承手绘字系，且正文字号更加舒适饱满 */
+.font-handwriting .prose-editorial,
+.prose-editorial.font-handwriting {
+  font-family: 'Caveat', 'Kaiti SC', 'STKaiti', 'KaiTi', '楷体', cursive, sans-serif;
+  font-size: 1.35rem;
+  line-height: 2.15;
+}
+
+@media (min-width: 640px) {
+  .font-handwriting .prose-editorial,
+  .prose-editorial.font-handwriting {
+    font-size: 1.55rem;
+    line-height: 2.3;
+  }
+}
+
+.font-handwriting .prose-editorial p,
+.prose-editorial.font-handwriting p {
+  font-size: inherit;
+  line-height: inherit;
+  font-family: inherit;
+  color: var(--color-gray-1200);
+}
+
+.font-handwriting .prose-editorial h1,
+.prose-editorial.font-handwriting h1,
+.font-handwriting .prose-editorial h2,
+.prose-editorial.font-handwriting h2,
+.font-handwriting .prose-editorial h3,
+.prose-editorial.font-handwriting h3,
+.font-handwriting .prose-editorial h4,
+.prose-editorial.font-handwriting h4 {
+  font-family: inherit;
+}
+
+.font-handwriting .prose-editorial h1,
+.prose-editorial.font-handwriting h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.font-handwriting .prose-editorial h2,
+.prose-editorial.font-handwriting h2 {
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.font-handwriting .prose-editorial h3,
+.prose-editorial.font-handwriting h3 {
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.font-handwriting .prose-editorial li,
+.prose-editorial.font-handwriting li,
+.font-handwriting .prose-editorial blockquote,
+.prose-editorial.font-handwriting blockquote {
+  font-size: inherit;
+  line-height: inherit;
+  font-family: inherit;
+}
+
+.font-handwriting .prose-editorial :not(pre) > code,
+.prose-editorial.font-handwriting :not(pre) > code {
+  font-family: 'JetBrains Mono', var(--font-geist-mono), monospace;
+  font-size: 0.85em;
+}
+
 /* ==================== 终极手绘批注与动画体系 (Ink Marks) ==================== */
 /* 荧光笔运笔抹色动画 */
 @keyframes crafterui-swipe {

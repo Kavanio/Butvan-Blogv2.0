@@ -56,13 +56,13 @@ export function NoteDetailClient({ note }: NoteDetailClientProps) {
   const metaTag = note.mood || note.weather || note.location || "Thought";
 
   return (
-    <div className="min-h-screen bg-[var(--color-gray-bg)] text-[var(--color-gray-1200)]">
-      <main className="max-w-[40.5rem] mx-auto px-6 pt-8 sm:pt-12 pb-24">
+    <div className="min-h-screen bg-[var(--color-gray-bg)] text-[var(--color-gray-1200)] font-handwriting">
+      <main className="max-w-[42rem] mx-auto px-6 pt-8 sm:pt-12 pb-24 font-handwriting">
         {/* 顶部极简导航栏 (← 圆形按钮 + 主题切换，返回手记归档列表) */}
         <DetailHeader backHref="/notes" />
 
         {/* 标题前置微型 Meta 摘要：Sep 21, 2026 · Mood / Weather */}
-        <div className="text-xs sm:text-[13px] text-gray-800 dark:text-gray-400 font-mono tracking-tight mb-3">
+        <div className="text-base sm:text-lg text-gray-800 dark:text-gray-400 tracking-tight mb-3 flex items-center flex-wrap gap-1">
           <span>{formatDate(note.publishedAt)}</span>
           <span className="mx-1.5 opacity-60">·</span>
           <span>{metaTag}</span>
@@ -74,15 +74,15 @@ export function NoteDetailClient({ note }: NoteDetailClientProps) {
           )}
         </div>
 
-        {/* 衬线体优雅大标题 (Instrument Serif) */}
-        <h1 className="font-serif text-2xl sm:text-[2.2rem] text-gray-1200 leading-[1.2] font-normal tracking-tight mb-5">
+        {/* 手绘优雅大标题 */}
+        <h1 className="text-3xl sm:text-[2.6rem] text-gray-1200 leading-[1.2] font-bold tracking-tight mb-5">
           {note.title}
         </h1>
 
         {/* 摘要导言（若存在） */}
         {note.summary && (
           <>
-            <p className="text-[15px] sm:text-base leading-relaxed text-gray-1100 mb-8 font-sans">
+            <p className="text-lg sm:text-2xl leading-[1.8] text-gray-1100 mb-8">
               {note.summary}
             </p>
             <div className="w-full h-px bg-gray-200/80 dark:bg-gray-800/80 mb-10" />
@@ -93,19 +93,19 @@ export function NoteDetailClient({ note }: NoteDetailClientProps) {
         <MarkdownRenderer
           content={note.content}
           contentHtml={note.contentHtml}
-          className="prose-editorial font-handwriting text-[1.2rem] sm:text-[1.35rem] leading-[2.1]"
+          className="prose-editorial font-handwriting text-[1.35rem] sm:text-[1.55rem] leading-[2.2] sm:leading-[2.35]"
         />
 
         {/* 文末极简互动区（无多余线条，高对比度清晰交互） */}
         <div className="mt-14 pt-4">
-          <div className="flex items-center justify-between text-xs font-mono">
+          <div className="flex items-center justify-between text-base sm:text-lg">
             {/* 极简手记共鸣 */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleLike}
               className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer ${
                 hasLiked
-                  ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-medium"
+                  ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold"
                   : "bg-gray-100 hover:bg-gray-200/80 dark:bg-gray-800/80 dark:hover:bg-gray-700/80 text-gray-800 dark:text-gray-200"
               }`}
             >
@@ -136,7 +136,7 @@ export function NoteDetailClient({ note }: NoteDetailClientProps) {
             </button>
           </div>
 
-          <div className="mt-5 text-xs text-gray-600 dark:text-gray-400 text-center sm:text-left font-sans">
+          <div className="mt-5 text-sm sm:text-base text-gray-600 dark:text-gray-400 text-center sm:text-left">
             © {new Date().getFullYear()} 可梵 · 随手手记
           </div>
         </div>
