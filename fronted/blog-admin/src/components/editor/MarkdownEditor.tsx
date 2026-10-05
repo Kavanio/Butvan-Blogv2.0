@@ -298,29 +298,22 @@ function createCarouselDOM(
   let prevBtn: HTMLButtonElement | null = null;
   let nextBtn: HTMLButtonElement | null = null;
   let dotsWrap: HTMLElement | null = null;
-  let counterBadge: HTMLElement | null = null;
 
   if (images.length > 1) {
     prevBtn = document.createElement("button");
     prevBtn.type = "button";
     prevBtn.className =
-      "absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/35 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer";
+      "absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/35 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer z-10";
     prevBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
 
     nextBtn = document.createElement("button");
     nextBtn.type = "button";
     nextBtn.className =
-      "absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/35 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer";
+      "absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/35 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer z-10";
     nextBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
-
-    counterBadge = document.createElement("div");
-    counterBadge.className =
-      "absolute right-2.5 bottom-2.5 px-2 py-0.5 rounded-md bg-black/45 text-white/90 text-[11px] font-mono backdrop-blur-xs pointer-events-none";
-    counterBadge.textContent = `1 / ${images.length}`;
 
     stage.appendChild(prevBtn);
     stage.appendChild(nextBtn);
-    stage.appendChild(counterBadge);
 
     // 底部小圆点
     const currentDotsWrap = document.createElement("div");
@@ -348,9 +341,6 @@ function createCarouselDOM(
     currentIndex = (index + images.length) % images.length;
     imgEl.src = images[currentIndex].url;
     imgEl.alt = images[currentIndex].alt || "";
-    if (counterBadge) {
-      counterBadge.textContent = `${currentIndex + 1} / ${images.length}`;
-    }
     if (dotsWrap) {
       Array.from(dotsWrap.children).forEach((dot, dIdx) => {
         dot.className =
@@ -364,6 +354,60 @@ function createCarouselDOM(
   if (prevBtn && nextBtn) {
     prevBtn.addEventListener("click", () => updateView(currentIndex - 1));
     nextBtn.addEventListener("click", () => updateView(currentIndex + 1));
+
+    // 自动轮播与悬停暂停
+    let autoTimer: any = null;
+    const startAuto = () => {
+      if (autoTimer) clearInterval(autoTimer);
+      autoTimer = setInterval(() => {
+        updateView(currentIndex + 1);
+      }, 3500);
+    };
+    const stopAuto = () => {
+      if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+      }
+    };
+    wrap.addEventListener("mouseenter", stopAuto);
+    wrap.addEventListener("mouseleave", startAuto);
+    startAuto();
+
+    // 鼠标左右拖动滑动
+    let isDragging = false;
+    let startX = 0;
+    let diffX = 0;
+
+    stage.style.cursor = "grab";
+    stage.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      startX = e.clientX;
+      diffX = 0;
+      stage.style.cursor = "grabbing";
+    });
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      diffX = e.clientX - startX;
+      imgEl.style.transform = `translateX(${diffX * 0.7}px)`;
+      imgEl.style.transition = "none";
+    };
+
+    const handleMouseUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      stage.style.cursor = "grab";
+      imgEl.style.transform = "";
+      imgEl.style.transition = "transform 0.25s ease-out";
+      if (diffX < -40) {
+        updateView(currentIndex + 1);
+      } else if (diffX > 40) {
+        updateView(currentIndex - 1);
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
   }
 
   return wrap;

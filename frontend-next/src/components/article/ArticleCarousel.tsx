@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ImagePreviewModal } from "./ImagePreviewModal";
 
@@ -9,47 +9,129 @@ export interface ArticleCarouselProps {
 }
 
 /**
- * 极简纯图片轮播组件（无任何多余背景、容器框或缩略图，纯粹展示图片与轻量交互）
+ * 极简纯图片轮播组件
+ * - 纯净呈现：无多余背景、无卡片框、无右下角数量
+ * - 自动轮播：鼠标移入暂停，移出继续
+ * - 鼠标/手势拖拽：支持鼠标左键按住左右滑动切图
  */
 export function ArticleCarousel({ images }: ArticleCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
   const [modalImage, setModalImage] = useState<{ isOpen: boolean; src: string; alt: string }>({
     isOpen: false,
     src: "",
     alt: "",
   });
 
+  const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const diffXRef = useRef(0);
+
+  const prev = useCallback(() => {
+    if (!images || images.length === 0) return;
+    setCurrentIndex((p) => (p - 1 + images.length) % images.length);
+  }, [images]);
+
+  const next = useCallback(() => {
+    if (!images || images.length === 0) return;
+    setCurrentIndex((p) => (p + 1) % images.length);
+  }, [images]);
+
+  // 1. 自动轮播（3.5 秒一次，鼠标悬浮时暂停）
+  useEffect(() => {
+    if (!images || images.length <= 1 || isHovered || isDragging) return;
+    const timer = setInterval(() => {
+      next();
+    }, 3500);
+    return () => clearInterval(timer);
+  }, [images, isHovered, isDragging, next]);
+
   if (!images || images.length === 0) return null;
 
   const currentImage = images[currentIndex] || images[0];
 
-  const prev = () => {
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  // 2. 鼠标与触控左右滑动处理
+  const onPointerDown = (clientX: number) => {
+    if (images.length <= 1) return;
+    isDraggingRef.current = true;
+    startXRef.current = clientX;
+    diffXRef.current = 0;
+    setIsDragging(true);
   };
 
-  const next = () => {
-    setCurrentIndex((prev) => (prev + 1) % images.length);
+  const onPointerMove = (clientX: number) => {
+    if (!isDraggingRef.current) return;
+    const diff = clientX - startXRef.current;
+    diffXRef.current = diff;
+    setDragOffset(diff);
+  };
+
+  const onPointerUp = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    const diff = diffXRef.current;
+    setIsDragging(false);
+    setDragOffset(0);
+
+    // 拖动位移超过 40px 触发切页
+    if (diff < -40) {
+      next();
+    } else if (diff > 40) {
+      prev();
+    }
+  };
+
+  const handleImageClick = () => {
+    // 只有非拖拽滑动时才弹出全屏大图
+    if (Math.abs(diffXRef.current) < 6) {
+      setModalImage({
+        isOpen: true,
+        src: currentImage.url,
+        alt: currentImage.alt,
+      });
+    }
   };
 
   return (
     <>
-      <div className="not-prose my-6 max-w-[85%] sm:max-w-[78%] mx-auto select-none group/carousel">
-        {/* 图片主体（无背景色，自然贴合图片） */}
-        <div className="relative flex items-center justify-center">
+      <div
+        className="not-prose my-6 max-w-[85%] sm:max-w-[78%] mx-auto select-none group/carousel"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          if (isDraggingRef.current) {
+            onPointerUp();
+          }
+        }}
+      >
+        {/* 图片主体视窗（支持鼠标左右拖动滑动） */}
+        <div
+          className={`relative flex items-center justify-center overflow-hidden ${
+            images.length > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : ""
+          }`}
+          onMouseDown={(e) => onPointerDown(e.clientX)}
+          onMouseMove={(e) => onPointerMove(e.clientX)}
+          onMouseUp={onPointerUp}
+          onTouchStart={(e) => onPointerDown(e.touches[0].clientX)}
+          onTouchMove={(e) => onPointerMove(e.touches[0].clientX)}
+          onTouchEnd={onPointerUp}
+        >
           <img
             src={currentImage.url}
             alt={currentImage.alt || `图片 ${currentIndex + 1}`}
-            onClick={() =>
-              setModalImage({
-                isOpen: true,
-                src: currentImage.url,
-                alt: currentImage.alt,
-              })
-            }
-            className="rounded-xl max-h-[420px] w-auto h-auto max-w-full object-contain mx-auto block shadow-xs border border-black/6 dark:border-white/8 cursor-pointer"
+            draggable={false}
+            onClick={handleImageClick}
+            style={{
+              transform: `translateX(${dragOffset * 0.8}px)`,
+              transition: isDragging ? "none" : "transform 0.25s ease-out",
+            }}
+            className="rounded-xl max-h-[420px] w-auto h-auto max-w-full object-contain mx-auto block shadow-xs border border-black/6 dark:border-white/8 select-none"
           />
 
-          {/* 左右翻页箭头（hover 时浮现） */}
+          {/* 左右翻页箭头（多张图时 hover 浮现） */}
           {images.length > 1 && (
             <>
               <button
@@ -58,7 +140,7 @@ export function ArticleCarousel({ images }: ArticleCarouselProps) {
                   e.stopPropagation();
                   prev();
                 }}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/35 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer"
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/35 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer z-10"
                 aria-label="上一张"
               >
                 <ChevronLeft size={18} />
@@ -69,19 +151,12 @@ export function ArticleCarousel({ images }: ArticleCarouselProps) {
                   e.stopPropagation();
                   next();
                 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/35 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/35 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer z-10"
                 aria-label="下一张"
               >
                 <ChevronRight size={18} />
               </button>
             </>
-          )}
-
-          {/* 右下角极简页码 */}
-          {images.length > 1 && (
-            <div className="absolute right-2.5 bottom-2.5 px-2 py-0.5 rounded-md bg-black/45 text-white/90 text-[11px] font-mono backdrop-blur-xs pointer-events-none">
-              {currentIndex + 1} / {images.length}
-            </div>
           )}
         </div>
 
