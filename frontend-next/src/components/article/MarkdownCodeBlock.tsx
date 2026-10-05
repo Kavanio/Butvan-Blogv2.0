@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import hljs from "highlight.js";
 import { useSound } from "@/hooks/useSound";
 
@@ -11,24 +11,40 @@ interface MarkdownCodeBlockProps {
 }
 
 /**
- * macOS 终端风格的高品质代码块组件
- * 包含语法高亮、一键复制、语言标签与长代码自适应折叠展开
+ * 极简现代代码块组件（对齐 new md preview / editor 规范）
+ * - 无文件名冗余信息
+ * - 灰底纯语言徽标（tsx/jsx 映射为 React，其他首字母大写）
+ * - 复制成功弹出强反馈气泡 Tooltip + 弹性对勾动画
+ * - 保持 JetBrains Mono 等宽字体与优雅暗黑模式适配
  */
 export function MarkdownCodeBlock({ code, lang = "" }: MarkdownCodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [maxHeight, setMaxHeight] = useState<string>("none");
   const bodyRef = useRef<HTMLDivElement>(null);
+  const resetTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { playDroplet } = useSound();
 
   const cleanLang = (lang || "").trim();
-  const displayLang = cleanLang ? cleanLang.toUpperCase() : "TEXT";
+  const rawLower = cleanLang.toLowerCase();
+
+  // 语言徽标映射规则：tsx/jsx 映射为 React，其他首字母大写
+  const displayLang = useMemo(() => {
+    if (!cleanLang) return "Code";
+    if (rawLower === "tsx" || rawLower === "jsx") return "React";
+    if (rawLower === "ts") return "TypeScript";
+    if (rawLower === "js") return "JavaScript";
+    if (rawLower === "py") return "Python";
+    if (rawLower === "rs") return "Rust";
+    if (rawLower === "sh" || rawLower === "shell") return "Bash";
+    return cleanLang.charAt(0).toUpperCase() + cleanLang.slice(1);
+  }, [cleanLang, rawLower]);
 
   // 计算行数
   const lines = code.endsWith("\n")
     ? code.split("\n").length - 1
     : code.split("\n").length;
-  const isCollapsible = lines > 16;
+  const isCollapsible = lines > 18;
 
   // 使用 highlight.js 语法高亮
   const highlightedHtml = useMemo(() => {
@@ -39,7 +55,6 @@ export function MarkdownCodeBlock({ code, lang = "" }: MarkdownCodeBlockProps) {
       }
       return hljs.highlightAuto(raw).value;
     } catch {
-      // 容错降级为基础实体转义
       return raw
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -55,12 +70,18 @@ export function MarkdownCodeBlock({ code, lang = "" }: MarkdownCodeBlockProps) {
       if (expanded) {
         setMaxHeight(`${bodyRef.current?.scrollHeight || 800}px`);
       } else {
-        setMaxHeight("360px");
+        setMaxHeight("380px");
       }
     } else {
       setMaxHeight("none");
     }
   }, [expanded, isCollapsible, code]);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+    };
+  }, []);
 
   const handleCopy = async () => {
     if (!code) return;
@@ -78,50 +99,76 @@ export function MarkdownCodeBlock({ code, lang = "" }: MarkdownCodeBlockProps) {
         document.execCommand("copy");
         document.body.removeChild(textarea);
       }
+
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = setTimeout(() => {
+        setCopied(false);
+      }, 1800);
     } catch (err) {
       console.warn("复制代码失败:", err);
     }
   };
 
   return (
-    <div className="md-codeblock font-mono my-6 overflow-hidden rounded-xl border border-gray-200/80 dark:border-gray-800/80 bg-gray-50/70 dark:bg-[#121214] shadow-sm relative group/code">
-      {/* 头部状态条 */}
-      <div className="flex items-center justify-between border-b border-gray-200/60 dark:border-gray-800/60 px-3.5 py-2 text-[10px] select-none bg-gray-100/50 dark:bg-gray-900/60">
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]/90 inline-block" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]/90 inline-block" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[#27c93f]/90 inline-block" />
+    <div className="code-card">
+      {/* 头部控制栏 */}
+      <div className="code-header">
+        {/* 左侧：纯语言徽标，不显示文件名 */}
+        <span className="code-lang-badge">{displayLang}</span>
+
+        {/* 右侧：带提示气泡与动画切换的复制按钮 */}
+        <div className="copy-btn-wrapper">
+          <div className={`copy-tooltip ${copied ? "show" : ""}`}>
+            已复制到剪贴板
+          </div>
+
+          <button
+            type="button"
+            onClick={handleCopy}
+            className={`code-copy-btn ${copied ? "copied" : ""}`}
+            title="复制代码"
+          >
+            {copied ? (
+              <svg
+                className="icon-pop-animate"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            )}
+          </button>
         </div>
-
-        {/* 语言标识 */}
-        <span className="font-bold text-gray-400 dark:text-gray-500 tracking-wider">
-          {displayLang}
-        </span>
-
-        {/* 复制代码按钮 */}
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="inline-flex items-center justify-center rounded p-1 text-gray-400 dark:text-gray-500 hover:bg-gray-200/60 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-colors cursor-pointer"
-          title={copied ? "已复制" : "复制代码"}
-        >
-          {copied ? (
-            <Check className="w-3.5 h-3.5 text-emerald-500" />
-          ) : (
-            <Copy className="w-3.5 h-3.5" />
-          )}
-        </button>
       </div>
 
       {/* 代码正文区 */}
       <div
         ref={bodyRef}
         style={{ maxHeight }}
-        className="md-codeblock__body transition-[max-height] duration-300 ease-in-out overflow-hidden relative"
+        className="transition-[max-height] duration-300 ease-in-out overflow-hidden relative"
       >
-        <pre className="m-0 overflow-x-auto p-4 text-[13px] leading-relaxed hljs">
+        <pre className="code-body m-0 p-4 text-[13px] leading-relaxed hljs">
           <code
             className={`language-${cleanLang} bg-transparent font-mono`}
             dangerouslySetInnerHTML={{ __html: highlightedHtml }}
@@ -130,17 +177,17 @@ export function MarkdownCodeBlock({ code, lang = "" }: MarkdownCodeBlockProps) {
 
         {/* 折叠状态下的渐变遮罩 */}
         {isCollapsible && !expanded && (
-          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-gray-50 dark:from-[#121214] to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white dark:from-[#121214] to-transparent pointer-events-none" />
         )}
       </div>
 
       {/* 折叠/展开控制按钮 */}
       {isCollapsible && (
-        <div className="flex justify-center border-t border-gray-200/50 dark:border-gray-800/50 bg-gray-50/50 dark:bg-gray-900/30 py-1.5">
+        <div className="flex justify-center border-t border-gray-100 dark:border-gray-800/60 bg-gray-50/60 dark:bg-gray-900/30 py-1.5">
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 px-3 py-0.5 text-[11px] font-mono text-gray-500 hover:text-sky-600 dark:text-gray-400 dark:hover:text-[#BBDFFF] transition-colors cursor-pointer"
+            className="flex items-center gap-1 px-3 py-0.5 text-[11px] font-mono text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 transition-colors cursor-pointer"
           >
             {expanded ? (
               <>
@@ -159,3 +206,4 @@ export function MarkdownCodeBlock({ code, lang = "" }: MarkdownCodeBlockProps) {
     </div>
   );
 }
+

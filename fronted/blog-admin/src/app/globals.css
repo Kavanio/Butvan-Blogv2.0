@@ -827,4 +827,163 @@ mark {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
 }
 
+/* ==================== 本地化手写与等宽字体 ==================== */
+@font-face {
+  font-family: 'Caveat';
+  font-style: normal;
+  font-weight: 600 700;
+  font-display: swap;
+  src: url('/fonts/caveat/caveat.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono/jetbrains-mono.woff2') format('woff2');
+}
+
+.font-handwriting {
+  font-family: 'Caveat', 'Kaiti SC', 'STKaiti', 'KaiTi', '楷体', cursive, sans-serif;
+}
+
+/* ==================== 终极手绘批注与动画体系 (Ink Marks) ==================== */
+@keyframes crafterui-swipe {
+  from { clip-path: inset(-0.4em calc(100% + 0.25em) -0.4em -0.25em); }
+  to   { clip-path: inset(-0.4em -0.25em -0.4em -0.25em); }
+}
+
+@keyframes crafterui-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes icon-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.icon-pop-animate {
+  animation: icon-pop 0.24s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.token-box, .ink-mark {
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline;
+  line-height: inherit;
+  white-space: nowrap;
+  margin: 0 0.08em;
+}
+
+.ink-text {
+  position: relative;
+  z-index: 2;
+  display: inline;
+}
+
+/* 1. 荧光高亮 (==mark==) */
+.swipe-mark, .ink-swipe {
+  position: absolute;
+  left: -0.24em;
+  right: -0.24em;
+  bottom: 0.1em;
+  height: 0.62em;
+  border-radius: 9999px;
+  background-color: #f5e1a8;
+  z-index: 1;
+  pointer-events: none;
+  clip-path: inset(-0.4em calc(100% + 0.25em) -0.4em -0.25em);
+}
+:root.dark .swipe-mark, :root.dark .ink-swipe {
+  background-color: rgba(245, 225, 168, 0.3);
+}
+
+.in-view .swipe-mark, .in-view .ink-swipe, .token-box.active .swipe-mark, .token-box.active .ink-swipe {
+  animation: crafterui-swipe 0.45s ease-out forwards;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+/* 2. 手绘圈选 ((circle)) */
+.circle-svg, .ink-svg-circle {
+  pointer-events: none;
+  position: absolute;
+  left: -0.28em;
+  top: -0.1em;
+  width: calc(100% + 0.56em);
+  height: calc(100% + 0.2em);
+  overflow: visible;
+  z-index: 3;
+  display: block;
+}
+.circle-svg path, .ink-svg-circle path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.in-view .circle-svg path, .in-view .ink-svg-circle path, .token-box.active .circle-svg path, .token-box.active .ink-svg-circle path {
+  animation: crafterui-draw 0.55s ease-out forwards;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+/* 3. 涂改划线 (~~strike~~) */
+.strike-svg, .ink-svg-strike {
+  pointer-events: none;
+  position: absolute;
+  left: -0.06em;
+  width: calc(100% + 0.12em);
+  height: 0.4em;
+  top: 50%;
+  transform: translateY(-40%);
+  overflow: visible;
+  z-index: 3;
+  display: block;
+}
+.strike-svg path, .ink-svg-strike path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.strike-svg path.strike-2, .ink-svg-strike path.line-2 {
+  stroke-width: 1.4;
+  opacity: 0.85;
+}
+.in-view .strike-svg path.strike-1, .in-view .ink-svg-strike path:not(.line-2),
+.token-box.active .strike-svg path.strike-1, .token-box.active .ink-svg-strike path:not(.line-2) {
+  animation: crafterui-draw 0.32s ease-out forwards;
+  animation-delay: var(--anim-delay, 0s);
+}
+.in-view .strike-svg path.strike-2, .in-view .ink-svg-strike path.line-2,
+.token-box.active .strike-svg path.strike-2, .token-box.active .ink-svg-strike path.line-2 {
+  animation: crafterui-draw 0.32s ease-out forwards;
+  animation-delay: calc(var(--anim-delay, 0s) + 0.1s);
+}
+
+/* 任务列表手写复选框 */
+.md-task-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 1.8px solid currentColor;
+  border-radius: 4px;
+  margin-right: 0.5rem;
+  position: relative;
+  top: 0.12em;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+
 

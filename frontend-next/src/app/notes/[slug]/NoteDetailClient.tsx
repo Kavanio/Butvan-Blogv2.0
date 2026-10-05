@@ -93,7 +93,7 @@ export function NoteDetailClient({ note }: NoteDetailClientProps) {
         <MarkdownRenderer
           content={note.content}
           contentHtml={note.contentHtml}
-          className="prose-editorial"
+          className="prose-editorial font-handwriting text-[1.2rem] sm:text-[1.35rem] leading-[2.1]"
         />
 
         {/* 文末极简互动区（无多余线条，高对比度清晰交互） */}

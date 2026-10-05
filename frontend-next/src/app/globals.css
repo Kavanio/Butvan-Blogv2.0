@@ -399,3 +399,310 @@ body {
   animation: shimmer 1.8s infinite cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ==================== 本地化手写与等宽字体 ==================== */
+@font-face {
+  font-family: 'Caveat';
+  font-style: normal;
+  font-weight: 600 700;
+  font-display: swap;
+  src: url('/fonts/caveat/caveat.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono/jetbrains-mono.woff2') format('woff2');
+}
+
+.font-handwriting {
+  font-family: 'Caveat', 'Kaiti SC', 'STKaiti', 'KaiTi', '楷体', cursive, sans-serif;
+}
+
+/* ==================== 终极手绘批注与动画体系 (Ink Marks) ==================== */
+/* 荧光笔运笔抹色动画 */
+@keyframes crafterui-swipe {
+  from { clip-path: inset(-0.4em calc(100% + 0.25em) -0.4em -0.25em); }
+  to   { clip-path: inset(-0.4em -0.25em -0.4em -0.25em); }
+}
+
+/* SVG 笔画描边动画 */
+@keyframes crafterui-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* 复制成功的图标弹性弹出动画 */
+@keyframes icon-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.icon-pop-animate {
+  animation: icon-pop 0.24s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* 核心批注外层：white-space: nowrap 保证被标注文本与背景永远为一个不可拆分的整体 */
+.token-box, .ink-mark {
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline;
+  line-height: inherit;
+  white-space: nowrap;
+  margin: 0 0.08em;
+}
+
+.ink-text {
+  position: relative;
+  z-index: 2;
+  display: inline;
+}
+
+/* 1. 荧光笔高亮 (==mark==) */
+.swipe-mark, .ink-swipe {
+  position: absolute;
+  left: -0.24em;
+  right: -0.24em;
+  bottom: 0.1em;
+  height: 0.62em;
+  border-radius: 9999px;
+  background-color: #f5e1a8;
+  z-index: 1;
+  pointer-events: none;
+  clip-path: inset(-0.4em calc(100% + 0.25em) -0.4em -0.25em);
+}
+.dark .swipe-mark, .dark .ink-swipe {
+  background-color: rgba(245, 225, 168, 0.3);
+}
+
+.in-view .swipe-mark, .in-view .ink-swipe, .token-box.active .swipe-mark, .token-box.active .ink-swipe {
+  animation: crafterui-swipe 0.45s ease-out forwards;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+/* 2. 手绘圈选 ((circle)) */
+.circle-svg, .ink-svg-circle {
+  pointer-events: none;
+  position: absolute;
+  left: -0.28em;
+  top: -0.1em;
+  width: calc(100% + 0.56em);
+  height: calc(100% + 0.2em);
+  overflow: visible;
+  z-index: 3;
+  display: block;
+}
+.circle-svg path, .ink-svg-circle path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.in-view .circle-svg path, .in-view .ink-svg-circle path, .token-box.active .circle-svg path, .token-box.active .ink-svg-circle path {
+  animation: crafterui-draw 0.55s ease-out forwards;
+  animation-delay: var(--anim-delay, 0s);
+}
+
+/* 3. 涂改划线 (~~strike~~)：中线 50% 居中穿透 */
+.strike-svg, .ink-svg-strike {
+  pointer-events: none;
+  position: absolute;
+  left: -0.06em;
+  width: calc(100% + 0.12em);
+  height: 0.4em;
+  top: 50%;
+  transform: translateY(-40%);
+  overflow: visible;
+  z-index: 3;
+  display: block;
+}
+.strike-svg path, .ink-svg-strike path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.strike-svg path.strike-2, .ink-svg-strike path.line-2 {
+  stroke-width: 1.4;
+  opacity: 0.85;
+}
+.in-view .strike-svg path.strike-1, .in-view .ink-svg-strike path:not(.line-2),
+.token-box.active .strike-svg path.strike-1, .token-box.active .ink-svg-strike path:not(.line-2) {
+  animation: crafterui-draw 0.32s ease-out forwards;
+  animation-delay: var(--anim-delay, 0s);
+}
+.in-view .strike-svg path.strike-2, .in-view .ink-svg-strike path.line-2,
+.token-box.active .strike-svg path.strike-2, .token-box.active .ink-svg-strike path.line-2 {
+  animation: crafterui-draw 0.32s ease-out forwards;
+  animation-delay: calc(var(--anim-delay, 0s) + 0.1s);
+}
+
+/* 任务列表手写复选框 */
+.md-task-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 1.8px solid currentColor;
+  border-radius: 4px;
+  margin-right: 0.5rem;
+  position: relative;
+  top: 0.12em;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ==================== 极简代码块卡片规范（无文件名 + 强反馈复制气泡） ==================== */
+.code-card {
+  margin: 1.8rem 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: visible;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  position: relative;
+}
+.dark .code-card {
+  background: #121214;
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  background: #ffffff;
+  border-bottom: 1px solid #f3f4f6;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  user-select: none;
+}
+.dark .code-header {
+  background: #121214;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.code-lang-badge {
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 500;
+  padding: 0.2rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.dark .code-lang-badge {
+  background: #27272a;
+  color: #f4f4f5;
+}
+
+.copy-btn-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.code-copy-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #4b5563;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dark .code-copy-btn {
+  color: #a1a1aa;
+}
+.code-copy-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+.dark .code-copy-btn:hover {
+  background: #27272a;
+  color: #fafafa;
+}
+
+.code-copy-btn.copied {
+  color: #16a34a !important;
+  background: #f0fdf4 !important;
+  border-color: #bbf7d0 !important;
+}
+.dark .code-copy-btn.copied {
+  color: #4ade80 !important;
+  background: rgba(22, 163, 74, 0.18) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+}
+
+.copy-tooltip {
+  position: absolute;
+  top: -2.3rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #18181b;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: 0.25rem 0.6rem;
+  border-radius: 5px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+}
+.dark .copy-tooltip {
+  background: #27272a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.copy-tooltip::after {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 6px;
+  height: 6px;
+  background: #18181b;
+}
+.dark .copy-tooltip::after {
+  background: #27272a;
+}
+
+.copy-tooltip.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.code-body {
+  padding: 1.15rem 1.25rem;
+  font-size: 0.95rem;
+  line-height: 1.7rem;
+  overflow-x: auto;
+  white-space: pre;
+  color: #111827;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+.dark .code-body {
+  color: #f4f4f5;
+}
+
+
+

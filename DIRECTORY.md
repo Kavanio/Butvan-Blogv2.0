@@ -68,6 +68,8 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   ├── Dockerfile                             #     生产容器 Docker 多阶段构建脚本（standalone 轻量运行）
 │   ├── .dockerignore                          #     Docker 镜像构建排除规则（排除 node_modules 及本地开发缓存）
 │   ├── package.json                           #     前端工程依赖管理（锁定 pnpm）
+│   ├── public/                                #     公共静态资源
+│   │   └── fonts/                             #       本地化手绘与等宽字体 (Caveat / JetBrains Mono)
 │   ├── next.config.mjs                        #     Next.js 配置（独立 standalone 产物与 BFF 反向代理）
 │   ├── tailwind.config.ts                     #     Tailwind CSS 3.4 样式与微噪点扩展配置
 │   ├── tsconfig.json                          #     TypeScript 编译配置与路径别名映射 (@/*)
@@ -251,6 +253,7 @@ Butvan Blog2.0/                                    # 📦 项目根目录
 │   │
 │   └── blog-admin/                                #   管理后台端（内容管理）
 │       ├── public/                                #     静态资源
+│       │   ├── fonts/                             #       本地化手绘与等宽字体 (Caveat / JetBrains Mono)
 │       │   ├── fWdgJuAOF.jpeg                     #       默认房间场景背景
 │       │   ├── images/tech/                       #       技术栈徽标（Spring, Postgres, Next.js, Docker, Agent）
 │       │   └── topography.svg                     #       登录页地形图背景资源
