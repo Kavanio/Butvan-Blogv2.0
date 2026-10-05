@@ -16,6 +16,9 @@ import {
   Link,
   Image,
   Globe,
+  Highlighter,
+  Circle,
+  Strikethrough,
 } from "lucide-react";
 
 export interface SlashCommand {
@@ -30,6 +33,36 @@ export interface SlashCommand {
 // 预定义指令列表
 export const SLASH_COMMANDS: SlashCommand[] = [
   {
+    id: "highlight",
+    label: "荧光高亮",
+    description: "手绘运笔荧光笔高亮 (==高亮==)",
+    icon: Highlighter,
+    markdown: (line) => {
+      const base = line.replace(/\/.*$/, "");
+      return { replaceText: `${base}==高亮内容==`, cursorOffset: base.length + 2 };
+    },
+  },
+  {
+    id: "circle",
+    label: "手绘圈选",
+    description: "手绘椭圆闭环描边圈选 ((圈选))",
+    icon: Circle,
+    markdown: (line) => {
+      const base = line.replace(/\/.*$/, "");
+      return { replaceText: `${base}((圈选内容))`, cursorOffset: base.length + 2 };
+    },
+  },
+  {
+    id: "strike",
+    label: "手绘划线",
+    description: "手绘双线错落涂改划线 (~~划线~~)",
+    icon: Strikethrough,
+    markdown: (line) => {
+      const base = line.replace(/\/.*$/, "");
+      return { replaceText: `${base}~~划线内容~~`, cursorOffset: base.length + 2 };
+    },
+  },
+  {
     id: "h1",
     label: "标题 1",
     description: "高大醒目的主标题",
@@ -40,6 +73,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
       return { replaceText: `${base}# `, cursorOffset: base.length + 2 };
     },
   },
+
   {
     id: "h2",
     label: "标题 2",
@@ -255,6 +289,7 @@ export default function SlashMenu({
             <button
               key={cmd.id}
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => onSelectCommand(cmd)}
               className={cn(
                 "w-full flex items-center gap-3 px-2.5 py-2 text-left rounded-lg transition-all cursor-pointer group",

@@ -7,10 +7,86 @@ import {
   Eye,
   Image as ImageIcon,
   Code as CodeIcon,
+  Globe,
   Trash2,
 } from "lucide-react";
+import SlashMenu, { SLASH_COMMANDS, type SlashCommand } from "./SlashMenu";
 import apiClient from "@/lib/api";
 import { resolveAssetUrl } from "@/lib/image-url";
+
+/**
+ * 测量 textarea 中光标的相对像素坐标 (Mirror Div 方案)
+ */
+function getCaretCoordinates(element: HTMLTextAreaElement, position: number) {
+  if (typeof window === "undefined" || !document) {
+    return { top: 32, left: 24, height: 28 };
+  }
+
+  const properties = [
+    "direction",
+    "boxSizing",
+    "width",
+    "height",
+    "overflowX",
+    "overflowY",
+    "borderTopWidth",
+    "borderRightWidth",
+    "borderBottomWidth",
+    "borderLeftWidth",
+    "paddingTop",
+    "paddingRight",
+    "paddingBottom",
+    "paddingLeft",
+    "fontStyle",
+    "fontVariant",
+    "fontWeight",
+    "fontStretch",
+    "fontSize",
+    "fontSizeAdjust",
+    "lineHeight",
+    "fontFamily",
+    "textAlign",
+    "textTransform",
+    "textIndent",
+    "textDecoration",
+    "letterSpacing",
+    "wordSpacing",
+    "tabSize",
+  ] as const;
+
+  const div = document.createElement("div");
+  div.id = "caret-position-mirror-div";
+  document.body.appendChild(div);
+
+  const style = div.style;
+  const computed = window.getComputedStyle(element);
+
+  style.whiteSpace = "pre-wrap";
+  style.wordBreak = "break-word";
+  style.position = "absolute";
+  style.visibility = "hidden";
+  style.top = "0";
+  style.left = "-9999px";
+
+  properties.forEach((prop) => {
+    style[prop as any] = computed[prop as any];
+  });
+
+  div.textContent = element.value.substring(0, position);
+
+  const span = document.createElement("span");
+  span.textContent = element.value.substring(position) || ".";
+  div.appendChild(span);
+
+  const coordinates = {
+    top: span.offsetTop + parseInt(computed.borderTopWidth || "0", 10),
+    left: span.offsetLeft + parseInt(computed.borderLeftWidth || "0", 10),
+    height: parseInt(computed.lineHeight || "24", 10) || 24,
+  };
+
+  document.body.removeChild(div);
+  return coordinates;
+}
 
 export interface MarkdownEditorProps {
   value: string;
@@ -182,6 +258,16 @@ function renderMarkdownToDOM(source: string, container: HTMLElement) {
     const trimmed = rawLine.trim();
 
     if (!trimmed) {
+      i++;
+      continue;
+    }
+
+    // 0. iframe 嵌入网页
+    if (trimmed.startsWith("<iframe") && trimmed.includes("</iframe>")) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "my-4 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm";
+      wrapper.innerHTML = trimmed;
+      container.appendChild(wrapper);
       i++;
       continue;
     }
@@ -436,13 +522,26 @@ export default function MarkdownEditor({
   const [viewMode, setViewMode] = useState<"edit" | "live" | "preview">(preview);
   const [uploading, setUploading] = useState(false);
 
+  // 斜杠指令菜单状态
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const [filteredCount, setFilteredCount] = useState(SLASH_COMMANDS.length);
+
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const previewContentRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const htmlFileInputRef = useRef<HTMLInputElement>(null);
 
   const textValue = value ?? "";
   const charCount = textValue.length;
+
+  // 搜索词变更时重置选中索引，避免越界
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchQuery]);
 
   // 图片更新同步
   useEffect(() => {
@@ -608,6 +707,46 @@ export default function MarkdownEditor({
     }
   };
 
+  // 异步上传 HTML 页面文件处理
+  const handleUploadHtmlFile = async (file: File) => {
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("sourceType", "ARTICLE_EMBED");
+      formData.append("sourceDetail", "文章正文嵌入 HTML 页面");
+      const res = await apiClient.post("/admin/media/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (res.data.code === 200 || res.data.code === 0) {
+        let url = res.data.data.fileUrl;
+        if (url.startsWith("/")) {
+          url = resolveAssetUrl(url);
+        }
+        if (editorRef.current) {
+          const textarea = editorRef.current;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const val = textarea.value;
+          const title = file.name.replace(/\.(html|htm)$/i, "");
+          const iframeSnippet = `\n<iframe src="${url}" title="${title}" width="100%" height="450px" style="width: 100%; height: 450px; border: none; border-radius: 12px; overflow: hidden;" allowfullscreen></iframe>\n\n`;
+          const nextVal = val.substring(0, start) + iframeSnippet + val.substring(end);
+          onChange(nextVal);
+          setTimeout(() => {
+            textarea.focus();
+            textarea.selectionStart = start + iframeSnippet.length;
+            textarea.selectionEnd = start + iframeSnippet.length;
+          }, 0);
+        }
+      }
+    } catch (err: any) {
+      console.error("HTML 页面上传失败:", err);
+      alert(err.message || "HTML 页面上传失败");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const items = e.clipboardData?.items;
     if (!items) return;
@@ -631,7 +770,168 @@ export default function MarkdownEditor({
     }
   };
 
+  // 检测光标所在位置是否处于 / 指令状态并计算浮层位置
+  const checkSlashCommand = useCallback(() => {
+    if (!editorRef.current) return;
+    const textarea = editorRef.current;
+    const pos = textarea.selectionStart;
+    const textBefore = textarea.value.slice(0, pos);
+
+    // 匹配行首、空白或换行后的 '/'
+    const match = textBefore.match(/(?:^|\n|[ ])\/([a-zA-Z0-9_\u4e00-\u9fa5]*)$/);
+    if (match) {
+      const query = match[1] || "";
+      setSearchQuery(query);
+      setMenuOpen(true);
+
+      const coords = getCaretCoordinates(textarea, pos);
+      const visualTop = coords.top - textarea.scrollTop;
+      const visualLeft = coords.left - textarea.scrollLeft;
+
+      let top = visualTop + coords.height + 6;
+      if (visualTop + coords.height + 260 > textarea.clientHeight && visualTop > 260) {
+        top = visualTop - 250;
+      }
+
+      let left = visualLeft;
+      if (left + 270 > textarea.clientWidth) {
+        left = Math.max(16, textarea.clientWidth - 280);
+      } else if (left < 16) {
+        left = 16;
+      }
+
+      setMenuPosition({ top, left });
+    } else {
+      setMenuOpen(false);
+    }
+  }, []);
+
+  // 执行选中的斜杠命令
+  const executeCommand = useCallback(
+    (cmd: SlashCommand) => {
+      if (!editorRef.current) return;
+      const textarea = editorRef.current;
+      const pos = textarea.selectionStart;
+      const fullText = textarea.value;
+      const textBefore = fullText.slice(0, pos);
+      const textAfter = fullText.slice(pos);
+
+      // 找到匹配的斜杠指令起点
+      const match = textBefore.match(/(?:^|\n|[ ])\/([a-zA-Z0-9_\u4e00-\u9fa5]*)$/);
+      if (!match) {
+        setMenuOpen(false);
+        return;
+      }
+
+      const matchText = match[0];
+      const slashIndexInMatch = matchText.indexOf("/");
+      const replaceStart = textBefore.length - matchText.length + slashIndexInMatch;
+
+      // 针对需要上传文件的特殊指令处理
+      if (cmd.id === "image") {
+        const nextVal = fullText.slice(0, replaceStart) + textAfter;
+        onChange(nextVal);
+        setMenuOpen(false);
+        setTimeout(() => {
+          textarea.focus();
+          textarea.selectionStart = replaceStart;
+          textarea.selectionEnd = replaceStart;
+          fileInputRef.current?.click();
+        }, 0);
+        return;
+      }
+
+      if (cmd.id === "html-file") {
+        const nextVal = fullText.slice(0, replaceStart) + textAfter;
+        onChange(nextVal);
+        setMenuOpen(false);
+        setTimeout(() => {
+          textarea.focus();
+          textarea.selectionStart = replaceStart;
+          textarea.selectionEnd = replaceStart;
+          htmlFileInputRef.current?.click();
+        }, 0);
+        return;
+      }
+
+      // 如果 cmd.markdown 是一个函数
+      if (typeof cmd.markdown === "function") {
+        const lineStart = textBefore.lastIndexOf("\n") + 1;
+        const currentLine = textBefore.slice(lineStart);
+        const result = cmd.markdown(currentLine);
+        const nextVal = fullText.slice(0, lineStart) + result.replaceText + textAfter;
+        onChange(nextVal);
+        setMenuOpen(false);
+        setTimeout(() => {
+          textarea.focus();
+          const targetCursor = lineStart + result.cursorOffset;
+          if (cmd.id === "highlight" || cmd.id === "circle" || cmd.id === "strike") {
+            const placeholderLen = 4;
+            textarea.selectionStart = targetCursor;
+            textarea.selectionEnd = targetCursor + placeholderLen;
+          } else {
+            textarea.selectionStart = targetCursor;
+            textarea.selectionEnd = targetCursor;
+          }
+          keepCaretInView();
+        }, 0);
+        return;
+      }
+
+      // 如果 cmd.markdown 是一个字符串
+      if (typeof cmd.markdown === "string") {
+        const nextVal = fullText.slice(0, replaceStart) + cmd.markdown + textAfter;
+        onChange(nextVal);
+        setMenuOpen(false);
+        setTimeout(() => {
+          textarea.focus();
+          const targetCursor = replaceStart + cmd.markdown.length;
+          textarea.selectionStart = targetCursor;
+          textarea.selectionEnd = targetCursor;
+          keepCaretInView();
+        }, 0);
+      }
+    },
+    [onChange, keepCaretInView]
+  );
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // 1. 如果斜杠菜单处于打开状态，拦截方向键、回车、Tab 与 Escape
+    if (menuOpen) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIndex((prev) => (filteredCount > 0 ? (prev + 1) % filteredCount : 0));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          filteredCount > 0 ? (prev - 1 + filteredCount) % filteredCount : 0
+        );
+        return;
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        const query = searchQuery.trim().toLowerCase();
+        const filtered = SLASH_COMMANDS.filter(
+          (cmd) =>
+            cmd.label.toLowerCase().includes(query) ||
+            cmd.id.toLowerCase().includes(query) ||
+            cmd.description.toLowerCase().includes(query)
+        );
+        const activeCommand = filtered[selectedIndex];
+        if (activeCommand) {
+          executeCommand(activeCommand);
+        }
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMenuOpen(false);
+        return;
+      }
+    }
+
     if (e.key === "Enter") {
       setTimeout(keepCaretInView, 0);
     }
@@ -731,6 +1031,17 @@ export default function MarkdownEditor({
               <span>{uploading ? "上传中..." : "插图"}</span>
             </button>
 
+            <button
+              type="button"
+              onClick={() => htmlFileInputRef.current?.click()}
+              disabled={uploading}
+              className="p-1 px-2 rounded text-xs font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              title="上传并嵌入 HTML 网页"
+            >
+              <Globe size={12} />
+              <span>{uploading ? "处理中..." : "嵌入网页"}</span>
+            </button>
+
             <input
               ref={fileInputRef}
               type="file"
@@ -739,6 +1050,18 @@ export default function MarkdownEditor({
               onChange={(e) => {
                 if (e.target.files && e.target.files[0]) {
                   handleUploadFile(e.target.files[0]);
+                }
+              }}
+            />
+
+            <input
+              ref={htmlFileInputRef}
+              type="file"
+              accept=".html,.htm"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  handleUploadHtmlFile(e.target.files[0]);
                 }
               }}
             />
@@ -822,14 +1145,44 @@ export default function MarkdownEditor({
             <textarea
               ref={editorRef}
               value={textValue}
-              onChange={(e) => onChange(e.target.value)}
+              onChange={(e) => {
+                onChange(e.target.value);
+                setTimeout(checkSlashCommand, 0);
+              }}
               onKeyDown={handleKeyDown}
+              onKeyUp={(e) => {
+                if (e.key !== "ArrowUp" && e.key !== "ArrowDown" && e.key !== "Enter") {
+                  checkSlashCommand();
+                }
+              }}
+              onClick={checkSlashCommand}
+              onScroll={() => {
+                if (menuOpen) {
+                  checkSlashCommand();
+                }
+              }}
+              onBlur={() => {
+                setTimeout(() => {
+                  setMenuOpen(false);
+                }, 200);
+              }}
               onPaste={handlePaste}
               onDrop={handleDrop}
               placeholder={placeholder}
               spellCheck={false}
               className="flex-1 w-full h-full p-6 pb-48 font-mono text-[13px] sm:text-[14px] leading-relaxed resize-none border-none outline-none bg-transparent text-zinc-800 dark:text-zinc-200 custom-scrollbar select-text placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
             />
+
+            {/* 斜杠指令浮动菜单 */}
+            {menuOpen && (
+              <SlashMenu
+                searchQuery={searchQuery}
+                selectedIndex={selectedIndex}
+                position={menuPosition}
+                onFilteredCommandsChange={setFilteredCount}
+                onSelectCommand={executeCommand}
+              />
+            )}
           </section>
         )}
 
