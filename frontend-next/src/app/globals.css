@@ -499,6 +499,14 @@ body {
   font-size: 0.85em;
 }
 
+.font-handwriting strong,
+.font-handwriting b,
+.prose-editorial strong,
+.prose-editorial b {
+  font-weight: 700;
+  color: var(--color-gray-1200);
+}
+
 /* ==================== 终极手绘批注与动画体系 (Ink Marks) ==================== */
 /* 荧光笔运笔抹色动画 */
 @keyframes crafterui-swipe {

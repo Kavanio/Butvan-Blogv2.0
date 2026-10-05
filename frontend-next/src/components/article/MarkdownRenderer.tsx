@@ -184,11 +184,12 @@ export function MarkdownRenderer({
           return `<span class="token-box strike-item"><span class="ink-text">${text}</span><svg class="strike-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="strike-1" d="M1 4 C24 2 46 7 68 4 C82 2 92 6 99 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" vector-effect="non-scaling-stroke" pathLength="1" stroke-dasharray="1"/><path class="strike-2" d="M2 7 C26 5 44 9 66 6 C80 4 92 8 98 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.85" vector-effect="non-scaling-stroke" pathLength="1" stroke-dasharray="1"/></svg></span>`;
         },
         listitem(item: any) {
+          const body = item.tokens ? (this as any).parser.parse(item.tokens) : item.text;
           if (item.task) {
             const isChecked = item.checked;
-            return `<li class="md-li flex items-baseline gap-1 my-1"><span class="md-task-checkbox ${isChecked ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500' : 'text-zinc-500'}">${isChecked ? '✓' : ''}</span><span>${item.text}</span></li>`;
+            return `<li class="md-li flex items-baseline gap-1 my-1"><span class="md-task-checkbox ${isChecked ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500' : 'text-zinc-500'}">${isChecked ? '✓' : ''}</span><span>${body}</span></li>`;
           }
-          return `<li>${item.text}</li>`;
+          return `<li>${body}</li>`;
         },
         link({ href, title, text }) {
           const isExternal =

@@ -100,10 +100,14 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
           {article.title}
         </h1>
 
-        {/* 导语摘要 - 采用雅致左侧竖线与轻底色，与正文形成清晰层次反差 */}
+        {/* 文章导读摘要卡片：左上角携带专属“摘要”Title，整体被柔和背景颜色包裹 */}
         {article.summary && (
-          <div className="relative my-6 pl-4 sm:pl-5 pr-3 py-2 rounded-r-lg border-l-2 border-gray-300 dark:border-gray-700 bg-gray-50/50 dark:bg-zinc-900/30">
-            <p className="text-[1rem] sm:text-[1.08rem] leading-[1.75] text-gray-1000 dark:text-gray-300 italic m-0">
+          <div className="my-7 p-4 sm:p-5 rounded-2xl bg-gray-100/75 dark:bg-zinc-900/60 border border-gray-200/80 dark:border-zinc-800/80">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800 dark:text-gray-200 tracking-wider mb-2 select-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+              <span>摘要</span>
+            </div>
+            <p className="text-[0.98rem] sm:text-[1.06rem] leading-[1.8] text-gray-1000 dark:text-gray-300 m-0">
               {article.summary}
             </p>
           </div>
