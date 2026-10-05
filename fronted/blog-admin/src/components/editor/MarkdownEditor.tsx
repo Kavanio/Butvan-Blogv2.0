@@ -274,21 +274,33 @@ function createCarouselDOM(
 
   let currentIndex = 0;
   const stage = document.createElement("div");
-  stage.className = "relative flex items-center justify-center";
+  stage.className = "relative overflow-hidden rounded-xl";
 
-  const imgEl = document.createElement("img");
-  imgEl.src = images[0].url;
-  imgEl.alt = images[0].alt || "";
-  imgEl.className =
-    "rounded-xl max-h-[360px] w-auto h-auto max-w-full object-contain mx-auto block shadow-xs border border-zinc-200 dark:border-zinc-800";
-  stage.appendChild(imgEl);
+  const track = document.createElement("div");
+  track.className = "flex w-full items-center";
+  track.style.transition = "transform 0.42s cubic-bezier(0.25, 1, 0.5, 1)";
+  track.style.transform = "translateX(0%)";
+
+  images.forEach((img, idx) => {
+    const slide = document.createElement("div");
+    slide.className = "w-full shrink-0 flex items-center justify-center p-0.5";
+    const imgEl = document.createElement("img");
+    imgEl.src = img.url;
+    imgEl.alt = img.alt || `图片 ${idx + 1}`;
+    imgEl.draggable = false;
+    imgEl.className =
+      "rounded-xl max-h-[360px] w-auto h-auto max-w-full object-contain mx-auto block shadow-xs border border-zinc-200 dark:border-zinc-800 select-none";
+    slide.appendChild(imgEl);
+    track.appendChild(slide);
+  });
+  stage.appendChild(track);
 
   // 极简补传按钮：鼠标移入图片区域右上角轻巧浮现
   if (onAppendImages) {
     const appendBtn = document.createElement("button");
     appendBtn.type = "button";
     appendBtn.className =
-      "absolute right-2 top-2 px-2 py-0.5 rounded-md bg-black/45 hover:bg-black/70 text-white text-[11px] backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer shadow-xs";
+      "absolute right-2 top-2 px-2 py-0.5 rounded-md bg-black/45 hover:bg-black/70 text-white text-[11px] backdrop-blur-xs transition-opacity opacity-0 group-hover/carousel:opacity-100 cursor-pointer shadow-xs z-10";
     appendBtn.textContent = "+ 补传";
     appendBtn.addEventListener("click", onAppendImages);
     stage.appendChild(appendBtn);
@@ -339,8 +351,8 @@ function createCarouselDOM(
 
   const updateView = (index: number) => {
     currentIndex = (index + images.length) % images.length;
-    imgEl.src = images[currentIndex].url;
-    imgEl.alt = images[currentIndex].alt || "";
+    track.style.transition = "transform 0.42s cubic-bezier(0.25, 1, 0.5, 1)";
+    track.style.transform = `translateX(-${currentIndex * 100}%)`;
     if (dotsWrap) {
       Array.from(dotsWrap.children).forEach((dot, dIdx) => {
         dot.className =
@@ -389,20 +401,21 @@ function createCarouselDOM(
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
       diffX = e.clientX - startX;
-      imgEl.style.transform = `translateX(${diffX * 0.7}px)`;
-      imgEl.style.transition = "none";
+      track.style.transition = "none";
+      track.style.transform = `translateX(calc(-${currentIndex * 100}% + ${diffX}px))`;
     };
 
     const handleMouseUp = () => {
       if (!isDragging) return;
       isDragging = false;
       stage.style.cursor = "grab";
-      imgEl.style.transform = "";
-      imgEl.style.transition = "transform 0.25s ease-out";
-      if (diffX < -40) {
+      track.style.transition = "transform 0.42s cubic-bezier(0.25, 1, 0.5, 1)";
+      if (diffX < -45) {
         updateView(currentIndex + 1);
-      } else if (diffX > 40) {
+      } else if (diffX > 45) {
         updateView(currentIndex - 1);
+      } else {
+        track.style.transform = `translateX(-${currentIndex * 100}%)`;
       }
     };
 

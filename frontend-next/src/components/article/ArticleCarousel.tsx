@@ -11,8 +11,9 @@ export interface ArticleCarouselProps {
 /**
  * 极简纯图片轮播组件
  * - 纯净呈现：无多余背景、无卡片框、无右下角数量
+ * - 左右切换：丝滑横向平滑滑动动画（CSS GPU 硬件加速）
  * - 自动轮播：鼠标移入暂停，移出继续
- * - 鼠标/手势拖拽：支持鼠标左键按住左右滑动切图
+ * - 鼠标/手势拖拽：支持鼠标左键按住左右滑动切图，实时跟手位移
  */
 export function ArticleCarousel({ images }: ArticleCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -51,9 +52,7 @@ export function ArticleCarousel({ images }: ArticleCarouselProps) {
 
   if (!images || images.length === 0) return null;
 
-  const currentImage = images[currentIndex] || images[0];
-
-  // 2. 鼠标与触控左右滑动处理
+  // 2. 鼠标与触控左右拖拽滑动处理
   const onPointerDown = (clientX: number) => {
     if (images.length <= 1) return;
     isDraggingRef.current = true;
@@ -76,21 +75,21 @@ export function ArticleCarousel({ images }: ArticleCarouselProps) {
     setIsDragging(false);
     setDragOffset(0);
 
-    // 拖动位移超过 40px 触发切页
-    if (diff < -40) {
+    // 拖动位移超过 45px 触发切页
+    if (diff < -45) {
       next();
-    } else if (diff > 40) {
+    } else if (diff > 45) {
       prev();
     }
   };
 
-  const handleImageClick = () => {
+  const handleImageClick = (img: { alt: string; url: string }) => {
     // 只有非拖拽滑动时才弹出全屏大图
     if (Math.abs(diffXRef.current) < 6) {
       setModalImage({
         isOpen: true,
-        src: currentImage.url,
-        alt: currentImage.alt,
+        src: img.url,
+        alt: img.alt,
       });
     }
   };
@@ -107,9 +106,9 @@ export function ArticleCarousel({ images }: ArticleCarouselProps) {
           }
         }}
       >
-        {/* 图片主体视窗（支持鼠标左右拖动滑动） */}
+        {/* 图片主体视窗（横向溢出隐藏，支持鼠标左右拖动滑动） */}
         <div
-          className={`relative flex items-center justify-center overflow-hidden ${
+          className={`relative overflow-hidden rounded-xl ${
             images.length > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : ""
           }`}
           onMouseDown={(e) => onPointerDown(e.clientX)}
@@ -119,17 +118,31 @@ export function ArticleCarousel({ images }: ArticleCarouselProps) {
           onTouchMove={(e) => onPointerMove(e.touches[0].clientX)}
           onTouchEnd={onPointerUp}
         >
-          <img
-            src={currentImage.url}
-            alt={currentImage.alt || `图片 ${currentIndex + 1}`}
-            draggable={false}
-            onClick={handleImageClick}
+          {/* 横向平滑滑动轨道 Track */}
+          <div
+            className="flex w-full items-center"
             style={{
-              transform: `translateX(${dragOffset * 0.8}px)`,
-              transition: isDragging ? "none" : "transform 0.25s ease-out",
+              transform: `translateX(calc(-${currentIndex * 100}% + ${dragOffset}px))`,
+              transition: isDragging
+                ? "none"
+                : "transform 0.42s cubic-bezier(0.25, 1, 0.5, 1)",
             }}
-            className="rounded-xl max-h-[420px] w-auto h-auto max-w-full object-contain mx-auto block shadow-xs border border-black/6 dark:border-white/8 select-none"
-          />
+          >
+            {images.map((img, idx) => (
+              <div
+                key={idx}
+                className="w-full shrink-0 flex items-center justify-center p-0.5"
+              >
+                <img
+                  src={img.url}
+                  alt={img.alt || `图片 ${idx + 1}`}
+                  draggable={false}
+                  onClick={() => handleImageClick(img)}
+                  className="rounded-xl max-h-[420px] w-auto h-auto max-w-full object-contain mx-auto block shadow-xs border border-black/6 dark:border-white/8 select-none"
+                />
+              </div>
+            ))}
+          </div>
 
           {/* 左右翻页箭头（多张图时 hover 浮现） */}
           {images.length > 1 && (
