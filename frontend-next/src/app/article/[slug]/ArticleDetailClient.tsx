@@ -81,13 +81,13 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
   const metaCategory = article.categoryName || (article.tagNames && article.tagNames[0]) || "Writing";
 
   return (
-    <div className="min-h-screen bg-[var(--color-gray-bg)] text-[var(--color-gray-1200)]">
-      <main className="max-w-[40.5rem] mx-auto px-6 pt-8 sm:pt-12 pb-24">
+    <div className="min-h-screen bg-[var(--color-gray-bg)] text-[var(--color-gray-1200)] font-handwriting">
+      <main className="max-w-[42rem] mx-auto px-6 pt-8 sm:pt-12 pb-24 font-handwriting">
         {/* 顶部极简导航栏 (← 圆形按钮 + 主题切换，返回文章归档列表) */}
         <DetailHeader backHref="/article" />
 
         {/* 标题前置微型 Meta 摘要：Sep 21, 2026 · Category · 10 min */}
-        <div className="text-xs sm:text-[13px] text-gray-800 dark:text-gray-400 font-mono tracking-tight mb-3">
+        <div className="text-[13px] sm:text-sm text-gray-800 dark:text-gray-400 tracking-tight mb-2.5 flex items-center flex-wrap gap-1 opacity-90">
           <span>{formatDate(article.publishedAt)}</span>
           <span className="mx-1.5 opacity-60">·</span>
           <span>{metaCategory}</span>
@@ -95,38 +95,41 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
           <span>{readingTime} min</span>
         </div>
 
-        {/* 衬线体优雅大标题 (Instrument Serif) */}
-        <h1 className="font-serif text-3xl sm:text-[2.6rem] text-gray-1200 leading-[1.18] font-normal tracking-tight mb-5">
+        {/* 优雅大标题 */}
+        <h1 className="text-2xl sm:text-[2.2rem] text-gray-1200 leading-[1.25] font-bold tracking-tight mb-5">
           {article.title}
         </h1>
 
-        {/* 导语段落与极浅水平分割线 */}
+        {/* 文章导读摘要卡片：左上角携带专属“摘要”Title，整体被柔和背景颜色包裹 */}
         {article.summary && (
-          <>
-            <p className="text-[15px] sm:text-base leading-relaxed text-gray-1100 mb-8 font-sans">
+          <div className="my-7 p-4 sm:p-5 rounded-2xl bg-gray-100/75 dark:bg-zinc-900/60 border border-gray-200/80 dark:border-zinc-800/80">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800 dark:text-gray-200 tracking-wider mb-2 select-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+              <span>摘要</span>
+            </div>
+            <p className="text-[0.98rem] sm:text-[1.06rem] leading-[1.8] text-gray-1000 dark:text-gray-300 m-0">
               {article.summary}
             </p>
-            <div className="w-full h-px bg-gray-200/80 dark:bg-gray-800/80 mb-10" />
-          </>
+          </div>
         )}
 
-        {/* 沉浸式 Markdown 正文 (彻底移除突兀的重复目录，保持纯净阅读) */}
+        {/* 沉浸式 Markdown 正文 */}
         <MarkdownRenderer
           content={article.content}
           contentHtml={article.contentHtml}
-          className="prose-editorial"
+          className="prose-editorial font-handwriting"
         />
 
         {/* 文末极简互动条与版权署名（无多余线条，高对比度清晰交互） */}
-        <div className="mt-14 pt-4">
-          <div className="flex items-center justify-between text-xs font-mono">
+        <div className="mt-12 pt-4">
+          <div className="flex items-center justify-between text-xs sm:text-[13px]">
             {/* 极简点赞微交互 */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleLike}
-              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer ${
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
                 hasLiked
-                  ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-medium"
+                  ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold"
                   : "bg-gray-100 hover:bg-gray-200/80 dark:bg-gray-800/80 dark:hover:bg-gray-700/80 text-gray-800 dark:text-gray-200"
               }`}
             >
@@ -141,7 +144,7 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
             {/* 极简分享链接 */}
             <button
               onClick={handleCopyLink}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200/80 dark:bg-gray-800/80 dark:hover:bg-gray-700/80 text-gray-800 dark:text-gray-200 transition-colors cursor-pointer font-medium"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200/80 dark:bg-gray-800/80 dark:hover:bg-gray-700/80 text-gray-800 dark:text-gray-200 transition-colors cursor-pointer font-medium"
             >
               {copied ? (
                 <>
@@ -158,13 +161,15 @@ export function ArticleDetailClient({ article }: ArticleDetailClientProps) {
           </div>
 
           {/* 极简版权小注 */}
-          <div className="mt-5 text-xs text-gray-600 dark:text-gray-400 text-center sm:text-left font-sans">
+          <div className="mt-5 text-xs text-gray-600 dark:text-gray-400 text-center sm:text-left">
             © {new Date().getFullYear()} 可梵 · CC BY-NC-SA 4.0 许可
           </div>
         </div>
 
         {/* 评论区挂载 */}
-        <CommentSection articleId={article.id} />
+        <div className="mt-8 font-sans">
+          <CommentSection articleId={article.id} />
+        </div>
       </main>
     </div>
   );

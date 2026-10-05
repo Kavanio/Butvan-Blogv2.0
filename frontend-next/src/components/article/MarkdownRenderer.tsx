@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Marked } from "marked";
 import { ExternalLink } from "lucide-react";
 import { MarkdownCodeBlock } from "./MarkdownCodeBlock";
@@ -24,6 +24,15 @@ const ATTR_MAP: Record<string, string> = {
   cellspacing: "cellSpacing",
   contenteditable: "contentEditable",
   spellcheck: "spellCheck",
+  strokewidth: "strokeWidth",
+  strokelinecap: "strokeLinecap",
+  strokelinejoin: "strokeLinejoin",
+  strokedasharray: "strokeDasharray",
+  strokedashoffset: "strokeDashoffset",
+  vectoreffect: "vectorEffect",
+  pathlength: "pathLength",
+  viewbox: "viewBox",
+  preserveaspectratio: "preserveAspectRatio",
 };
 
 /**
@@ -52,12 +61,97 @@ interface MarkdownRendererProps {
 }
 
 /**
- * 专为 Butvan Blog 打造的极客级 Markdown / 富文本渲染引擎
+ * Marked 扩展：支持 ==荧光笔高亮== 语法
+ */
+const highlightExtension = {
+  name: "highlight",
+  level: "inline" as const,
+  start(src: string) {
+    return src.indexOf("==");
+  },
+  tokenizer(src: string) {
+    const match = /^==((?:[^=]|=(?!=))+)==/.exec(src);
+    if (match) {
+      return {
+        type: "highlight",
+        raw: match[0],
+        text: match[1],
+        tokens: (this as any).lexer.inlineTokens(match[1]),
+      };
+    }
+  },
+  renderer(token: any) {
+    return `<span class="token-box mark-item"><span class="swipe-mark"></span><span class="ink-text">${(this as any).parser.parseInline(token.tokens)}</span></span>`;
+  },
+};
+
+/**
+ * Marked 扩展：支持 ((手绘椭圆圈选)) 语法
+ */
+const circleExtension = {
+  name: "circle",
+  level: "inline" as const,
+  start(src: string) {
+    return src.indexOf("((");
+  },
+  tokenizer(src: string) {
+    const match = /^\(\(((?:[^()]|\((?!\()|\)(?!\)))+)\)\)/.exec(src);
+    if (match) {
+      return {
+        type: "circle",
+        raw: match[0],
+        text: match[1],
+        tokens: (this as any).lexer.inlineTokens(match[1]),
+      };
+    }
+  },
+  renderer(token: any) {
+    return `<span class="token-box circle-item"><span class="ink-text">${(this as any).parser.parseInline(token.tokens)}</span><svg class="circle-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M8 54 C6 26 30 8 52 7 C76 6 95 20 95 46 C95 74 72 93 48 93 C24 93 7 78 6 52 C6 34 16 20 34 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" vector-effect="non-scaling-stroke" pathLength="1" stroke-dasharray="1"/></svg></span>`;
+  },
+};
+
+import { ArticleCarousel } from "./ArticleCarousel";
+
+/**
+ * Marked 扩展：支持 <carousel> 与 :::carousel 多图轮播语法
+ */
+const carouselExtension = {
+  name: "carousel",
+  level: "block" as const,
+  start(src: string) {
+    const m = src.match(/(?:<carousel>|:::carousel)/);
+    return m ? m.index : -1;
+  },
+  tokenizer(src: string) {
+    const match = /^(?:<carousel>([\s\S]*?)<\/carousel>|:::carousel\s*([\s\S]*?):::)/.exec(src);
+    if (match) {
+      const rawBody = match[1] ?? match[2] ?? "";
+      const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
+      const images: { alt: string; url: string }[] = [];
+      let imgMatch: RegExpExecArray | null;
+      while ((imgMatch = imgRegex.exec(rawBody)) !== null) {
+        images.push({ alt: imgMatch[1] || "", url: imgMatch[2] });
+      }
+      return {
+        type: "carousel",
+        raw: match[0],
+        images,
+      };
+    }
+  },
+  renderer(token: any) {
+    const jsonStr = encodeURIComponent(JSON.stringify(token.images || []));
+    return `<div class="article-carousel-block" data-carousel="${jsonStr}"></div>`;
+  },
+};
+
+/**
+ * 文章渲染器组件
  * 
  * 核心特性：
- * 1. 彻底修复 contentHtml 存放 raw Markdown 导致的无换行与排版错乱 Bug
+ * 1. 深度支持三大手绘笔触（==高亮==、((圈选))、~~双线划线~~）与视口运笔动画
  * 2. 自动生成标题锚点与 TOC 目录大纲
- * 3. 拦截接管 <pre><code> 代码块为带有 macOS 终端三色控制点、语言标示、高亮和一键复制的交互组件
+ * 3. 拦截接管 <pre><code> 为对齐新规范的极简代码块（纯语言徽标 + 复制气泡）
  * 4. 拦截图片点击，无缝调出全屏高清 Lightbox 查看器
  * 5. 表格自动添加响应式横向滚动包装层
  * 6. 首屏 SSR 优先直出 HTML，客户端 Hydration 后无缝升级为 React 交互组件
@@ -68,6 +162,7 @@ export function MarkdownRenderer({
   className = "prose-editorial",
   onHeadingsExtracted,
 }: MarkdownRendererProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [reactContent, setReactContent] = useState<React.ReactNode>(null);
   const [previewImage, setPreviewImage] = useState<{
     isOpen: boolean;
@@ -100,6 +195,7 @@ export function MarkdownRenderer({
     });
 
     inst.use({
+      extensions: [highlightExtension, circleExtension, carouselExtension],
       renderer: {
         heading({ text, depth }) {
           const plainText = text.replace(/<[^>]+>/g, "").trim();
@@ -117,6 +213,18 @@ export function MarkdownRenderer({
           }
 
           return `<h${depth} id="${id}" class="group relative flex items-center">${text}<a href="#${id}" class="heading-anchor opacity-0 group-hover:opacity-100 ml-2 text-sky-500 dark:text-[#BBDFFF] font-mono text-xs transition-opacity" aria-label="锚点链接">#</a></h${depth}>`;
+        },
+        del({ text }: { text: string }) {
+          // 双线错落手绘涂改划线
+          return `<span class="token-box strike-item"><span class="ink-text">${text}</span><svg class="strike-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="strike-1" d="M1 4 C24 2 46 7 68 4 C82 2 92 6 99 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" vector-effect="non-scaling-stroke" pathLength="1" stroke-dasharray="1"/><path class="strike-2" d="M2 7 C26 5 44 9 66 6 C80 4 92 8 98 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.85" vector-effect="non-scaling-stroke" pathLength="1" stroke-dasharray="1"/></svg></span>`;
+        },
+        listitem(item: any) {
+          const body = item.tokens ? (this as any).parser.parse(item.tokens) : item.text;
+          if (item.task) {
+            const isChecked = item.checked;
+            return `<li class="md-li flex items-baseline gap-1 my-1"><span class="md-task-checkbox ${isChecked ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500' : 'text-zinc-500'}">${isChecked ? '✓' : ''}</span><span>${body}</span></li>`;
+          }
+          return `<li>${body}</li>`;
         },
         link({ href, title, text }) {
           const isExternal =
@@ -147,6 +255,48 @@ export function MarkdownRenderer({
     }
   }, [headings, onHeadingsExtracted]);
 
+  // 3. 视口滚动运笔手绘动画监听
+  useEffect(() => {
+    if (typeof window === "undefined" || !containerRef.current) return;
+    const el = containerRef.current;
+
+    const tokens = el.querySelectorAll(".token-box");
+    if (tokens.length === 0) return;
+
+    const targetBlocks = new Set<HTMLElement>();
+    tokens.forEach((t: Element) => {
+      const parent = t.closest("p, li, tr, h1, h2, h3, h4, h5, h6, blockquote, div") as HTMLElement;
+      if (parent) targetBlocks.add(parent);
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const block = entry.target as HTMLElement;
+            const boxList = block.querySelectorAll(".token-box");
+            boxList.forEach((token, idx) => {
+              (token as HTMLElement).style.setProperty("--anim-delay", `${idx * 0.28}s`);
+            });
+            block.classList.add("in-view");
+            observer.unobserve(block);
+          }
+        });
+      },
+      {
+        threshold: 0.2,
+        rootMargin: "0px 0px -40px 0px",
+      }
+    );
+
+    targetBlocks.forEach((block) => observer.observe(block));
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [reactContent, cleanHtml]);
+
+
   // 3. 客户端拦截转换：将代码块提升为 React 交互组件
   useEffect(() => {
     if (typeof window === "undefined" || !cleanHtml) return;
@@ -162,6 +312,22 @@ export function MarkdownRenderer({
       if (node.nodeType === Node.ELEMENT_NODE) {
         const element = node as HTMLElement;
         const tagName = element.tagName.toLowerCase();
+
+        // 拦截多图轮播块并渲染为交互式画廊组件
+        if (element.classList.contains("article-carousel-block")) {
+          const rawData = element.getAttribute("data-carousel") || "";
+          try {
+            const images = JSON.parse(decodeURIComponent(rawData));
+            return (
+              <ArticleCarousel
+                key={`carousel-block-${index}`}
+                images={images}
+              />
+            );
+          } catch (e) {
+            console.error("解析轮播图数据失败:", e);
+          }
+        }
 
         // 拦截 <pre><code> 渲染为高质量代码块
         if (tagName === "pre") {
@@ -267,9 +433,7 @@ export function MarkdownRenderer({
           props.src = rawSrc;
           props.alt = element.getAttribute("alt") || "";
           props.loading = "lazy";
-          props.className = `${
-            element.getAttribute("class") || ""
-          } cursor-zoom-in hover:opacity-95 transition-opacity rounded-xl max-w-full h-auto shadow-sm my-4`;
+          props.className = "cursor-zoom-in rounded-xl max-w-[88%] sm:max-w-[76%] max-h-[360px] sm:max-h-[420px] w-auto h-auto object-contain mx-auto block shadow-xs border border-gray-200/70 dark:border-zinc-800/80 my-6 select-none";
         }
 
         if (tagName === "a") {
@@ -349,6 +513,7 @@ export function MarkdownRenderer({
     <>
       {!reactContent ? (
         <div
+          ref={containerRef}
           className={`${className} max-w-none`}
           onClick={handleContainerClick}
           dangerouslySetInnerHTML={{ __html: cleanHtml }}
@@ -356,6 +521,7 @@ export function MarkdownRenderer({
         />
       ) : (
         <div
+          ref={containerRef}
           className={`${className} max-w-none`}
           onClick={handleContainerClick}
           suppressHydrationWarning
@@ -363,6 +529,7 @@ export function MarkdownRenderer({
           {reactContent}
         </div>
       )}
+
 
       {/* 图片全屏预览模态框 */}
       <ImagePreviewModal

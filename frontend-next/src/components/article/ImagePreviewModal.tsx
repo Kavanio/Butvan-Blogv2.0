@@ -43,13 +43,13 @@ export function ImagePreviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85"
       onClick={onClose}
     >
       {/* 顶部关闭按钮 */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/25 text-white cursor-pointer"
         aria-label="关闭预览"
       >
         <X className="w-5 h-5" />
@@ -57,7 +57,7 @@ export function ImagePreviewModal({
 
       {/* 图片主体 */}
       <div
-        className="relative max-w-5xl max-h-[90vh] flex flex-col items-center justify-center"
+        className="relative max-w-5xl max-h-[90vh] flex flex-col items-center justify-center select-none"
         onClick={(e) => e.stopPropagation()}
       >
         <img
