@@ -167,6 +167,9 @@ export const friendService = {
 };
 
 export const commentService = {
+  /**
+   * 获取指定文章下的评论树
+   */
   async getComments(articleId: number): Promise<CommentVO[]> {
     try {
       return await http.get<CommentVO[]>(`/articles/${articleId}/comments`);
@@ -175,10 +178,34 @@ export const commentService = {
     }
   },
 
+  /**
+   * 发表文章评论
+   */
   async createComment(articleId: number, dto: CommentCreateDTO): Promise<CommentVO> {
     return await http.post<CommentVO>(`/articles/${articleId}/comments`, dto);
   },
 
+  /**
+   * 获取指定手记下的评论树
+   */
+  async getNoteComments(noteId: number): Promise<CommentVO[]> {
+    try {
+      return await http.get<CommentVO[]>(`/notes/${noteId}/comments`);
+    } catch {
+      return [];
+    }
+  },
+
+  /**
+   * 发表手记评论
+   */
+  async createNoteComment(noteId: number, dto: CommentCreateDTO): Promise<CommentVO> {
+    return await http.post<CommentVO>(`/notes/${noteId}/comments`, dto);
+  },
+
+  /**
+   * 评论点赞自增
+   */
   async likeComment(commentId: number): Promise<void> {
     try {
       await http.post<void>(`/comments/${commentId}/like`);

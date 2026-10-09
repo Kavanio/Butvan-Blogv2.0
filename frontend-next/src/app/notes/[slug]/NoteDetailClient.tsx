@@ -9,6 +9,7 @@ import { formatDate } from "@/utils/date";
 import { noteService } from "@/services";
 import { DetailHeader } from "@/components/article/DetailHeader";
 import { MarkdownRenderer } from "@/components/article/MarkdownRenderer";
+import { CommentSection } from "@/components/modules/CommentSection";
 
 interface NoteDetailClientProps {
   note: NoteDetailVO;
@@ -142,6 +143,11 @@ export function NoteDetailClient({ note }: NoteDetailClientProps) {
           <div className="mt-5 text-xs text-gray-600 dark:text-gray-400 text-center sm:text-left">
             © {new Date().getFullYear()} 可梵 · 随手手记
           </div>
+        </div>
+
+        {/* 评论区挂载 */}
+        <div className="mt-8 font-sans">
+          <CommentSection noteId={note.id} targetType="note" />
         </div>
       </main>
     </div>
