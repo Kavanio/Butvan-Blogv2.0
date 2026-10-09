@@ -49,6 +49,12 @@ public class CommentVO {
 
     private String articleSlug; // 关联文章 Slug 标识
 
+    private Long noteId; // 所属手记 ID（若评论归属手记则非空）
+
+    private String noteTitle; // 关联手记标题
+
+    private String noteSlug; // 关联手记 Slug 标识
+
     private LocalDateTime createdAt; // 评论发表的创建时间
 
     private String visitorEmail; // 访客邮箱

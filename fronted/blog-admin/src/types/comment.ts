@@ -5,7 +5,10 @@ import type { CommentStatus } from "./common";
  */
 export interface CommentItem {
   id: number;
-  articleId: number;
+  articleId?: number | null;
+  noteId?: number | null;
+  noteTitle?: string | null;
+  noteSlug?: string | null;
   parentId?: number | null;
   userId?: number | null;
   nickname: string;

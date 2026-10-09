@@ -31,6 +31,27 @@ public interface CommentService {
     CommentVO createComment(Long articleId, CommentCreateDTO dto, String ipAddress, String userAgent);
 
     /**
+     * 根据手记 ID 查询并组装两级树形结构评论列表 (顶级评论 + replies)
+     *
+     * @param noteId 手记唯一主键 ID
+     * @param viewerName 当前访客的昵称
+     * @param viewerEmail 当前访客的邮箱
+     * @return 组装树形化包装的评论 VO 列表
+     */
+    List<CommentVO> listCommentsByNoteId(Long noteId, String viewerName, String viewerEmail);
+
+    /**
+     * 前台访客/注册用户提交手记新评论接口
+     *
+     * @param noteId 评论所属的手记唯一主键 ID
+     * @param dto 提交的内容表单载荷对象 (昵称、邮箱、网站、正文)
+     * @param ipAddress 客户端请求提交时的 IP 地址
+     * @param userAgent 客户端请求提交时的 UA 字符串说明
+     * @return 生成写入成功后的评论 VO 对象
+     */
+    CommentVO createNoteComment(Long noteId, CommentCreateDTO dto, String ipAddress, String userAgent);
+
+    /**
      * 根据评论 ID 对本条评论进行点赞增加 1
      *
      * @param commentId 评论主键 ID

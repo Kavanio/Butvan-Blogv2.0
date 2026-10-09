@@ -69,6 +69,46 @@ public class CommentController {
     }
 
     /**
+     * 【公开前台】获取指定手记下的所有审核通过的嵌套树形评论列表
+     *
+     * @param noteId 手记唯一主键 ID
+     * @return 统一格式 Result 包装的树形评论 VO 列表
+     */
+    @TrackApi("【公开前台】获取指定手记下的所有审核通过的嵌套树形评论列表")
+    @GetMapping("/notes/{noteId}/comments")
+    public Result<List<CommentVO>> getCommentsByNoteId(
+            @PathVariable Long noteId,
+            @RequestParam(required = false) String viewerName,
+            @RequestParam(required = false) String viewerEmail) {
+        log.info("前台获取手记评论树 API 请求: noteId={}, viewerName={}, viewerEmail={}", noteId, viewerName, viewerEmail);
+        List<CommentVO> comments = commentService.listCommentsByNoteId(noteId, viewerName, viewerEmail);
+        return Result.success(comments);
+    }
+
+    /**
+     * 【公开前台】提交发表手记新评论 (支持独立评论及嵌套回复)
+     *
+     * @param noteId 评论所属的手记唯一主键 ID
+     * @param dto 评论的载荷数据 (昵称、邮箱、网站、内容)
+     * @param request HTTP Servlet 请求对象，用于解析 IP 与 UA
+     * @return 统一格式 Result 包装的新增评论 VO 实体对象
+     */
+    @TrackApi("【公开前台】提交发表手记新评论 (支持独立评论及嵌套回复)")
+    @PostMapping("/notes/{noteId}/comments")
+    public Result<CommentVO> createNoteComment(
+            @PathVariable Long noteId,
+            @RequestBody CommentCreateDTO dto,
+            HttpServletRequest request) {
+        log.info("前台提交手记评论 API 请求: noteId={}, visitorName={}", noteId, dto.getVisitorName());
+
+        String ipAddress = IpUtils.getClientIp(request);
+        String userAgent = request.getHeader("User-Agent");
+
+        CommentVO savedVO = commentService.createNoteComment(noteId, dto, ipAddress, userAgent);
+        return Result.success(savedVO);
+    }
+
+    /**
      * 【公开前台】评论点赞喜欢自增
      *
      * @param commentId 评论唯一主键 ID

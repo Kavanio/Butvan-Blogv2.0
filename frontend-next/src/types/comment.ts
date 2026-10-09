@@ -1,6 +1,7 @@
 export interface CommentVO {
   id: number;
-  articleId: number;
+  articleId?: number;
+  noteId?: number;
   parentId?: number | null;
   userId?: number | null;
   nickname: string;
@@ -15,6 +16,8 @@ export interface CommentVO {
   status?: string;
   articleTitle?: string;
   articleSlug?: string;
+  noteTitle?: string;
+  noteSlug?: string;
   createdAt: string;
   visitorEmail?: string;
   replies?: CommentVO[];

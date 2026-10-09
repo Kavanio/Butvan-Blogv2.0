@@ -10,8 +10,13 @@ import { VerifiedBadge } from "@/components/ui/VerifiedBadge";
 import { useSound } from "@/hooks/useSound";
 import { formatDate } from "@/utils/date";
 
-interface CommentSectionProps {
-  articleId: number;
+export interface CommentSectionProps {
+  /** 文章 ID (用于文章详情页评论) */
+  articleId?: number;
+  /** 手记 ID (用于手记详情页评论) */
+  noteId?: number;
+  /** 目标类型：'article'（文章）| 'note'（手记），默认自动推断 */
+  targetType?: "article" | "note";
 }
 
 interface VisitorData {
@@ -21,7 +26,8 @@ interface VisitorData {
 }
 
 interface CommentInputFormProps {
-  articleId: number;
+  targetId: number;
+  targetType: "article" | "note";
   parentId: number | null;
   replyTarget?: CommentVO | null;
   visitorData: VisitorData;
@@ -36,7 +42,8 @@ interface CommentInputFormProps {
  * 支持一级独立发表，以及楼层下就地内嵌回复
  */
 function CommentInputForm({
-  articleId,
+  targetId,
+  targetType,
   parentId,
   replyTarget,
   visitorData,
@@ -73,7 +80,10 @@ function CommentInputForm({
         parentId,
       };
 
-      const newComment = await commentService.createComment(articleId, payload);
+      const newComment =
+        targetType === "note"
+          ? await commentService.createNoteComment(targetId, payload)
+          : await commentService.createComment(targetId, payload);
       playDroplet();
 
       // 缓存游客信息供下次快速调用
@@ -196,7 +206,10 @@ function CommentInputForm({
   );
 }
 
-export function CommentSection({ articleId }: CommentSectionProps) {
+export function CommentSection({ articleId, noteId, targetType }: CommentSectionProps) {
+  const effectiveType: "article" | "note" = targetType || (noteId !== undefined ? "note" : "article");
+  const targetId = effectiveType === "note" ? (noteId ?? articleId ?? 0) : (articleId ?? noteId ?? 0);
+
   const [comments, setComments] = useState<CommentVO[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormExpanded, setIsFormExpanded] = useState(false);
@@ -232,7 +245,10 @@ export function CommentSection({ articleId }: CommentSectionProps) {
     async function load() {
       try {
         setLoading(true);
-        const list = await commentService.getComments(articleId);
+        const list =
+          effectiveType === "note"
+            ? await commentService.getNoteComments(targetId)
+            : await commentService.getComments(targetId);
         setComments(list);
         const counts: Record<number, number> = {};
         const collectCounts = (items: CommentVO[]) => {
@@ -250,7 +266,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
       }
     }
     load();
-  }, [articleId]);
+  }, [targetId, effectiveType]);
 
   const handleLike = async (commentId: number) => {
     if (likedMap[commentId]) return;
@@ -396,7 +412,8 @@ export function CommentSection({ articleId }: CommentSectionProps) {
               className="overflow-hidden mt-2 pt-2 border-t border-gray-200/60 dark:border-gray-800/60"
             >
               <CommentInputForm
-                articleId={articleId}
+                targetId={targetId}
+                targetType={effectiveType}
                 parentId={item.id}
                 replyTarget={item}
                 visitorData={visitorData}
@@ -463,7 +480,8 @@ export function CommentSection({ articleId }: CommentSectionProps) {
             className="overflow-hidden pt-3 pb-5"
           >
             <CommentInputForm
-              articleId={articleId}
+              targetId={targetId}
+              targetType={effectiveType}
               parentId={null}
               visitorData={visitorData}
               onVisitorChange={setVisitorData}

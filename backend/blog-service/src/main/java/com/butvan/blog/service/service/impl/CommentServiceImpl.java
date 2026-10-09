@@ -2,6 +2,8 @@ package com.butvan.blog.service.service.impl;
 
 import com.butvan.blog.common.exception.BusinessException;
 import com.butvan.blog.pojo.dto.comment.CommentCreateDTO;
+import com.butvan.blog.pojo.entity.Note;
+import com.butvan.blog.service.repository.NoteRepository;
 import com.butvan.blog.pojo.entity.Article;
 import com.butvan.blog.pojo.entity.Comment;
 import com.butvan.blog.pojo.entity.CommentBan;
@@ -41,6 +43,7 @@ public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
     private final ArticleRepository articleRepository;
+    private final NoteRepository noteRepository;
     private final UserRepository userRepository;
     private final CommentBanRepository commentBanRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -49,7 +52,6 @@ public class CommentServiceImpl implements CommentService {
     public List<CommentVO> listCommentsByArticleId(Long articleId, String viewerName, String viewerEmail) {
         log.info("查询文章评论树: articleId={}, viewerName={}, viewerEmail={}", articleId, viewerName, viewerEmail);
         
-        // 1. 查询全部已审核通过 (APPROVED) 的评论，或者虽未通过但属于当前浏览者的评论
         Specification<Comment> spec = (root, query, cb) -> {
             Predicate isApproved = cb.equal(root.get("status"), "APPROVED");
             
@@ -72,45 +74,48 @@ public class CommentServiceImpl implements CommentService {
         };
 
         List<Comment> comments = commentRepository.findAll(spec, Sort.by(Sort.Direction.ASC, "createdAt"));
-        
-        // 2. 将实体列表批量转化为 VO，并利用 Map 进行缓存检索
+        return buildCommentTreeFromList(comments);
+    }
+
+    @Override
+    public List<CommentVO> listCommentsByNoteId(Long noteId, String viewerName, String viewerEmail) {
+        log.info("查询手记评论树: noteId={}, viewerName={}, viewerEmail={}", noteId, viewerName, viewerEmail);
+
+        Specification<Comment> spec = (root, query, cb) -> {
+            Predicate isApproved = cb.equal(root.get("status"), "APPROVED");
+
+            Predicate isViewerComment = cb.and(
+                cb.notEqual(root.get("status"), "APPROVED"),
+                cb.equal(root.get("note").get("id"), noteId)
+            );
+
+            if (viewerEmail != null && !viewerEmail.trim().isEmpty()) {
+                Predicate emailMatch = cb.equal(root.get("visitorEmail"), viewerEmail.trim());
+                isViewerComment = cb.and(isViewerComment, emailMatch);
+            } else {
+                isViewerComment = cb.disjunction();
+            }
+
+            return cb.and(
+                cb.equal(root.get("note").get("id"), noteId),
+                cb.or(isApproved, isViewerComment)
+            );
+        };
+
+        List<Comment> comments = commentRepository.findAll(spec, Sort.by(Sort.Direction.ASC, "createdAt"));
+        return buildCommentTreeFromList(comments);
+    }
+
+    /**
+     * 将评论实体列表组装为树形结构 VO
+     */
+    private List<CommentVO> buildCommentTreeFromList(List<Comment> comments) {
         Map<Long, CommentVO> voMap = comments.stream()
-                .map(c -> {
-                    String nickname = getDisplayNickname(c.getUser(), c.getVisitorName());
-                    String avatarUrl = null;
-                    if (c.getUser() != null) {
-                        avatarUrl = c.getUser().getAvatarUrl();
-                        if (avatarUrl == null || avatarUrl.trim().isEmpty()) {
-                            avatarUrl = getGravatarUrl(c.getUser().getEmail());
-                        }
-                    } else {
-                        avatarUrl = getGravatarUrl(c.getVisitorEmail());
-                    }
-                    boolean isAuthor = (c.getIsAuthor() != null && c.getIsAuthor()) || (c.getUser() != null && "ADMIN".equalsIgnoreCase(c.getUser().getRole()));
-                    return CommentVO.builder()
-                            .id(c.getId())
-                            .articleId(c.getArticle().getId())
-                            .parentId(c.getParentId())
-                            .userId(c.getUser() != null ? c.getUser().getId() : null)
-                            .nickname(nickname)
-                            .avatarUrl(avatarUrl)
-                            .visitorWebsite(c.getUser() != null ? null : c.getVisitorWebsite())
-                            .content(c.getContent())
-                            .likeCount(c.getLikeCount())
-                            .isAuthorReplied(c.getIsAuthorReplied())
-                            .isAuthor(isAuthor)
-                            .isPinned(c.getIsPinned() != null && c.getIsPinned())
-                            .status(c.getStatus())
-                            .userAgent(c.getUserAgent())
-                            .createdAt(c.getCreatedAt())
-                            .replies(new ArrayList<>())
-                            .build();
-                })
+                .map(this::toPublicVO)
                 .collect(Collectors.toMap(CommentVO::getId, vo -> vo));
 
         List<CommentVO> rootComments = new ArrayList<>();
 
-        // 3. 构建大厂经典清晰的两级树形回复盖楼结构 (顶级评论为一级，子孙回复全部放在顶级评论的 replies 列表里)
         for (Comment c : comments) {
             CommentVO vo = voMap.get(c.getId());
             if (c.getParentId() == null) {
@@ -118,22 +123,19 @@ public class CommentServiceImpl implements CommentService {
             } else {
                 CommentVO parentVO = voMap.get(c.getParentId());
                 if (parentVO != null) {
-                    // 设置被回复人的昵称
                     vo.setReplyTo(parentVO.getNickname());
-                    // 沿着 parent 链往上追溯，找到最顶层的顶级评论
                     CommentVO rootVO = findRootComment(vo, voMap);
                     if (rootVO != null) {
                         rootVO.getReplies().add(vo);
                     } else {
-                        rootComments.add(vo); // 兜底处理
+                        rootComments.add(vo);
                     }
                 } else {
-                    rootComments.add(vo); // 父级丢失，则升级为顶级评论
+                    rootComments.add(vo);
                 }
             }
         }
 
-        // 4. 对顶级评论进行排序：置顶的排最前，其次时间升序
         rootComments.sort((c1, c2) -> {
             boolean p1 = c1.getIsPinned() != null && c1.getIsPinned();
             boolean p2 = c2.getIsPinned() != null && c2.getIsPinned();
@@ -143,6 +145,46 @@ public class CommentServiceImpl implements CommentService {
         });
 
         return rootComments;
+    }
+
+    /**
+     * 将单个评论实体转换为公开 VO（兼容文章与手记）
+     */
+    private CommentVO toPublicVO(Comment c) {
+        String nickname = getDisplayNickname(c.getUser(), c.getVisitorName());
+        String avatarUrl = null;
+        if (c.getUser() != null) {
+            avatarUrl = c.getUser().getAvatarUrl();
+            if (avatarUrl == null || avatarUrl.trim().isEmpty()) {
+                avatarUrl = getGravatarUrl(c.getUser().getEmail());
+            }
+        } else {
+            avatarUrl = getGravatarUrl(c.getVisitorEmail());
+        }
+        boolean isAuthor = (c.getIsAuthor() != null && c.getIsAuthor()) || (c.getUser() != null && "ADMIN".equalsIgnoreCase(c.getUser().getRole()));
+        return CommentVO.builder()
+                .id(c.getId())
+                .articleId(c.getArticle() != null ? c.getArticle().getId() : null)
+                .articleTitle(c.getArticle() != null ? c.getArticle().getTitle() : null)
+                .articleSlug(c.getArticle() != null ? c.getArticle().getSlug() : null)
+                .noteId(c.getNote() != null ? c.getNote().getId() : null)
+                .noteTitle(c.getNote() != null ? c.getNote().getTitle() : null)
+                .noteSlug(c.getNote() != null ? c.getNote().getSlug() : null)
+                .parentId(c.getParentId())
+                .userId(c.getUser() != null ? c.getUser().getId() : null)
+                .nickname(nickname)
+                .avatarUrl(avatarUrl)
+                .visitorWebsite(c.getUser() != null ? null : c.getVisitorWebsite())
+                .content(c.getContent())
+                .likeCount(c.getLikeCount())
+                .isAuthorReplied(c.getIsAuthorReplied())
+                .isAuthor(isAuthor)
+                .isPinned(c.getIsPinned() != null && c.getIsPinned())
+                .status(c.getStatus())
+                .userAgent(c.getUserAgent())
+                .createdAt(c.getCreatedAt())
+                .replies(new ArrayList<>())
+                .build();
     }
 
     @Transactional
@@ -274,6 +316,145 @@ public class CommentServiceImpl implements CommentService {
 
     @Transactional
     @Override
+    public CommentVO createNoteComment(Long noteId, CommentCreateDTO dto, String ipAddress, String userAgent) {
+        log.info("提交手记评论: noteId={}, visitorName={}", noteId, dto.getVisitorName());
+
+        // 0. 检验发表人邮箱或 IP 是否在封禁黑名单中
+        if (dto.getVisitorEmail() != null && commentBanRepository.existsByEmail(dto.getVisitorEmail().trim())) {
+            throw new BusinessException("您的邮箱已在本站的封禁黑名单中，无法发表评论");
+        }
+        if (ipAddress != null && commentBanRepository.existsByIpAddress(ipAddress.trim())) {
+            throw new BusinessException("您的 IP 地址已在本站的封禁黑名单中，无法发表评论");
+        }
+
+        // 1. 检验手记是否存在
+        Note note = noteRepository.findById(noteId)
+                .orElseThrow(() -> new BusinessException("目标手记不存在"));
+
+        if (!"PUBLISHED".equalsIgnoreCase(note.getStatus())) {
+            throw new BusinessException("该手记未正式发布，无法发布评论");
+        }
+
+        // 2. 字段空校验
+        if (dto.getVisitorName() == null || dto.getVisitorName().trim().isEmpty()) {
+            throw new BusinessException("评论昵称不能为空");
+        }
+        if (dto.getVisitorEmail() == null || dto.getVisitorEmail().trim().isEmpty()) {
+            throw new BusinessException("电子邮箱不能为空");
+        }
+        if (dto.getContent() == null || dto.getContent().trim().isEmpty()) {
+            throw new BusinessException("评论正文内容不能为空");
+        }
+
+        // 3. 校验 parentId 关联父评论合法性
+        String replyToName = null;
+        if (dto.getParentId() != null) {
+            Comment parent = commentRepository.findById(dto.getParentId())
+                    .orElseThrow(() -> new BusinessException("被回复的目标评论不存在或已被删除"));
+            replyToName = getDisplayNickname(parent.getUser(), parent.getVisitorName());
+        }
+
+        // 查询是否有绑定的 User，如果邮箱匹配，则自动关联为注册用户评论
+        User matchedUser = null;
+        if (dto.getVisitorEmail() != null && !dto.getVisitorEmail().trim().isEmpty()) {
+            matchedUser = userRepository.findByEmail(dto.getVisitorEmail().trim()).orElse(null);
+        }
+
+        if (matchedUser != null && "DISABLED".equalsIgnoreCase(matchedUser.getStatus())) {
+            throw new BusinessException("您的账号已被禁用，无法发表评论");
+        }
+
+        // 4. 构建实体类并持久化保存
+        Comment comment = Comment.builder()
+                .note(note)
+                .parentId(dto.getParentId())
+                .user(matchedUser)
+                .visitorName(dto.getVisitorName().trim())
+                .visitorEmail(dto.getVisitorEmail().trim())
+                .visitorWebsite(dto.getVisitorWebsite() != null ? dto.getVisitorWebsite().trim() : null)
+                .content(dto.getContent().trim())
+                .status("APPROVED") // 默认直接通过
+                .ipAddress(ipAddress)
+                .userAgent(userAgent)
+                .likeCount(0)
+                .isAuthorReplied(false)
+                .build();
+
+        Comment saved = commentRepository.save(comment);
+
+        // 5. 更新手记表的 comment_count 冗余计数字段
+        refreshTargetCommentCount(saved);
+
+        // 6. 转换构建为当前最新保存的评论 VO 返回对象
+        String avatarUrl = null;
+        if (saved.getUser() != null) {
+            avatarUrl = saved.getUser().getAvatarUrl();
+            if (avatarUrl == null || avatarUrl.trim().isEmpty()) {
+                avatarUrl = getGravatarUrl(saved.getUser().getEmail());
+            }
+        } else {
+            avatarUrl = getGravatarUrl(saved.getVisitorEmail());
+        }
+
+        boolean isAuthor = (saved.getIsAuthor() != null && saved.getIsAuthor()) || (saved.getUser() != null && "ADMIN".equalsIgnoreCase(saved.getUser().getRole()));
+
+        // 若不是管理员发布的评论，则触发事件通知
+        if (!isAuthor) {
+            String excerpt = saved.getContent();
+            if (excerpt.length() > 50) {
+                excerpt = excerpt.substring(0, 47) + "...";
+            }
+            eventPublisher.publishEvent(new com.butvan.blog.service.event.NotificationEvents.CommentCreatedEvent(
+                    this,
+                    getDisplayNickname(saved.getUser(), saved.getVisitorName()),
+                    null,
+                    note.getTitle(),
+                    excerpt,
+                    saved.getId()
+            ));
+        }
+
+        return CommentVO.builder()
+                .id(saved.getId())
+                .noteId(note.getId())
+                .noteTitle(note.getTitle())
+                .noteSlug(note.getSlug())
+                .parentId(saved.getParentId())
+                .userId(saved.getUser() != null ? saved.getUser().getId() : null)
+                .nickname(getDisplayNickname(saved.getUser(), saved.getVisitorName()))
+                .avatarUrl(avatarUrl)
+                .visitorWebsite(saved.getUser() != null ? null : saved.getVisitorWebsite())
+                .content(saved.getContent())
+                .likeCount(saved.getLikeCount())
+                .isAuthorReplied(saved.getIsAuthorReplied())
+                .isAuthor(isAuthor)
+                .userAgent(saved.getUserAgent())
+                .createdAt(saved.getCreatedAt())
+                .replyTo(replyToName)
+                .replies(new ArrayList<>())
+                .build();
+    }
+
+    /**
+     * 辅助方法：刷新评论归属的目标（文章或手记）的 comment_count 冗余计数字段
+     */
+    private void refreshTargetCommentCount(Comment comment) {
+        if (comment == null) return;
+        if (comment.getArticle() != null) {
+            Article article = comment.getArticle();
+            long approvedCount = commentRepository.countByArticleIdAndStatus(article.getId(), "APPROVED");
+            article.setCommentCount(approvedCount);
+            articleRepository.save(article);
+        } else if (comment.getNote() != null) {
+            Note note = comment.getNote();
+            long approvedCount = commentRepository.countByNoteIdAndStatus(note.getId(), "APPROVED");
+            note.setCommentCount(approvedCount);
+            noteRepository.save(note);
+        }
+    }
+
+    @Transactional
+    @Override
     public void likeComment(Long commentId) {
         log.info("评论被点赞: id={}", commentId);
         Comment comment = commentRepository.findById(commentId)
@@ -383,7 +564,12 @@ public class CommentServiceImpl implements CommentService {
 
                     return CommentVO.builder()
                             .id(c.getId())
-                            .articleId(c.getArticle().getId())
+                            .articleId(c.getArticle() != null ? c.getArticle().getId() : null)
+                            .articleTitle(c.getArticle() != null ? c.getArticle().getTitle() : null)
+                            .articleSlug(c.getArticle() != null ? c.getArticle().getSlug() : null)
+                            .noteId(c.getNote() != null ? c.getNote().getId() : null)
+                            .noteTitle(c.getNote() != null ? c.getNote().getTitle() : null)
+                            .noteSlug(c.getNote() != null ? c.getNote().getSlug() : null)
                             .parentId(c.getParentId())
                             .userId(c.getUser() != null ? c.getUser().getId() : null)
                             .nickname(nickname)
@@ -396,8 +582,6 @@ public class CommentServiceImpl implements CommentService {
                             .isPinned(c.getIsPinned() != null && c.getIsPinned())
                             .replyTo(replyTo)
                             .status(c.getStatus())
-                            .articleTitle(c.getArticle().getTitle())
-                            .articleSlug(c.getArticle().getSlug())
                             .createdAt(c.getCreatedAt())
                             .visitorEmail(c.getVisitorEmail())
                             .ipAddress(c.getIpAddress())
@@ -426,10 +610,7 @@ public class CommentServiceImpl implements CommentService {
         commentRepository.save(comment);
 
         if (!oldStatus.equals(status)) {
-            Article article = comment.getArticle();
-            long approvedCount = commentRepository.countByArticleIdAndStatus(article.getId(), "APPROVED");
-            article.setCommentCount(approvedCount);
-            articleRepository.save(article);
+            refreshTargetCommentCount(comment);
         }
     }
 
@@ -446,6 +627,7 @@ public class CommentServiceImpl implements CommentService {
 
         Comment reply = Comment.builder()
                 .article(parent.getArticle())
+                .note(parent.getNote())
                 .parentId(parent.getId())
                 .user(admin)
                 .visitorName(admin.getNickname())
@@ -463,15 +645,17 @@ public class CommentServiceImpl implements CommentService {
         parent.setIsAuthorReplied(true);
         commentRepository.save(parent);
 
-        Article article = parent.getArticle();
-        long approvedCount = commentRepository.countByArticleIdAndStatus(article.getId(), "APPROVED");
-        article.setCommentCount(approvedCount);
-        articleRepository.save(article);
+        refreshTargetCommentCount(parent);
 
         boolean isAuthor = (savedReply.getIsAuthor() != null && savedReply.getIsAuthor()) || (savedReply.getUser() != null && "ADMIN".equalsIgnoreCase(savedReply.getUser().getRole()));
         return CommentVO.builder()
                 .id(savedReply.getId())
-                .articleId(savedReply.getArticle().getId())
+                .articleId(savedReply.getArticle() != null ? savedReply.getArticle().getId() : null)
+                .articleTitle(savedReply.getArticle() != null ? savedReply.getArticle().getTitle() : null)
+                .articleSlug(savedReply.getArticle() != null ? savedReply.getArticle().getSlug() : null)
+                .noteId(savedReply.getNote() != null ? savedReply.getNote().getId() : null)
+                .noteTitle(savedReply.getNote() != null ? savedReply.getNote().getTitle() : null)
+                .noteSlug(savedReply.getNote() != null ? savedReply.getNote().getSlug() : null)
                 .parentId(savedReply.getParentId())
                 .userId(admin.getId())
                 .nickname(admin.getNickname())
@@ -483,8 +667,6 @@ public class CommentServiceImpl implements CommentService {
                 .isPinned(savedReply.getIsPinned() != null && savedReply.getIsPinned())
                 .replyTo(parent.getUser() != null ? parent.getUser().getNickname() : parent.getVisitorName())
                 .status(savedReply.getStatus())
-                .articleTitle(article.getTitle())
-                .articleSlug(article.getSlug())
                 .createdAt(savedReply.getCreatedAt())
                 .build();
     }
@@ -574,12 +756,8 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("目标删除评论不存在"));
         
-        Article article = comment.getArticle();
         commentRepository.delete(comment);
-
-        long approvedCount = commentRepository.countByArticleIdAndStatus(article.getId(), "APPROVED");
-        article.setCommentCount(approvedCount);
-        articleRepository.save(article);
+        refreshTargetCommentCount(comment);
     }
 
     /**
