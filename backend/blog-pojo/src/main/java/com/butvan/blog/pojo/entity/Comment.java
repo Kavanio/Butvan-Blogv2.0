@@ -27,8 +27,12 @@ public class Comment {
     private Long id; // 评论唯一主键 ID
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "article_id", nullable = false)
-    private Article article; // 评论归属的文章实体关联
+    @JoinColumn(name = "article_id")
+    private Article article; // 评论归属的文章实体关联（若属于手记评论则为 NULL）
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "note_id")
+    private Note note; // 评论归属的手记实体关联（若属于文章评论则为 NULL）
 
     @Column(name = "parent_id")
     private Long parentId; // 父评论 ID（NULL 表示顶级根评论）

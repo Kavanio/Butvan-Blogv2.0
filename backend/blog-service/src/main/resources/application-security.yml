@@ -44,6 +44,7 @@ security:
     # ---- 手记模块 ----
     - "GET /api/notes/**"
     - "POST /api/notes/*/like"
+    - "POST /api/notes/*/comments"
 
     # ---- 金句留言墙模块 ----
     - "GET /api/quotes"

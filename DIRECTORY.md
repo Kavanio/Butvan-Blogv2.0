@@ -546,8 +546,9 @@ Butvan Blog2.0/                                    # 📦 项目根目录
             │   │   │   └── TrafficSyncScheduler.java#         每日流量访问（PV/UV）Redis 缓存数据定时同步回刷数据库调度器
             │   └── resources/                      #       配置文件与 Flyway 数据库迁移
             │       ├── db/migration/               #         Flyway 数据库同步更新源
-            │       │   └── V202607291900__add_article_related_ids.sql # 文章关联推荐 ID 列表字段扩展迁移 SQL
-            │       │   └── V202609021100__create_quote_wall.sql # 金句墙表、索引和动态导航注册
+            │       │   ├── V202607291900__add_article_related_ids.sql # 文章关联推荐 ID 列表字段扩展迁移 SQL
+            │       │   ├── V202609021100__create_quote_wall.sql # 金句墙表、索引和动态导航注册
+            │       │   └── V202610092000__add_note_comment_support.sql # 支持手记评论关联 (解开 article_id 必填，新增 note_id 外键与索引)
             │   │   ├── log/                        #       📝 日志模块
             │   │   │   └── WebConsoleAppender.java  #         自定义 Logback 系统日志 WebSocket 拦截 Appender
             │   │   └── security/                   #       🔒 安全模块

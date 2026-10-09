@@ -539,8 +539,8 @@ export default function CommentsPage() {
                   />
                 </div>
 
-                {/* 归属文章条状卡片 */}
-                {comment.articleTitle && (
+                {/* 归属文章 / 手记条状卡片 */}
+                {comment.articleTitle ? (
                   <div className="mt-4 flex items-center justify-between rounded-lg bg-zinc-50/50 dark:bg-zinc-900/15 px-3.5 py-2 text-xs">
                     <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
                       <span className="bg-primary/10 text-primary dark:bg-primary/20 dark:text-[#b0a2ff] px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 select-none">
@@ -561,7 +561,17 @@ export default function CommentsPage() {
                       </a>
                     )}
                   </div>
-                )}
+                ) : comment.noteTitle ? (
+                  <div className="mt-4 flex items-center justify-between rounded-lg bg-zinc-50/50 dark:bg-zinc-900/15 px-3.5 py-2 text-xs">
+                    <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
+                      <span className="bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 select-none">
+                        <FileText size={10} />
+                        <span>手记</span>
+                      </span>
+                      <span className="font-semibold">{comment.noteTitle}</span>
+                    </div>
+                  </div>
+                ) : null}
 
                 {/* 底栏操作项 */}
                 <div className="mt-3.5 pt-0 flex flex-wrap items-center justify-between gap-3 text-xs select-none">
